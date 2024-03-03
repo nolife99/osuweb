@@ -1,4 +1,4 @@
-define([], function() {
+define([], () => {
     function ErrorMeter(r300, r100, r50) {
         PIXI.Container.call(this);
 

@@ -1,4 +1,4 @@
-define([], function() {
+define([], () => {
     function LoadingMenu(windowfield, track) {
         PIXI.Container.call(this);
         this.fadetime = 200;
@@ -17,10 +17,10 @@ define([], function() {
                 name: 'Venera', size: 14
             }
         };
-        this.titletext = new PIXI.BitmapText(track.metadata.Title || '-', { 
-            font: { 
-                name: 'Venera', size: 24 
-            } 
+        this.titletext = new PIXI.BitmapText(track.metadata.Title || '-', {
+            font: {
+                name: 'Venera', size: 24
+            }
         });
         this.artisttext = new PIXI.BitmapText(track.metadata.Artist || '-', allFont);
         this.versiontext = new PIXI.BitmapText(track.metadata.Version || '-', allFont);

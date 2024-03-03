@@ -1,4 +1,4 @@
-define([], function() {
+define([], () => {
     class LazyNumber {
         constructor(value) {
             this.value = value;
@@ -35,7 +35,6 @@ define([], function() {
         this.maxJudgeTotal = 0;
         this.HP = 1;
 
-        this.onfail = null;
         this.judgecnt = {
             great: 0,
             good: 0,

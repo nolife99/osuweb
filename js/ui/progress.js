@@ -1,10 +1,10 @@
-define([], function() {
+define([], () => {
     function ProgressOverlay(windowfield, starttime, endtime) {
         PIXI.Container.call(this);
         this.starttime = starttime;
         this.endtime = endtime;
 
-        var font = {
+        let font = {
             font: {
                 name: 'Venera', size: 16
             }, tint: 0xddffff
@@ -26,7 +26,7 @@ define([], function() {
         }
         this.resize(windowfield);
 
-        const timeformat = ms => {
+        function timeformat(ms) {
             let s = ms / 1000;
             let prefix = '';
             if (s < 0) {

@@ -1,6 +1,6 @@
 const circTolerance = .15;
 
-define([], function() {
+define([], () => {
     const dotlen = a => a.x * a.x + a.y * a.y;
     const vecsub = (a, b) => {
         return {
@@ -19,7 +19,7 @@ define([], function() {
         var c = {
             x: hit.keyframes[1].x, y: hit.keyframes[1].y
         };
-        
+
         var d = 2 * (a.x * vecsub(b, c).y + b.x * vecsub(c, a).y + c.x * vecsub(a, b).y);
         var aSq = dotlen(a);
         var bSq = dotlen(b);
@@ -63,7 +63,7 @@ define([], function() {
         };
 
         var verts = 2 * radius <= circTolerance ? 2 : Math.max(2, Math.floor(arcRange / (2 * Math.acos(1 - circTolerance / radius))));
-        if (!verts) return []; 
+        if (!verts) return [];
         var output = new Array(verts);
 
         for (var i = 0, l = 0; i < verts; ++i) {

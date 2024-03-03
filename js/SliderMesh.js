@@ -1,4 +1,4 @@
-define([], function() {
+define([], () => {
     Container = PIXI.Container;
 
     const vertexSrc = `
@@ -20,7 +20,7 @@ define([], function() {
         gl_FragColor = alpha * texture2D(uSampler2, vec2(dist, texturepos));
     }`;
 
-    const newTexture = (colors, SliderTrackOverride, SliderBorder) => {
+    function newTexture(colors, SliderTrackOverride, SliderBorder) {
         const borderwidth = .128;
         const innerPortion = 1 - borderwidth;
         const edgeOpacity = .8;
@@ -92,7 +92,7 @@ define([], function() {
     }
 
     const DIVIDES = 30;
-    const curveGeometry = (curve, radius) => {
+    function curveGeometry(curve, radius) {
         let vert = [], index = [];
         vert.push(curve[0].x, curve[0].y, curve[0].t, 0);
 
@@ -119,7 +119,7 @@ define([], function() {
             index.push(n - 6, n - 5, n - 1, n - 5, n - 1, n - 3);
             index.push(n - 6, n - 4, n - 1, n - 4, n - 1, n - 2);
         }
-        const addArc = (c, p1, p2, t) => {
+        function addArc(c, p1, p2, t) {
             let theta_1 = Math.atan2(vert[4 * p1 + 1] - vert[4 * c + 1], vert[4 * p1] - vert[4 * c])
             let theta_2 = Math.atan2(vert[4 * p2 + 1] - vert[4 * c + 1], vert[4 * p2] - vert[4 * c])
             if (theta_1 > theta_2) theta_2 += 2 * Math.PI;
@@ -152,7 +152,7 @@ define([], function() {
         }
         return new PIXI.Geometry().addAttribute('position', vert, 4).addIndex(index);
     }
-    const circleGeometry = radius => {
+    function circleGeometry(radius) {
         let vert = [], index = [];
         vert.push(0, 0, 0, 0);
 
@@ -212,13 +212,11 @@ define([], function() {
         if (shader.update) shader.update();
         renderer.batch.flush();
 
+        let ox0 = this.uniforms.ox, oy0 = this.uniforms.oy;
         this.uniforms.alpha = this.alpha;
         this.uniforms.texturepos = this.tintid / this.ncolors;
         this.uniforms.dt = 0;
         this.uniforms.ot = .5;
-
-        let ox0 = this.uniforms.ox;
-        let oy0 = this.uniforms.oy;
 
         const gl = renderer.gl;
         gl.clearDepth(1);
@@ -228,14 +226,11 @@ define([], function() {
         renderer.state.set(this.state);
         renderer.state.setDepthTest(true);
 
-        let glType;
-        let indexLength;
-
-        const bind = geometry => {
+        let glType, indexLength;
+        function bind(geometry) {
             renderer.shader.bind(shader);
             renderer.geometry.bind(geometry, shader);
-            let byteSize = geometry.indexBuffer.data.BYTES_PER_ELEMENT;
-            glType = byteSize === 2 ? gl.UNSIGNED_SHORT : gl.UNSIGNED_INT;
+            glType = geometry.indexBuffer.data.BYTES_PER_ELEMENT === 2 ? gl.UNSIGNED_SHORT : gl.UNSIGNED_INT;
             indexLength = geometry.indexBuffer.data.length;
         }
         if (this.startt == 0 && this.endt == 1) {
@@ -312,7 +307,7 @@ define([], function() {
         Container.prototype.destroy.call(this, options);
         this.geometry.dispose();
         this.circle.dispose();
-        
+
         this.geometry = null;
         this.circle = null;
         this.shader = null;

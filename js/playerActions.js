@@ -1,5 +1,5 @@
 define([], () => {
-    let checkClickdown = function() {
+    function checkClickdown() {
         let click = {
             x: playback.game.mouseX, y: playback.game.mouseY,
             time: playback.osu.audio.getPosition() * 1000
@@ -23,18 +23,18 @@ define([], () => {
             }
         }
     };
-    let inUpcoming = click => hit => {
+    const inUpcoming = click => hit => {
         let dx = click.x - hit.x;
         let dy = click.y - hit.y;
         return hit.score < 0 && dx * dx + dy * dy < playback.circleRadius * playback.circleRadius && Math.abs(click.time - hit.time) < playback.MehTime;
     };
-    let inUpcoming_grace = predict => hit => {
+    const inUpcoming_grace = predict => hit => {
         var dx = predict.x - hit.x;
         var dy = predict.y - hit.y;
         var r = predict.r + playback.circleRadius;
         return result = hit.score < 0 && dx * dx + dy * dy < r * r && Math.abs(predict.time - hit.time) < playback.MehTime;
     }
-    let playerActions = function(playback) {
+    function playerActions(playback) {
         if (playback.autoplay) {
             playback.auto = {
                 currentObject: null,
@@ -44,7 +44,7 @@ define([], () => {
                 lasttime: 0
             }
         }
-        playback.game.updatePlayerActions = function(time) {
+        playback.game.updatePlayerActions = function (time) {
             if (playback.autoplay) {
                 const spinRadius = 60;
                 let cur = playback.auto.currentObject;
@@ -118,10 +118,10 @@ define([], () => {
             }
         };
 
-        var movehistory = [{
+        let movehistory = [{
             x: 256, y: 192, t: new Date().getTime()
         }];
-        playback.game.mouse = function(t) {
+        playback.game.mouse = function (t) {
             let m = movehistory;
             let i = 0;
             while (i < m.length - 1 && m[0].t - m[i].t < 40 && t - m[i].t < 100) ++i;
@@ -137,7 +137,7 @@ define([], () => {
                 r: Math.hypot(velocity.x, velocity.y) * Math.max(t - m[0].t, window.currentFrameInterval)
             };
         }
-        var mousemoveCallback = function(e) {
+        function mousemoveCallback(e) {
             playback.game.mouseX = (e.clientX - gfx.xoffset) / gfx.width * 512;
             playback.game.mouseY = (e.clientY - gfx.yoffset) / gfx.height * 384;
             movehistory.unshift({
@@ -145,7 +145,7 @@ define([], () => {
             });
             if (movehistory.length > 10) movehistory.pop();
         }
-        var mousedownCallback = function(e) {
+        function mousedownCallback(e) {
             mousemoveCallback(e);
             if (e.button == 0) {
                 if (playback.game.M1down) return;
@@ -162,7 +162,7 @@ define([], () => {
             playback.game.down = playback.game.K1down || playback.game.K2down || playback.game.M1down || playback.game.M2down;
             checkClickdown();
         }
-        var mouseupCallback = function(e) {
+        function mouseupCallback(e) {
             mousemoveCallback(e);
             if (e.button == 0) playback.game.M1down = false;
             else if (e.button == 2) playback.game.M2down = false;
@@ -172,7 +172,7 @@ define([], () => {
             e.stopPropagation();
             playback.game.down = playback.game.K1down || playback.game.K2down || playback.game.M1down || playback.game.M2down;
         }
-        var keydownCallback = function(e) {
+        function keydownCallback(e) {
             if (e.keyCode == playback.game.K1keycode) {
                 if (playback.game.K1down) return;
                 playback.game.K1down = true;
@@ -188,7 +188,7 @@ define([], () => {
             playback.game.down = playback.game.K1down || playback.game.K2down || playback.game.M1down || playback.game.M2down;
             checkClickdown();
         }
-        var keyupCallback = function(e) {
+        function keyupCallback(e) {
             if (e.keyCode == playback.game.K1keycode) playback.game.K1down = false;
             else if (e.keyCode == playback.game.K2keycode) playback.game.K2down = false;
             else return;
@@ -214,25 +214,23 @@ define([], () => {
             window.removeEventListener("keyup", keyupCallback);
         }
     }
-    if (!Array.prototype.find) {
-        Object.defineProperty(Array.prototype, 'find', {
-            value: function(predicate) {
-                if (this == null) throw new TypeError('"this" is null or not defined');
-                if (typeof predicate !== 'function') throw new TypeError('predicate must be a function');
+    if (!Array.prototype.find) Object.defineProperty(Array.prototype, 'find', {
+        value: function (predicate) {
+            if (this == null) throw new TypeError('"this" is null or not defined');
+            if (typeof predicate !== 'function') throw new TypeError('predicate must be a function');
 
-                let k = 0;
-                let o = Object(this);
-                let thisArg = arguments[1];
+            let k = 0;
+            let o = Object(this);
+            let thisArg = arguments[1];
 
-                while (k < (o.length >>> 0)) {
-                    let kValue = o[k];
-                    if (predicate.call(thisArg, kValue, k++, o)) return kValue;
-                }
-                return undefined;
-            },
-            configurable: true,
-            writable: true
-        });
-    }
+            while (k < (o.length >>> 0)) {
+                let kValue = o[k];
+                if (predicate.call(thisArg, kValue, k++, o)) return kValue;
+            }
+            return undefined;
+        },
+        configurable: true,
+        writable: true
+    });
     return playerActions;
 });

@@ -1,4 +1,4 @@
-define([], function() {
+define([], () => {
     function BreakOverlay(windowfield) {
         PIXI.Container.call(this);
         this.fadetime = 200;

@@ -28,7 +28,6 @@ function setOptionPanel() {
         mastervolume: 100,
         effectvolume: 100,
         musicvolume: 100,
-        audiooffset: 0,
         beatmapHitsound: false,
 
         easy: false,
@@ -40,7 +39,7 @@ function setOptionPanel() {
 
         hideNumbers: false,
         hideGreat: true,
-        hideFollowPoints: false,
+        hideFollowPoints: false
     };
     window.gamesettings = {};
 
@@ -183,8 +182,6 @@ function setOptionPanel() {
     bindrange("mastervolume-range", "mastervolume", v => v + "%");
     bindrange("effectvolume-range", "effectvolume", v => v + "%");
     bindrange("musicvolume-range", "musicvolume", v => v + "%");
-    bindrange("audiooffset-range", "audiooffset", v => v + "ms");
-    bindcheck("beatmap-hitsound-check", "beatmapHitsound")
     bindExclusiveCheck("easy-check", "easy", "hardrock-check", "hardrock");
     bindExclusiveCheck("daycore-check", "daycore", "nightcore-check", "nightcore");
     bindcheck("hidden-check", "hidden");

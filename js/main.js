@@ -1,8 +1,7 @@
-require(["osu", "underscore", "sound", "playback"], function(Osu, _, sound, Playback) {
+require(["osu", "underscore", "sound", "playback"], (Osu, _, _sound, Playback) => {
     let game = {
         window: window,
         stage: null,
-        scene: null,
         updatePlayerActions: null,
         backgroundDimRate: .7,
         backgroundBlurRate: 0,
@@ -93,175 +92,174 @@ require(["osu", "underscore", "sound", "playback"], function(Osu, _, sound, Play
     };
     sounds.load(sample);
 
-    function BeatmapController() {
-        this.osuReady = false;
-    }
-    BeatmapController.prototype.startGame = function(trackid) {
-        if (window.app) return;
-        let app = window.app = new PIXI.Application({
-            width: window.innerWidth,
-            height: window.innerHeight,
-            resolution: window.devicePixelRatio || 1,
-            autoDensity: true
-        });
-        app.renderer.autoDensity = true;
-        app.renderer.backgroundColor = 0x111111;
-
-        let scrollTop = document.body.scrollTop;
-        let defaultAlert = window.alert;
-
-        document.addEventListener("contextmenu", function(e) {
-            e.preventDefault();
-            return false;
-        });
-        document.body.classList.add("gaming");
-
-        if (!game.showhwmouse || game.autoplay) {
-            game.cursor = new PIXI.Sprite(Skin["cursor.png"]);
-            game.cursor.anchor.x = game.cursor.anchor.y = .5;
-            game.cursor.scale.x = game.cursor.scale.y = .3 * game.cursorSize;
-            game.stage.addChild(game.cursor);
+    class BeatmapController {
+        constructor() {
+            this.osuReady = false;
         }
-
-        let pGameArea = document.getElementById("game-area");
-        var pMainPage = document.getElementById("main-page");
-        pGameArea.appendChild(app.view);
-
-        if (game.autoplay) {
-            pGameArea.classList.remove("shownomouse");
-            pGameArea.classList.remove("showhwmouse");
-        }
-        else if (game.showhwmouse) {
-            pGameArea.classList.remove("shownomouse");
-            pGameArea.classList.add("showhwmouse");
-        }
-        else {
-            pGameArea.classList.remove("showhwmouse");
-            pGameArea.classList.add("shownomouse");
-        }
-        pMainPage.hidden = true;
-        pGameArea.hidden = false;
-
-        let gameLoop;
-        window.quitGame = function() {
-            pGameArea.hidden = true;
-            pMainPage.hidden = false;
-            document.body.classList.remove("gaming");
-            document.body.scrollTop = scrollTop;
-            window.alert = defaultAlert;
-
-            if (game.cursor) {
-                game.stage.removeChild(game.cursor);
-                game.cursor.destroy();
-                game.cursor = null;
-            }
-            window.app.destroy(true, {
-                children: true, texture: false
+        startGame(trackid) {
+            if (window.app) return;
+            let app = window.app = new PIXI.Application({
+                width: window.innerWidth,
+                height: window.innerHeight,
+                resolution: window.devicePixelRatio || 1,
+                autoDensity: true
             });
-            window.app = null;
-            gameLoop = null;
-            window.cancelAnimationFrame(window.animationRequestID);
-        }
+            app.renderer.autoDensity = true;
+            app.renderer.backgroundColor = 0x111111;
 
-        let playback = new Playback(window.game, this.osu, this.osu.tracks[trackid]);
-        game.scene = playback;
-        playback.load();
+            let scrollTop = document.body.scrollTop;
+            let defaultAlert = window.alert;
 
-        gameLoop = time => {
-            playback.render(time);
-            if (game.cursor) {
-                game.cursor.x = game.mouseX / 512 * gfx.width + gfx.xoffset;
-                game.cursor.y = game.mouseY / 384 * gfx.height + gfx.yoffset;
-                game.cursor.bringToFront();
+            document.addEventListener("contextmenu", function (e) {
+                e.preventDefault();
+                return false;
+            });
+            document.body.classList.add("gaming");
+
+            if (!game.showhwmouse || game.autoplay) {
+                game.cursor = new PIXI.Sprite(Skin["cursor.png"]);
+                game.cursor.anchor.x = game.cursor.anchor.y = .5;
+                game.cursor.scale.x = game.cursor.scale.y = .3 * game.cursorSize;
+                game.stage.addChild(game.cursor);
             }
-            if (!app.renderer) return;
-            app.renderer.render(game.stage);
+
+            let pGameArea = document.getElementById("game-area");
+            var pMainPage = document.getElementById("main-page");
+            pGameArea.appendChild(app.view);
+
+            if (game.autoplay) {
+                pGameArea.classList.remove("shownomouse");
+                pGameArea.classList.remove("showhwmouse");
+            }
+            else if (game.showhwmouse) {
+                pGameArea.classList.remove("shownomouse");
+                pGameArea.classList.add("showhwmouse");
+            }
+            else {
+                pGameArea.classList.remove("showhwmouse");
+                pGameArea.classList.add("shownomouse");
+            }
+            pMainPage.hidden = true;
+            pGameArea.hidden = false;
+
+            let gameLoop;
+            window.quitGame = function () {
+                pGameArea.hidden = true;
+                pMainPage.hidden = false;
+                document.body.classList.remove("gaming");
+                document.body.scrollTop = scrollTop;
+                window.alert = defaultAlert;
+
+                if (game.cursor) {
+                    game.stage.removeChild(game.cursor);
+                    game.cursor.destroy();
+                    game.cursor = null;
+                }
+                window.app.destroy(true, {
+                    children: true, texture: false
+                });
+
+                window.cancelAnimationFrame(window.animationRequestID);
+                window.app = null;
+                gameLoop = null;
+            };
+
+            let playback = new Playback(window.game, this.osu, this.osu.tracks[trackid]);
+            playback.load();
+
+            gameLoop = time => {
+                playback.render(time);
+                if (game.cursor) {
+                    game.cursor.x = game.mouseX / 512 * gfx.width + gfx.xoffset;
+                    game.cursor.y = game.mouseY / 384 * gfx.height + gfx.yoffset;
+                    game.cursor.bringToFront();
+                }
+                if (!app.renderer) return;
+
+                app.renderer.render(game.stage);
+                window.requestAnimationFrame(gameLoop);
+            };
             window.requestAnimationFrame(gameLoop);
         }
-        window.requestAnimationFrame(gameLoop);
-    }
-    BeatmapController.prototype.createBeatmapBox = function() {
-        let map = this;
-        let pBeatmapBox = document.createElement("div");
-        let pBeatmapCover = document.createElement("img");
-        let pBeatmapTitle = document.createElement("div");
-        let pBeatmapAuthor = document.createElement("div");
+        createBeatmapBox() {
+            let map = this;
+            let pBeatmapBox = document.createElement("div");
+            let pBeatmapCover = document.createElement("img");
+            let pBeatmapTitle = document.createElement("div");
+            let pBeatmapAuthor = document.createElement("div");
 
-        pBeatmapBox.className = "beatmapbox";
-        pBeatmapCover.className = "beatmapcover";
-        pBeatmapTitle.className = "beatmaptitle";
-        pBeatmapAuthor.className = "beatmapauthor";
-        pBeatmapBox.appendChild(pBeatmapCover);
-        pBeatmapBox.appendChild(pBeatmapTitle);
-        pBeatmapBox.appendChild(pBeatmapAuthor);
+            pBeatmapBox.className = "beatmapbox";
+            pBeatmapCover.className = "beatmapcover";
+            pBeatmapTitle.className = "beatmaptitle";
+            pBeatmapAuthor.className = "beatmapauthor";
+            pBeatmapBox.appendChild(pBeatmapCover);
+            pBeatmapBox.appendChild(pBeatmapTitle);
+            pBeatmapBox.appendChild(pBeatmapAuthor);
 
-        let title = map.osu.tracks[0].metadata.Title;
-        let artist = map.osu.tracks[0].metadata.Artist;
-        let creator = map.osu.tracks[0].metadata.Creator;
-        pBeatmapTitle.innerText = title;
-        pBeatmapAuthor.innerText = artist + " / " + creator;
-        pBeatmapCover.alt = "beatmap cover";
-        map.osu.getCoverSrc(pBeatmapCover);
+            pBeatmapTitle.innerText = map.osu.tracks[0].metadata.Title;
+            pBeatmapAuthor.innerText = map.osu.tracks[0].metadata.Artist + "/" + map.osu.tracks[0].metadata.Creator;
+            map.osu.getCoverSrc(pBeatmapCover);
 
-        if (map.osu.tracks[0].length) {
-            let pBeatmapLength = document.createElement("div");
-            pBeatmapLength.className = "beatmaplength";
-            pBeatmapBox.appendChild(pBeatmapLength);
-            let length = map.osu.tracks[0].length;
-            pBeatmapLength.innerText = Math.floor(length / 60) + ":" + (length % 60 < 10 ? "0" : "") + Math.round(length % 60);
-        }
-        pBeatmapBox.onclick = function(e) {
-            if (!window.showingDifficultyBox) {
-                e.stopPropagation();
-                let difficultyBox = document.createElement("div");
-                difficultyBox.className = "difficulty-box";
-
-                let rect = this.getBoundingClientRect();
-                let x = e.clientX - rect.left;
-                let y = e.clientY - rect.top;
-                difficultyBox.style.left = x + "px";
-                difficultyBox.style.top = y + "px";
-
-                const closeDifficultyMenu = () => {
-                    pBeatmapBox.removeChild(difficultyBox);
-                    window.showingDifficultyBox = false;
-                    window.removeEventListener('click', closeDifficultyMenu, false);
-                };
-
-                for (let i = 0; i < map.osu.tracks.length; ++i) {
-                    let difficultyItem = document.createElement("div");
-                    let difficultyRing = document.createElement("div");
-                    let difficultyText = document.createElement("span");
-                    difficultyItem.className = "difficulty-item";
-                    difficultyRing.className = "difficulty-ring";
-
-                    let star = map.osu.tracks[i].difficulty.star;
-                    if (star) {
-                        if (star < 2) difficultyRing.classList.add("easy");
-                        else if (star < 2.7) difficultyRing.classList.add("normal");
-                        else if (star < 4) difficultyRing.classList.add("hard");
-                        else if (star < 5.3) difficultyRing.classList.add("insane");
-                        else if (star < 6.5) difficultyRing.classList.add("expert");
-                        else difficultyRing.classList.add("expert-plus");
-                    }
-
-                    difficultyText.innerText = map.osu.tracks[i].metadata.Version;
-                    difficultyItem.appendChild(difficultyRing);
-                    difficultyItem.appendChild(difficultyText);
-                    difficultyBox.appendChild(difficultyItem);
-                    difficultyItem.onclick = e => {
-                        e.stopPropagation();
-                        closeDifficultyMenu();
-                        map.startGame(i);
-                    }
-                }
-                pBeatmapBox.appendChild(difficultyBox);
-
-                window.showingDifficultyBox = true;
-                window.addEventListener("click", closeDifficultyMenu, false);
+            if (map.osu.tracks[0].length) {
+                let pBeatmapLength = document.createElement("div");
+                pBeatmapLength.className = "beatmaplength";
+                pBeatmapBox.appendChild(pBeatmapLength);
+                let length = map.osu.tracks[0].length;
+                pBeatmapLength.innerText = Math.floor(length / 60) + ":" + (length % 60 < 10 ? "0" : "") + Math.round(length % 60);
             }
+            pBeatmapBox.onclick = function (e) {
+                if (!window.showingDifficultyBox) {
+                    e.stopPropagation();
+                    let difficultyBox = document.createElement("div");
+                    difficultyBox.className = "difficulty-box";
+
+                    let rect = this.getBoundingClientRect();
+                    let x = e.clientX - rect.left;
+                    let y = e.clientY - rect.top;
+                    difficultyBox.style.left = x + "px";
+                    difficultyBox.style.top = y + "px";
+
+                    function closeDifficultyMenu() {
+                        pBeatmapBox.removeChild(difficultyBox);
+                        window.showingDifficultyBox = false;
+                        window.removeEventListener('click', closeDifficultyMenu, false);
+                    };
+
+                    for (let i = 0; i < map.osu.tracks.length; ++i) {
+                        let difficultyItem = document.createElement("div");
+                        let difficultyRing = document.createElement("div");
+                        let difficultyText = document.createElement("span");
+                        difficultyItem.className = "difficulty-item";
+                        difficultyRing.className = "difficulty-ring";
+
+                        let star = map.osu.tracks[i].difficulty.star;
+                        if (star) {
+                            if (star < 2) difficultyRing.classList.add("easy");
+                            else if (star < 2.7) difficultyRing.classList.add("normal");
+                            else if (star < 4) difficultyRing.classList.add("hard");
+                            else if (star < 5.3) difficultyRing.classList.add("insane");
+                            else if (star < 6.5) difficultyRing.classList.add("expert");
+                            else difficultyRing.classList.add("expert-plus");
+                        }
+
+                        difficultyText.innerText = map.osu.tracks[i].metadata.Version;
+                        difficultyItem.appendChild(difficultyRing);
+                        difficultyItem.appendChild(difficultyText);
+                        difficultyBox.appendChild(difficultyItem);
+                        difficultyItem.onclick = e => {
+                            e.stopPropagation();
+                            closeDifficultyMenu();
+                            map.startGame(i);
+                        };
+                    }
+                    pBeatmapBox.appendChild(difficultyBox);
+
+                    window.showingDifficultyBox = true;
+                    window.addEventListener("click", closeDifficultyMenu, false);
+                }
+            };
+            return pBeatmapBox;
         }
-        return pBeatmapBox;
     }
 
     let pDragbox = document.getElementById("beatmap-dragbox");
@@ -276,7 +274,7 @@ require(["osu", "underscore", "sound", "playback"], function(Osu, _, sound, Play
     pDragboxHint.loadingHint = "loading...";
     let beatmapFileList = [];
 
-    localforage.getItem("beatmapfilelist", function(err, names) {
+    localforage.getItem("beatmapfilelist", function (err, names) {
         if (!err && names && typeof names.length !== undefined) {
             console.log("local beatmap list:", names);
             document.getElementById('bm-total-counter').innerText = names.length;
@@ -293,22 +291,20 @@ require(["osu", "underscore", "sound", "playback"], function(Osu, _, sound, Play
             let loadingn = 0;
 
             beatmapFileList = beatmapFileList.concat(names);
-            for (let i = 0; i < names.length; ++i) {
-                localforage.getItem(names[i], (err, blob) => {
-                    if (!err && blob) {
-                        let fs = new zip.fs.FS();
-                        fs.filename = names[i];
-                        fs.root.importBlob(blob, () => {
-                            addbeatmap(fs, box => {
-                                pBeatmapList.replaceChild(box, tempbox[i]);
-                                pDragboxHint.innerText = pDragboxHint.defaultHint;
-                            });
-                            loadingCounter.innerText = ++loadingn;
-                        }, e => pDragboxHint.innerText = pDragboxHint.nonValidHint);
-                    }
-                    else console.error("error while loading beatmap:", names[i], err);
-                });
-            }
+            for (let i = 0; i < names.length; ++i) localforage.getItem(names[i], (err, blob) => {
+                if (!err && blob) {
+                    let fs = new zip.fs.FS();
+                    fs.filename = names[i];
+                    fs.root.importBlob(blob, () => {
+                        addbeatmap(fs, box => {
+                            pBeatmapList.replaceChild(box, tempbox[i]);
+                            pDragboxHint.innerText = pDragboxHint.defaultHint;
+                        });
+                        loadingCounter.innerText = ++loadingn;
+                    }, _e => pDragboxHint.innerText = pDragboxHint.nonValidHint);
+                }
+                else console.error("error while loading beatmap:", names[i], err);
+            });
         }
         else if (names) console.error("error while loading beatmap list:", err, names);
     });
@@ -316,9 +312,9 @@ require(["osu", "underscore", "sound", "playback"], function(Osu, _, sound, Play
         let map = new BeatmapController();
         map.osu = new Osu(osz.root);
         map.filename = osz.filename;
-        console.log("adding beatmap filename:", osz.filename)
+        console.log("adding beatmap filename:", osz.filename);
 
-        map.osu.ondecoded = function() {
+        map.osu.ondecoded = function () {
             map.osu.filterTracks();
             map.osu.sortTracks();
             map.osu.requestStar();
@@ -328,20 +324,19 @@ require(["osu", "underscore", "sound", "playback"], function(Osu, _, sound, Play
                 pDragboxHint.innerText = pDragboxHint.modeErrHint;
                 return;
             }
-            let pBeatmapBox = map.createBeatmapBox();
-            f(pBeatmapBox);
+            f(map.createBeatmapBox());
 
             if (!beatmapFileList.includes(map.filename)) {
                 beatmapFileList.push(map.filename);
-                localforage.setItem("beatmapfilelist", beatmapFileList, function(err, val) {
+                localforage.setItem("beatmapfilelist", beatmapFileList, (err, _val) => {
                     if (err) console.error("Error while saving beatmap list");
                 });
             }
         };
-        map.osu.onerror = e => console.error("osu load error");
+        map.osu.onerror = _e => console.error("osu load error");
         map.osu.load();
     }
-    let handleDragDrop = function(e) {
+    function handleDragDrop(e) {
         e.stopPropagation();
         e.preventDefault();
 
@@ -355,17 +350,13 @@ require(["osu", "underscore", "sound", "playback"], function(Osu, _, sound, Play
             if (raw_file.name.indexOf(".osz") === raw_file.name.length - 4) {
                 let fs = new zip.fs.FS();
                 fs.filename = raw_file.name;
-                localforage.setItem(raw_file.name, raw_file, function(err, val) {
+                localforage.setItem(raw_file.name, raw_file, (err, _val) => {
                     if (err) console.error("Error while saving beatmap", fs.filename);
                 })
-                fs.root.importBlob(raw_file, function() {
-                    addbeatmap(fs, function(box) {
-                        pBeatmapList.insertBefore(box, pDragbox);
-                        pDragboxHint.innerText = pDragboxHint.defaultHint;
-                    })
-                }, function(err) {
-                    pDragboxHint.innerText = pDragboxHint.nonValidHint;
-                });
+                fs.root.importBlob(raw_file, () => addbeatmap(fs, box => {
+                    pBeatmapList.insertBefore(box, pDragbox);
+                    pDragboxHint.innerText = pDragboxHint.defaultHint;
+                }), _e => pDragboxHint.innerText = pDragboxHint.nonValidHint);
             }
             else pDragboxHint.innerText = pDragboxHint.nonOszHint;
         }
@@ -380,9 +371,9 @@ require(["osu", "underscore", "sound", "playback"], function(Osu, _, sound, Play
     window.scriptReady = true;
     document.getElementById("script-progress").classList.add("finished");
 
-    PIXI.Sprite.prototype.bringToFront = function() {
-        if (this.parent) {
-            let parent = this.parent;
+    PIXI.Sprite.prototype.bringToFront = function () {
+        let parent = this.parent;
+        if (parent) {
             parent.removeChild(this);
             parent.addChild(this);
         }

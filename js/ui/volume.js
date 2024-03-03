@@ -1,4 +1,4 @@
-define([], function() {
+define([], () => {
     function VolumeMenu(windowfield) {
         PIXI.Container.call(this);
         this.fadetime = 1000;
@@ -33,7 +33,7 @@ define([], function() {
 
         this.setVolume = function(volume) {
             this.changed = true;
-            this.volumetext.text = Math.round(volume).toString();
+            this.volumetext.text = volume.toFixed(0);
         }
         this.update = function(timestamp) {
             if (this.changed) {
