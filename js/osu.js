@@ -1,4 +1,4 @@
-define(["underscore", "osu-audio", "curves/LinearBezier", "curves/ArcPath"], (_, OsuAudio, LinearBezier, ArcPath) => {
+define(["underscore", "osu-audio", "curve/LinearBezier", "curve/ArcPath"], (_, OsuAudio, LinearBezier, ArcPath) => {
     var HIT_TYPE_CIRCLE = 1, HIT_TYPE_SLIDER = 2, HIT_TYPE_NEWCOMBO = 4, HIT_TYPE_SPINNER = 8;
 
     const stackHitObjects = track => {
@@ -339,7 +339,7 @@ define(["underscore", "osu-audio", "curves/LinearBezier", "curves/ArcPath"], (_,
                     break;
                 }
                 catch (error) {
-                    img.src = "assets/skin/defaultbg.jpg";
+                    img.src = "asset/skin/defaultbg.jpg";
                 }
             }
         };

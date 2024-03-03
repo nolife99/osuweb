@@ -47,29 +47,29 @@ require(["osu", "underscore", "sound", "playback"], function(Osu, _, sound, Play
     game.stage = new PIXI.Container();
     game.cursor = null;
 
-    PIXI.Loader.shared.add('assets/fonts/venera.fnt').add("assets/skin/sprites.json").load(() => {
+    PIXI.Loader.shared.add('asset/fonts/venera.fnt').add("asset/skin/sprites.json").load(() => {
         window.skinReady = true;
         document.getElementById("skin-progress").classList.add("finished");
-        Skin = PIXI.Loader.shared.resources["assets/skin/sprites.json"].textures;
+        Skin = PIXI.Loader.shared.resources["asset/skin/sprites.json"].textures;
     });
 
     let sample = [
-        'hitsounds/normal-hitnormal.ogg',
-        'hitsounds/normal-hitwhistle.ogg',
-        'hitsounds/normal-hitfinish.ogg',
-        'hitsounds/normal-hitclap.ogg',
-        'hitsounds/normal-slidertick.ogg',
-        'hitsounds/soft-hitnormal.ogg',
-        'hitsounds/soft-hitwhistle.ogg',
-        'hitsounds/soft-hitfinish.ogg',
-        'hitsounds/soft-hitclap.ogg',
-        'hitsounds/soft-slidertick.ogg',
-        'hitsounds/drum-hitnormal.ogg',
-        'hitsounds/drum-hitwhistle.ogg',
-        'hitsounds/drum-hitfinish.ogg',
-        'hitsounds/drum-hitclap.ogg',
-        'hitsounds/drum-slidertick.ogg',
-        'hitsounds/combobreak.ogg'
+        'asset/hitsound/normal-hitnormal.ogg',
+        'asset/hitsound/normal-hitwhistle.ogg',
+        'asset/hitsound/normal-hitfinish.ogg',
+        'asset/hitsound/normal-hitclap.ogg',
+        'asset/hitsound/normal-slidertick.ogg',
+        'asset/hitsound/soft-hitnormal.ogg',
+        'asset/hitsound/soft-hitwhistle.ogg',
+        'asset/hitsound/soft-hitfinish.ogg',
+        'asset/hitsound/soft-hitclap.ogg',
+        'asset/hitsound/soft-slidertick.ogg',
+        'asset/hitsound/drum-hitnormal.ogg',
+        'asset/hitsound/drum-hitwhistle.ogg',
+        'asset/hitsound/drum-hitfinish.ogg',
+        'asset/hitsound/drum-hitclap.ogg',
+        'asset/hitsound/drum-slidertick.ogg',
+        'asset/hitsound/combobreak.ogg'
     ];
     sounds.whenLoaded = () => {
         game.sample[1].hitnormal = sounds[sample[0]];
@@ -109,7 +109,7 @@ require(["osu", "underscore", "sound", "playback"], function(Osu, _, sound, Play
 
         let scrollTop = document.body.scrollTop;
         let defaultAlert = window.alert;
-        
+
         document.addEventListener("contextmenu", function(e) {
             e.preventDefault();
             return false;
@@ -126,7 +126,7 @@ require(["osu", "underscore", "sound", "playback"], function(Osu, _, sound, Play
         let pGameArea = document.getElementById("game-area");
         var pMainPage = document.getElementById("main-page");
         pGameArea.appendChild(app.view);
-        
+
         if (game.autoplay) {
             pGameArea.classList.remove("shownomouse");
             pGameArea.classList.remove("showhwmouse");
@@ -149,7 +149,7 @@ require(["osu", "underscore", "sound", "playback"], function(Osu, _, sound, Play
             document.body.classList.remove("gaming");
             document.body.scrollTop = scrollTop;
             window.alert = defaultAlert;
-            
+
             if (game.cursor) {
                 game.stage.removeChild(game.cursor);
                 game.cursor.destroy();

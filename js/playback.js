@@ -1,4 +1,4 @@
-define(["playerActions", "SliderMesh", "overlay/score", "overlay/volume", "overlay/loading", "overlay/break", "overlay/progress", "overlay/hiterrormeter"], (setPlayerActions, SliderMesh, ScoreOverlay, VolumeMenu, LoadingMenu, BreakOverlay, ProgressOverlay, ErrorMeterOverlay) => {
+define(["playerActions", "SliderMesh", "ui/score", "ui/volume", "ui/loading", "ui/break", "ui/progress", "ui/hiterrormeter"], (setPlayerActions, SliderMesh, ScoreOverlay, VolumeMenu, LoadingMenu, BreakOverlay, ProgressOverlay, ErrorMeterOverlay) => {
     const clamp = (num, min, max) => Math.min(Math.max(num, min), max);
     const clamp01 = num => Math.min(Math.max(num, 0), 1);
     const colorLerp = (rgb1, rgb2, t) => {
@@ -396,11 +396,11 @@ define(["playerActions", "SliderMesh", "overlay/score", "overlay/volume", "overl
                     self.ready = true;
                 });
                 else {
-                    loadBackground("assets/skin/defaultbg.jpg");
+                    loadBackground("asset/skin/defaultbg.jpg");
                     self.ready = true;
                 }
             }
-            else loadBackground("assets/skin/defaultbg.jpg");
+            else loadBackground("asset/skin/defaultbg.jpg");
         };
         self.createBackground();
 

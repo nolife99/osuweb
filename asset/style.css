@@ -4,14 +4,14 @@
     font-family: 'Exo 2';
     font-style: italic;
     font-weight: 600;
-    src: url(../fonts/600i.ttf) format('truetype');
+    src: url(fonts/600i.ttf) format('truetype');
 }
 
 @font-face {
     font-family: 'Exo 2';
     font-style: normal;
     font-weight: 400;
-    src: url(../fonts/400.ttf) format('truetype');
+    src: url(fonts/400.ttf) format('truetype');
 }
 
 body {
@@ -35,7 +35,7 @@ canvas {
 }
 
 .game-area.showhwmouse {
-    cursor: url("assets/skin/cursor.cur") 40 40, crosshair !important;
+    cursor: url("asset/skin/cursor.cur") 40 40, crosshair !important;
 }
 
 .game-area.shownomouse {

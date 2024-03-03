@@ -1,4 +1,4 @@
-define(["underscore", "curves/BSpline"], function(_, BSpline) {
+define(["underscore", "curve/BSpline"], function(_, BSpline) {
     const lerp = (a, b, t) => a * (1 - t) + b * t;
     function LinearBeizer(hit, line) {
         this.hitObject = hit;
