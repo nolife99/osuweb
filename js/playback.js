@@ -324,7 +324,7 @@ define(["playerActions", "SliderMesh", "ui/score", "ui/volume", "ui/loading", "u
         }
         this.updateJudgement = function(judge, time) {
             if (judge.points < 0 && time >= judge.finalTime) {
-                let points = this.auto ? 300 : judge.defaultScore;
+                let points = game.autoplay ? 300 : judge.defaultScore;
 
                 this.scoreOverlay.hit(points, 300, judge.finalTime);
                 this.invokeJudgement(judge, points, judge.finalTime);
@@ -414,8 +414,7 @@ define(["playerActions", "SliderMesh", "ui/score", "ui/volume", "ui/loading", "u
         let combos = new Array(track.colors.length);
         for (let i = 0; i < track.colors.length; ++i) combos[i] = convertcolor(track.colors[i]);
 
-        let SliderTrackOverride;
-        let SliderBorder;
+        let SliderTrackOverride, SliderBorder;
         if (track.colors.SliderTrackOverride) SliderTrackOverride = convertcolor(track.colors.SliderTrackOverride);
         if (track.colors.SliderBorder) SliderBorder = convertcolor(track.colors.SliderBorder);
 
@@ -539,9 +538,9 @@ define(["playerActions", "SliderMesh", "ui/score", "ui/volume", "ui/loading", "u
             hit.rotationProgress = 0;
             hit.clicked = false;
 
-            let spinRequiredPerSec = this.OD < 5 ? 3 + .4 * this.OD : 2.5 + .5 * this.OD;
-            hit.rotationRequired = Math.PI * (this.playbackRate * spinRequiredPerSec * (hit.endTime - hit.time) / 1000);
-
+            let spinPerSec = 1.5 * this.OD < 5 ? 3 + .4 * this.OD: 2.5 + .5 * this.OD;
+            hit.clearRotations = spinPerSec / this.playbackRate * Math.PI * (hit.endTime - hit.time) / 1000;
+            
             function newsprite(spritename) {
                 let sprite = new PIXI.Sprite(Skin[spritename]);
                 sprite.anchor.set(.5);
@@ -902,15 +901,15 @@ define(["playerActions", "SliderMesh", "ui/score", "ui/volume", "ui/loading", "u
                     hit.approach.y = at.y;
                 }
 
-                let dx = game.mouseX - at.x;
-                let dy = game.mouseY - at.y;
-                let followPixelSize = hit.followSize * this.circleRadius;
-                let isfollowing = this.auto || dx * dx + dy * dy <= followPixelSize * followPixelSize;
-                let predict = game.mouse(this.realtime);
-                let dx1 = predict.x - at.x;
-                let dy1 = predict.y - at.y;
-                isfollowing |= dx1 * dx1 + dy1 * dy1 <= (followPixelSize + predict.r) * (followPixelSize + predict.r);
-                let activated = this.auto || (game.down && isfollowing || hit.followSize > 1.01);
+                let isfollowing = game.autoplay;
+                if (!game.autoplay) {
+                    let predict = game.mouse(this.realtime);
+                    let dx1 = predict.x - at.x;
+                    let dy1 = predict.y - at.y;
+                    let followPixelSize = hit.followSize * this.circleRadius;
+                    isfollowing = dx1 * dx1 + dy1 * dy1 <= (followPixelSize + predict.r) * (followPixelSize + predict.r);
+                }
+                let activated = game.autoplay || (game.down && isfollowing || hit.followSize > 1.01);
 
                 for (; hit.nexttick < hit.ticks.length; ++hit.nexttick) {
                     let currentTick = hit.ticks[hit.nexttick];
@@ -1025,7 +1024,7 @@ define(["playerActions", "SliderMesh", "ui/score", "ui/volume", "ui/loading", "u
                 if (t <= 1) hit.top.rotation = -t * t * 10;
             }
 
-            let progress = hit.rotationProgress / hit.rotationRequired;
+            let progress = hit.rotationProgress / hit.clearRotations;
             if (time > hit.time) {
                 hit.base.rotation = hit.rotation / 2;
                 hit.top.rotation = hit.rotation / 2;
@@ -1035,7 +1034,7 @@ define(["playerActions", "SliderMesh", "ui/score", "ui/volume", "ui/loading", "u
 
             if (time >= hit.endTime) {
                 if (hit.score < 0) {
-                    if (this.auto) this.hitSuccess(hit, 300, hit.endTime);
+                    if (game.autoplay) this.hitSuccess(hit, 300, hit.endTime);
                     else {
                         let points = 0;
                         if (progress >= 1) points = 300;
@@ -1074,6 +1073,10 @@ define(["playerActions", "SliderMesh", "ui/score", "ui/volume", "ui/loading", "u
 
         this.breakIndex = 0;
         this.render = function(timestamp) {
+            this.realtime = new Date().getTime();
+            if (window.lastPlaybackRenderTime) window.currentFrameInterval = this.realtime - window.lastPlaybackRenderTime;
+            window.lastPlaybackRenderTime = this.realtime;
+
             let time;
             if (this.audioReady) time = osu.audio.getPosition() * 1000 + self.offset;
             if (typeof time !== 'undefined') {
@@ -1138,7 +1141,7 @@ define(["playerActions", "SliderMesh", "ui/score", "ui/volume", "ui/loading", "u
             window.removeEventListener('wheel', volumeCallback);
             window.removeEventListener('keyup', pauseCallback);
             window.removeEventListener('keydown', skipCallback);
-            game.cleanupPlayerActions();
+            if (!game.autoplay) game.cleanupPlayerActions();
             self.render = function() { };
         };
         this.start = function() {

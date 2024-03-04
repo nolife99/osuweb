@@ -8,7 +8,7 @@ define([], () => {
         const color50 = 0xffcc22;
         this.lscale = barheight / 2 / r50;
 
-        let newbarpiece = function(height, tint) {
+        function newbarpiece(height, tint) {
             let piece = new PIXI.Sprite(Skin["errormeterbar.png"]);
             piece.width = 2;
             piece.height = height;
@@ -38,16 +38,15 @@ define([], () => {
         this.avgmarker.y = 0;
         this.addChild(this.avgmarker);
 
-        this.ticks = [];
-        this.poolsize = 20;
-        for (let i = 0; i < this.poolsize; ++i) {
+        this.ticks = new Array(20);
+        for (let i = 0; i < this.ticks.length; ++i) {
             let tick = new PIXI.Sprite(Skin["errormeterindicator.png"]);
             tick.scale.set(.2);
             tick.anchor.set(0, .5);
             tick.alpha = 0;
             tick.t0 = -23333;
             tick.x = 2;
-            this.ticks.push(tick);
+            this.ticks[i] = tick;
             this.addChild(tick);
         }
         this.poolptr = 0;
@@ -60,11 +59,14 @@ define([], () => {
         PIXI.Container.prototype.destroy.call(this, options);
     };
     ErrorMeter.prototype.update = function(time) {
-        for (let i = 0; i < this.poolsize; ++i) this.ticks[i].alpha = Math.exp(-(time - this.ticks[i].t0) / 1000);
+        for (let i = 0; i < this.ticks.length; ++i) {
+            let tick = this.ticks[i];
+            tick.alpha = Math.exp(-(time - tick.t0) / 1000);
+        }
     }
     ErrorMeter.prototype.hit = function(hiterror, time) {
         let tick = this.ticks[this.poolptr];
-        this.poolptr = (this.poolptr + 1) % this.poolsize;
+        this.poolptr = (this.poolptr + 1) % this.ticks.length;
         tick.t0 = time;
         tick.y = hiterror * this.lscale;
         this.avgerror = this.avgerror * .9 + hiterror * .1;

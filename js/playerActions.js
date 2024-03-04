@@ -117,87 +117,87 @@ define([], () => {
                 }
             }
         };
-
-        let movehistory = [{
-            x: 256, y: 192, t: new Date().getTime()
-        }];
-        playback.game.mouse = function (t) {
-            let m = movehistory;
-            let i = 0;
-            while (i < m.length - 1 && m[0].t - m[i].t < 40 && t - m[i].t < 100) ++i;
-
-            let velocity = i == 0 ? {
-                x: 0, y: 0
-            } : {
-                x: (m[0].x - m[i].x) / (m[0].t - m[i].t), y: (m[0].y - m[i].y) / (m[0].t - m[i].t)
-            };
-            let dt = Math.min(t - m[0].t + window.currentFrameInterval, 40);
-            return {
-                x: m[0].x + velocity.x * dt, y: m[0].y + velocity.y * dt,
-                r: Math.hypot(velocity.x, velocity.y) * Math.max(t - m[0].t, window.currentFrameInterval)
-            };
-        }
-        function mousemoveCallback(e) {
-            playback.game.mouseX = (e.clientX - gfx.xoffset) / gfx.width * 512;
-            playback.game.mouseY = (e.clientY - gfx.yoffset) / gfx.height * 384;
-            movehistory.unshift({
-                x: playback.game.mouseX, y: playback.game.mouseY, t: new Date().getTime()
-            });
-            if (movehistory.length > 10) movehistory.pop();
-        }
-        function mousedownCallback(e) {
-            mousemoveCallback(e);
-            if (e.button == 0) {
-                if (playback.game.M1down) return;
-                playback.game.M1down = true;
-            }
-            else if (e.button == 2) {
-                if (playback.game.M2down) return;
-                playback.game.M2down = true;
-            }
-            else return;
-
-            e.preventDefault();
-            e.stopPropagation();
-            playback.game.down = playback.game.K1down || playback.game.K2down || playback.game.M1down || playback.game.M2down;
-            checkClickdown();
-        }
-        function mouseupCallback(e) {
-            mousemoveCallback(e);
-            if (e.button == 0) playback.game.M1down = false;
-            else if (e.button == 2) playback.game.M2down = false;
-            else return;
-
-            e.preventDefault();
-            e.stopPropagation();
-            playback.game.down = playback.game.K1down || playback.game.K2down || playback.game.M1down || playback.game.M2down;
-        }
-        function keydownCallback(e) {
-            if (e.keyCode == playback.game.K1keycode) {
-                if (playback.game.K1down) return;
-                playback.game.K1down = true;
-            }
-            else if (e.keyCode == playback.game.K2keycode) {
-                if (playback.game.K2down) return;
-                playback.game.K2down = true;
-            }
-            else return;
-
-            e.preventDefault();
-            e.stopPropagation();
-            playback.game.down = playback.game.K1down || playback.game.K2down || playback.game.M1down || playback.game.M2down;
-            checkClickdown();
-        }
-        function keyupCallback(e) {
-            if (e.keyCode == playback.game.K1keycode) playback.game.K1down = false;
-            else if (e.keyCode == playback.game.K2keycode) playback.game.K2down = false;
-            else return;
-
-            e.preventDefault();
-            e.stopPropagation();
-            playback.game.down = playback.game.K1down || playback.game.K2down || playback.game.M1down || playback.game.M2down;
-        }
         if (!playback.autoplay) {
+            let movehistory = [{
+                x: 256, y: 192, t: new Date().getTime()
+            }];
+            playback.game.mouse = function (t) {
+                let m = movehistory;
+                let i = 0;
+                while (i < m.length - 1 && m[0].t - m[i].t < 40 && t - m[i].t < 100) ++i;
+    
+                let velocity = i == 0 ? {
+                    x: 0, y: 0
+                } : {
+                    x: (m[0].x - m[i].x) / (m[0].t - m[i].t), y: (m[0].y - m[i].y) / (m[0].t - m[i].t)
+                };
+                let dt = Math.min(t - m[0].t + window.currentFrameInterval, 40);
+                return {
+                    x: m[0].x + velocity.x * dt, y: m[0].y + velocity.y * dt,
+                    r: Math.hypot(velocity.x, velocity.y) * Math.max(t - m[0].t, window.currentFrameInterval)
+                };
+            }
+            function mousemoveCallback(e) {
+                playback.game.mouseX = (e.clientX - gfx.xoffset) / gfx.width * 512;
+                playback.game.mouseY = (e.clientY - gfx.yoffset) / gfx.height * 384;
+                movehistory.unshift({
+                    x: playback.game.mouseX, y: playback.game.mouseY, t: new Date().getTime()
+                });
+                if (movehistory.length > 10) movehistory.pop();
+            }
+            function mousedownCallback(e) {
+                mousemoveCallback(e);
+                if (e.button == 0) {
+                    if (playback.game.M1down) return;
+                    playback.game.M1down = true;
+                }
+                else if (e.button == 2) {
+                    if (playback.game.M2down) return;
+                    playback.game.M2down = true;
+                }
+                else return;
+    
+                e.preventDefault();
+                e.stopPropagation();
+                playback.game.down = playback.game.K1down || playback.game.K2down || playback.game.M1down || playback.game.M2down;
+                checkClickdown();
+            }
+            function mouseupCallback(e) {
+                mousemoveCallback(e);
+                if (e.button == 0) playback.game.M1down = false;
+                else if (e.button == 2) playback.game.M2down = false;
+                else return;
+    
+                e.preventDefault();
+                e.stopPropagation();
+                playback.game.down = playback.game.K1down || playback.game.K2down || playback.game.M1down || playback.game.M2down;
+            }
+            function keydownCallback(e) {
+                if (e.keyCode == playback.game.K1keycode) {
+                    if (playback.game.K1down) return;
+                    playback.game.K1down = true;
+                }
+                else if (e.keyCode == playback.game.K2keycode) {
+                    if (playback.game.K2down) return;
+                    playback.game.K2down = true;
+                }
+                else return;
+    
+                e.preventDefault();
+                e.stopPropagation();
+                playback.game.down = playback.game.K1down || playback.game.K2down || playback.game.M1down || playback.game.M2down;
+                checkClickdown();
+            }
+            function keyupCallback(e) {
+                if (e.keyCode == playback.game.K1keycode) playback.game.K1down = false;
+                else if (e.keyCode == playback.game.K2keycode) playback.game.K2down = false;
+                else return;
+    
+                e.preventDefault();
+                e.stopPropagation();
+                playback.game.down = playback.game.K1down || playback.game.K2down || playback.game.M1down || playback.game.M2down;
+            }
+
             window.addEventListener("mousemove", mousemoveCallback);
             if (playback.game.allowMouseButton) {
                 window.addEventListener("mousedown", mousedownCallback);
@@ -205,20 +205,18 @@ define([], () => {
             }
             window.addEventListener("keydown", keydownCallback);
             window.addEventListener("keyup", keyupCallback);
-        }
-        playback.game.cleanupPlayerActions = () => {
-            window.removeEventListener("mousemove", mousemoveCallback);
-            window.removeEventListener("mousedown", mousedownCallback);
-            window.removeEventListener("mouseup", mouseupCallback);
-            window.removeEventListener("keydown", keydownCallback);
-            window.removeEventListener("keyup", keyupCallback);
+
+            playback.game.cleanupPlayerActions = () => {
+                window.removeEventListener("mousemove", mousemoveCallback);
+                window.removeEventListener("mousedown", mousedownCallback);
+                window.removeEventListener("mouseup", mouseupCallback);
+                window.removeEventListener("keydown", keydownCallback);
+                window.removeEventListener("keyup", keyupCallback);
+            }
         }
     }
     if (!Array.prototype.find) Object.defineProperty(Array.prototype, 'find', {
         value: function (predicate) {
-            if (this == null) throw new TypeError('"this" is null or not defined');
-            if (typeof predicate !== 'function') throw new TypeError('predicate must be a function');
-
             let k = 0;
             let o = Object(this);
             let thisArg = arguments[1];

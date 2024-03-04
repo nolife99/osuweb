@@ -61,7 +61,7 @@ define([], () => {
         }
         this.resize(windowfield);
 
-        this.hide = function(e) {
+        this.hide = function(_e) {
             this.hidden = true;
         }
         this.updateloading = function(timestamp) {

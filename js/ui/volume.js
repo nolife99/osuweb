@@ -52,7 +52,7 @@ define([], () => {
     if (PIXI.Container) VolumeMenu.__proto__ = PIXI.Container;
     VolumeMenu.prototype = Object.create(PIXI.Container && PIXI.Container.prototype);
     VolumeMenu.prototype.constructor = VolumeMenu;
-    VolumeMenu.prototype.destroy = function destroy(options) {
+    VolumeMenu.prototype.destroy = function(options) {
         PIXI.Container.prototype.destroy.call(this, options);
     };
 

@@ -47,9 +47,9 @@ define([], () => {
         this.accuracy4display = new LazyNumber(100);
         this.HP4display = new LazyNumber(1);
 
-        this.newSpriteArray = (len, scaleMul, tint = 0xffffff) => {
-            var a = new Array(len);
-            for (var i = 0; i < len; ++i) {
+        this.newSpriteArray = function(len, scaleMul, tint = 0xffffff) {
+            let a = new Array(len);
+            for (let i = 0; i < len; ++i) {
                 a[i] = new PIXI.Sprite();
                 a[i].scale.x = a[i].scale.y = this.scaleMul * scaleMul;
                 a[i].anchor.x = 0;
@@ -80,8 +80,8 @@ define([], () => {
             this.field = windowfield;
             this.scaleMul = windowfield.height / 800;
 
-            const f = (a, mul) => {
-                for (var i = 0; i < a.length; ++i) a[i].scale.x = a[i].scale.y = mul;
+            function f(a, mul) {
+                for (let i = 0; i < a.length; ++i) a[i].scale.x = a[i].scale.y = mul;
             };
             f(this.scoreDigits, this.scaleMul * .4);
             f(this.comboDigits, this.scaleMul * .2);
@@ -116,7 +116,7 @@ define([], () => {
             this.score += result * (maxresult == 300 ? 1 + this.combo * this.scoreMultiplier / 25 : 1);
             this.HP = Math.min(1, Math.max(0, this.HP + this.HPincreasefor(result)));
 
-            var oldCombo = this.combo;
+            let oldCombo = this.combo;
             this.combo = result > 0 ? this.combo + 1 : 0;
             this.maxcombo = Math.max(this.maxcombo, this.combo);
             ++this.fullcombo;
@@ -134,31 +134,28 @@ define([], () => {
 
         this.charspacing = 10;
         this.setSpriteArrayText = (arr, str) => {
-            var width = 0;
-            for (var i = 0; i < str.length; ++i) {
-                var ch = str[i];
-                if (ch == "%") ch = "percent";
-                var textname = "score-" + ch + ".png";
-                arr[i].texture = Skin[textname];
-                arr[i].knownwidth = arr[i].scale.x * (Skin[textname].width + this.charspacing);
-                arr[i].visible = true;
-                width += arr[i].knownwidth;
+            arr.width = 0;
+            for (let i = 0; i < str.length; ++i) {
+                let digit = arr[i], ch = str[i];
+                digit.texture = Skin["score-" + (ch === '%' ? "percent" : ch) + ".png"];
+                digit.knownwidth = digit.scale.x * (digit.texture.width + this.charspacing);
+                digit.visible = true;
+                arr.width += digit.knownwidth;
             }
 
-            for (var i = str.length; i < arr.length; ++i) arr[i].visible = false;
-            arr.width = width;
+            for (let i = str.length; i < arr.length; ++i) arr[i].visible = false;
             arr.useLength = str.length;
         }
         this.setSpriteArrayPos = (arr, x, y) => {
-            var curx = x;
-            for (var i = 0; i < arr.useLength; ++i) {
+            let curx = x;
+            for (let i = 0; i < arr.useLength; ++i) {
                 arr[i].x = curx + arr[i].scale.x * this.charspacing / 2;
                 arr[i].y = y;
                 curx += arr[i].knownwidth;
             }
         }
         this.update = time => {
-            var HPpos = this.HP4display.valueAt(time) * this.field.width;
+            let HPpos = this.HP4display.valueAt(time) * this.field.width;
             this.HPbar[0].x = HPpos;
             this.HPbar[1].x = HPpos;
             this.HPbar[2].x = HPpos;
@@ -167,15 +164,15 @@ define([], () => {
             this.setSpriteArrayText(this.comboDigits, this.combo4display.valueAt(time).toFixed(0) + "x");
             this.setSpriteArrayText(this.accuracyDigits, this.accuracy4display.valueAt(time).toFixed(2) + "%");
 
-            var basex = this.field.width * .5;
-            var basey = this.field.height * .017;
-            var unit = Math.min(this.field.width / 640, this.field.height / 480);
+            let basex = this.field.width * .5;
+            let basey = this.field.height * .017;
+            let unit = Math.min(this.field.width / 640, this.field.height / 480);
             this.setSpriteArrayPos(this.scoreDigits, basex - this.scoreDigits.width / 2, basey);
             this.setSpriteArrayPos(this.accuracyDigits, basex - this.scoreDigits.width / 2 - this.accuracyDigits.width - 16 * unit, basey + 3 * unit);
             this.setSpriteArrayPos(this.comboDigits, basex + this.scoreDigits.width / 2 + 16 * unit, basey + 3 * unit);
         }
-        this.showSummary = function(metadata, hiterrors, retryCallback, quitCallback) {
-            const grade = acc => {
+        this.showSummary = function(metadata, a, retryCallback, quitCallback) {
+            function grade(acc) {
                 if (acc >= 1) return 'SS';
                 if (acc >= .95) return 'S';
                 if (acc >= .9) return 'A';
@@ -183,21 +180,21 @@ define([], () => {
                 if (acc >= .7) return 'C';
                 return 'D';
             }
-            const errortext = a => {
+            function errortext() {
                 let sum = 0;
                 for (let i = 0; i < a.length; ++i) sum += a[i];
                 let avg = sum / a.length;
                 let sumsqerr = 0;
                 for (let i = 0; i < a.length; ++i) sumsqerr += (a[i] - avg) * (a[i] - avg);
-                let variance = sumsqerr / a.length;
-                let stdev = Math.sqrt(variance);
+                let letiance = sumsqerr / a.length;
+                let stdev = Math.sqrt(letiance);
 
                 let sgnavg = avg.toFixed(0);
                 if (sgnavg[0] != '-') sgnavg = '+' + sgnavg;
                 return sgnavg + "±" + stdev.toFixed(0) + "ms";
             }
-            const modstext = game => {
-                let l = [];
+            function modstext() {
+                let l = [], game = window.game;
                 if (game.easy) l.push("EZ");
                 if (game.daycore) l.push("DC");
                 if (game.hidden) l.push("HD");
@@ -209,7 +206,7 @@ define([], () => {
                 for (let i = 1; i < l.length; ++i) s = s + '+' + l[i];
                 return s;
             }
-            const newdiv = (parent, classname, text) => {
+            function newdiv(parent, classname, text) {
                 let div = document.createElement("div");
                 if (parent) parent.appendChild(div);
                 if (classname) div.className = classname;
@@ -229,14 +226,14 @@ define([], () => {
             newdiv(info, "artist", metadata.Artist);
             newdiv(info, "version", metadata.Version);
             newdiv(info, "mapper", "mapped by " + metadata.Creator);
-            newdiv(info, "version", modstext(window.game));
+            newdiv(info, "version", modstext());
             newdiv(top, "ranking", "Ranking");
             newdiv(top, "grade " + rank, rank);
 
             let left = newdiv(grading, "left");
-            newdiv(left, "block score", Math.round(this.score).toString());
+            newdiv(left, "block score", this.score.toFixed(0));
             newdiv(left, "block acc", (acc * 100).toFixed(2) + "%");
-            newdiv(left, "block err", errortext(hiterrors));
+            newdiv(left, "block err", errortext());
             newdiv(left, "block great", this.judgecnt.great.toString());
             newdiv(left, "block good", this.judgecnt.good.toString());
             newdiv(left, "block meh", this.judgecnt.meh.toString());
