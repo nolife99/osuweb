@@ -2,8 +2,7 @@
     "use strict";
 
     addEventListener("message", event => {
-        var message = event.data, type = message.type, sn = message.sn;
-        var handler = handlers[type];
+        let message = event.data, type = message.type, sn = message.sn, handler = handlers[type];
         if (handler) {
             try {
                 handler(message);
@@ -14,13 +13,12 @@
         }
     });
 
-    var handlers = {
+    let handlers = {
         importScripts: doImportScripts,
         newTask: newTask,
         append: processData,
         flush: processData,
-    };
-    var tasks = {};
+    }, tasks = {};
 
     function doImportScripts(msg) {
         if (msg.scripts && msg.scripts.length > 0) importScripts.apply(undefined, msg.scripts);
@@ -28,36 +26,32 @@
             type: 'importScripts'
         });
     }
-    var newTask = msg => {
-        var CodecClass = global[msg.codecClass];
-        var sn = msg.sn;
+    function newTask(msg) {
+        let CodecClass = global[msg.codecClass], sn = msg.sn;
         if (tasks[sn]) throw Error('duplicated sn');
         tasks[sn] = {
             codec: new CodecClass(msg.options),
             crcInput: msg.crcType === 'input',
             crcOutput: msg.crcType === 'output',
-            crc: new Crc32(),
+            crc: new Crc32()
         };
-        postMessage({ 
-            type: 'newTask', sn: sn 
+        postMessage({
+            type: 'newTask', sn: sn
         });
     }
-    var now = global.performance ? global.performance.now.bind(global.performance) : Date.now;
+    let now = global.performance ? global.performance.now.bind(global.performance) : Date.now;
 
     function processData(msg) {
-        var sn = msg.sn, type = msg.type, input = msg.data;
-        var task = tasks[sn];
+        let sn = msg.sn, type = msg.type, input = msg.data, task = tasks[sn];
         if (!task && msg.codecClass) {
             newTask(msg);
             task = tasks[sn];
         }
-        var isAppend = type === 'append';
-        var start = now();
-        var output;
 
+        let isAppend = type === 'append', start = now(), output;
         if (isAppend) {
             try {
-                output = task.codec.append(input, function(loaded) {
+                output = task.codec.append(input, function (loaded) {
                     postMessage({
                         type: 'progress', sn: sn, loaded: loaded
                     });
@@ -72,17 +66,14 @@
             delete tasks[sn];
             output = task.codec.flush();
         }
-        var codecTime = now() - start;
+        let codecTime = now() - start;
 
         start = now();
         if (input && task.crcInput) task.crc.append(input);
         if (output && task.crcOutput) task.crc.append(output);
-        var crcTime = now() - start;
-
-        var rmsg = {
+        let crcTime = now() - start, rmsg = {
             type: type, sn: sn, codecTime: codecTime, crcTime: crcTime
-        };
-        var transferables = [];
+        }, transferables = [];
         if (output) {
             rmsg.data = output;
             transferables.push(output.buffer);
@@ -96,33 +87,32 @@
             postMessage(rmsg);
         }
     }
-    const onError = (type, sn, e) => {
-        var msg = {
-            type: type,
-            sn: sn,
-            error: formatError(e)
-        };
-        postMessage(msg);
-    }
-    const formatError = e => {
+    const onError = (type, sn, e) => postMessage({
+        type: type,
+        sn: sn,
+        error: formatError(e)
+    });
+    function formatError(e) {
         return {
             message: e.message, stack: e.stack
         };
     }
 
-    function Crc32() {
-        this.crc = -1;
+    class Crc32 {
+        constructor() {
+            this.crc = -1;
+        }
+        append(data) {
+            var crc = this.crc | 0, table = this.table;
+            for (var ofs = 0, len = data.length | 0; ofs < len; ++ofs) crc = (crc >>> 8) ^ table[(crc ^ data[ofs]) & 0xFF];
+            this.crc = crc;
+        }
+        get() {
+            return ~this.crc;
+        }
     }
-    Crc32.prototype.append = function(data) {
-        var crc = this.crc | 0, table = this.table;
-        for (var ofs = 0, len = data.length | 0; ofs < len; ++ofs) crc = (crc >>> 8) ^ table[(crc ^ data[ofs]) & 0xFF];
-        this.crc = crc;
-    };
-    Crc32.prototype.get = function() {
-        return ~this.crc;
-    };
     Crc32.prototype.table = (() => {
-        var i, j, t, table = [];
+        let i, j, t, table = [];
         for (i = 0; i < 256; ++i) {
             t = i;
             for (j = 0; j < 8; ++j) {

@@ -23,7 +23,7 @@ define([], () => {
         this.addChild(this.mastertext);
         this.addChild(this.volumetext);
 
-        this.resize = function(windowfield) {
+        this.resize = windowfield => {
             this.mastertext.x = windowfield.width - 100;
             this.mastertext.y = windowfield.height / 2 - 30;
             this.volumetext.x = windowfield.width - 100;
@@ -31,11 +31,11 @@ define([], () => {
         }
         this.resize(windowfield);
 
-        this.setVolume = function(volume) {
+        this.setVolume = volume => {
             this.changed = true;
             this.volumetext.text = volume.toFixed(0);
         }
-        this.update = function(timestamp) {
+        this.update = timestamp => {
             if (this.changed) {
                 this.visible = true;
                 this.t0 = timestamp;

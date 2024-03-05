@@ -35,7 +35,7 @@ define([], () => {
             }
             return prefix + Math.floor(s / 60) + ":" + (s % 60).toFixed(0).padStart(2, '0');
         }
-        this.update = function(time) {
+        this.update = time => {
             if (time >= this.endtime) return;
             this.remaining.text = timeformat(this.endtime - time);
             this.past.text = timeformat(time - this.starttime);

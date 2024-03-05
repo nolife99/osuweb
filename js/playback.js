@@ -45,7 +45,7 @@ define(["playerActions", "SliderMesh", "ui/score", "ui/volume", "ui/loading", "u
         self.skipped = false;
         self.ended = false;
 
-        osu.onready = function() {
+        osu.onready = () => {
             self.loadingMenu.hide();
             self.audioReady = true;
             self.start();
@@ -54,7 +54,7 @@ define(["playerActions", "SliderMesh", "ui/score", "ui/volume", "ui/loading", "u
 
         let gfx = window.gfx = {};
         self.gamefield = new PIXI.Container();
-        self.calcSize = function() {
+        self.calcSize = () => {
             gfx.width = window.innerWidth;
             gfx.height = window.innerHeight;
             if (gfx.width / 512 > gfx.height / 384) gfx.width = gfx.height / 384 * 512;
@@ -88,7 +88,7 @@ define(["playerActions", "SliderMesh", "ui/score", "ui/volume", "ui/loading", "u
             height: window.innerHeight
         }, this.hits[0].time, this.hits[this.hits.length - 1].endTime);
 
-        window.onresize = function() {
+        window.onresize = () => {
             window.app.renderer.resize(window.innerWidth, window.innerHeight);
             self.calcSize();
 
@@ -220,36 +220,35 @@ define(["playerActions", "SliderMesh", "ui/score", "ui/volume", "ui/loading", "u
         let btn_retry = document.getElementById("pausebtn-retry");
         let btn_quit = document.getElementById("pausebtn-quit");
 
-        this.pause = function() {
+        this.pause = () => {
             if (osu.audio.pause()) {
                 game.paused = true;
                 menu.hidden = false;
 
-                btn_continue.onclick = function() {
+                btn_continue.onclick = () => {
                     self.resume();
                     btn_continue.onclick = null;
                     btn_retry.onclick = null;
                     btn_quit.onclick = null;
                 }
-                btn_retry.onclick = function() {
+                btn_retry.onclick = () => {
                     game.paused = false;
                     menu.hidden = true;
                     self.retry();
                 }
-                btn_quit.onclick = function() {
+                btn_quit.onclick = () => {
                     game.paused = false;
                     menu.hidden = true;
                     self.quit();
                 }
             }
         };
-        this.resume = function() {
+        this.resume = () => {
             game.paused = false;
             menu.hidden = true;
             osu.audio.play();
         };
 
-        let volumeCallback;
         function pauseCallback(e) {
             if (e.keyCode === 32) {
                 if (!game.paused) self.pause();
@@ -263,7 +262,7 @@ define(["playerActions", "SliderMesh", "ui/score", "ui/volume", "ui/loading", "u
             if (e.keyCode === 17 && !game.paused && !self.skipped) self.skip();
         };
         if (game.allowMouseScroll) {
-            volumeCallback = function(e) {
+            function volumeCallback(e) {
                 game.masterVolume = clamp01(game.masterVolume - e.deltaY * .002);
                 if (osu.audio) osu.audio.gain.gain.value = game.musicVolume * game.masterVolume;
                 self.volumeMenu.setVolume(game.masterVolume * 100);
@@ -274,7 +273,7 @@ define(["playerActions", "SliderMesh", "ui/score", "ui/volume", "ui/loading", "u
         window.addEventListener("keydown", skipCallback);
         window.addEventListener("keyup", pauseCallback);
 
-        this.fadeOutEasing = function(t) {
+        function fadeOutEasing(t) {
             if (t <= 0) return 1;
             if (t > 1) return 0;
             return 1 - Math.sin(t * Math.PI / 2);
@@ -297,7 +296,7 @@ define(["playerActions", "SliderMesh", "ui/score", "ui/volume", "ui/loading", "u
                 default: throw "no such judgement";
             }
         }
-        this.createJudgement = function(x, y, depth, finalTime) {
+        this.createJudgement = (x, y, depth, finalTime) => {
             let judge = new PIXI.BitmapText('', {
                 font: {
                     name: 'Venera', size: 20
@@ -314,7 +313,7 @@ define(["playerActions", "SliderMesh", "ui/score", "ui/volume", "ui/loading", "u
             judge.defaultScore = 0;
             return judge;
         }
-        this.invokeJudgement = function(judge, points, time) {
+        this.invokeJudgement = (judge, points, time) => {
             judge.visible = true;
             judge.points = points;
             judge.t0 = time;
@@ -322,7 +321,7 @@ define(["playerActions", "SliderMesh", "ui/score", "ui/volume", "ui/loading", "u
             judge.tint = judgementColor(points);
             this.updateJudgement(judge, time);
         }
-        this.updateJudgement = function(judge, time) {
+        this.updateJudgement = (judge, time) => {
             if (judge.points < 0 && time >= judge.finalTime) {
                 let points = game.autoplay ? 300 : judge.defaultScore;
 
@@ -339,10 +338,7 @@ define(["playerActions", "SliderMesh", "ui/score", "ui/volume", "ui/loading", "u
                     return;
                 }
                 judge.alpha = t < 100 ? t / 100 : t < 600 ? 1 : 1 - (t - 600) / 200;
-
-                let tQ = t / 800;
-                let t5 = tQ * tQ * tQ * tQ * tQ;
-
+                let tQ = t / 800, t5 = tQ * tQ * tQ * tQ * tQ;
                 judge.y = judge.basey + 100 * t5 * this.hitSpriteScale;
                 judge.rotation = .7 * t5;
             }
@@ -352,7 +348,6 @@ define(["playerActions", "SliderMesh", "ui/score", "ui/volume", "ui/loading", "u
                     return;
                 }
                 judge.alpha = t < 100 ? t / 100 : 1 - (t - 100) / 400;
-
                 let tQ = t / 1800 - 1;
                 judge.letterSpacing = 70 * (tQ * tQ * tQ * tQ * tQ + 1);
             }
@@ -362,11 +357,10 @@ define(["playerActions", "SliderMesh", "ui/score", "ui/volume", "ui/loading", "u
                 let loader = new PIXI.Loader();
                 loader.add("bg", uri, {
                     loadType: PIXI.LoaderResource.LOAD_TYPE.IMAGE
-                }).load(function(_loader, resources) {
+                }).load((_loader, resources) => {
                     let sprite = new PIXI.Sprite(resources.bg.texture);
                     if (game.backgroundBlurRate > .0001) {
-                        let width = resources.bg.texture.width;
-                        let height = resources.bg.texture.height;
+                        let width = resources.bg.texture.width, height = resources.bg.texture.height;
                         sprite.anchor.set(.5);
                         sprite.x = width / 2;
                         sprite.y = height / 2;
@@ -390,7 +384,7 @@ define(["playerActions", "SliderMesh", "ui/score", "ui/volume", "ui/loading", "u
                     game.stage.addChildAt(self.background, 0);
                 });
             }
-            if (track.events.length != 0) {
+            if (track.events.length > 0) {
                 self.ready = false;
                 let file = track.events[0][2];
                 if (track.events[0][0] === "Video") file = track.events[1][2];
@@ -426,7 +420,7 @@ define(["playerActions", "SliderMesh", "ui/score", "ui/volume", "ui/loading", "u
         game.stage.addChild(this.volumeMenu);
         game.stage.addChild(this.loadingMenu);
 
-        this.createHitCircle = function(hit) {
+        this.createHitCircle = hit => {
             function newHitSprite(spritename, depth, scalemul = 1, anchorx = .5, anchory = .5) {
                 let sprite = new PIXI.Sprite(Skin[spritename]);
                 sprite.initialscale = self.hitSpriteScale * scalemul;
@@ -463,7 +457,7 @@ define(["playerActions", "SliderMesh", "ui/score", "ui/volume", "ui/loading", "u
                 hit.numbers.push(newHitSprite("score-" + ((index - index % 10) / 10) + ".png", basedep, .35, 1, .47));
             }
         }
-        this.createSlider = function(hit) {
+        this.createSlider = hit => {
             hit.lastrep = 0;
             hit.nexttick = 0;
 
@@ -489,8 +483,7 @@ define(["playerActions", "SliderMesh", "ui/score", "ui/volume", "ui/loading", "u
             let nticks = Math.floor(hit.sliderTimeTotal / tickDuration) + 1;
 
             for (let i = 0; i < nticks; ++i) {
-                let t = hit.time + i * tickDuration;
-                let pos = repeatclamp(i * tickDuration / hit.sliderTime);
+                let t = hit.time + i * tickDuration, pos = repeatclamp(i * tickDuration / hit.sliderTime);
                 if (Math.min(pos, 1 - pos) * hit.sliderTime <= 10) continue;
                 let at = hit.curve.pointAt(pos);
 
@@ -501,14 +494,12 @@ define(["playerActions", "SliderMesh", "ui/score", "ui/volume", "ui/loading", "u
                 lastTick.result = false;
             }
             if (hit.repeat > 1) {
-                let p = hit.curve.curve[hit.curve.curve.length - 1];
-                let p2 = hit.curve.curve[hit.curve.curve.length - 2];
+                let p = hit.curve.curve[hit.curve.curve.length - 1], p2 = hit.curve.curve[hit.curve.curve.length - 2];
                 hit.reverse = newSprite("reversearrow.png", p.x, p.y, .36);
                 hit.reverse.rotation = Math.atan2(p2.y - p.y, p2.x - p.x);
             }
             if (hit.repeat > 2) {
-                let p = hit.curve.curve[0];
-                let p2 = hit.curve.curve[1];
+                let p = hit.curve.curve[0], p2 = hit.curve.curve[1];
                 hit.reverse_b = newSprite("reversearrow.png", p.x, p.y, .36);
                 hit.reverse_b.rotation = Math.atan2(p2.y - p.y, p2.x - p.x);
                 hit.reverse_b.visible = false;
@@ -525,12 +516,11 @@ define(["playerActions", "SliderMesh", "ui/score", "ui/volume", "ui/loading", "u
 
             let endPoint = hit.curve.curve[hit.curve.curve.length - 1];
             for (let i = 1; i <= hit.repeat; ++i) {
-                let x = i % 2 == 1 ? endPoint.x : hit.x;
-                let y = i % 2 == 1 ? endPoint.y : hit.y;
-                hit.judgements.push(this.createJudgement(x, y, 4, hit.time + i * hit.sliderTime));
+                let v = i % 2 == 1 ? endPoint : hit;
+                hit.judgements.push(this.createJudgement(v.x, v.y, 4, hit.time + i * hit.sliderTime));
             }
         }
-        this.createSpinner = function(hit) {
+        this.createSpinner = hit => {
             hit.approachTime = self.spinnerAppearTime + self.spinnerZoomInTime;
             hit.x = 256;
             hit.y = 192;
@@ -560,7 +550,7 @@ define(["playerActions", "SliderMesh", "ui/score", "ui/volume", "ui/loading", "u
             }
             hit.judgements.push(this.createJudgement(hit.x, hit.y, 4, hit.endTime + 233));
         }
-        this.createFollowPoint = function(prevHit, hit) {
+        this.createFollowPoint = (prevHit, hit) => {
             let x1 = prevHit.x, y1 = prevHit.y, t1 = prevHit.time;
             if (prevHit.type == "slider") {
                 t1 += prevHit.sliderTimeTotal;
@@ -602,8 +592,8 @@ define(["playerActions", "SliderMesh", "ui/score", "ui/volume", "ui/loading", "u
                 container.addChild(p);
             }
         }
-        this.populateHit = function(hit) {
-            this.currentHitIndex += 1;
+        this.populateHit = hit => {
+            ++this.currentHitIndex;
             hit.hitIndex = this.currentHitIndex;
             hit.objects = [];
             hit.judgements = [];
@@ -640,7 +630,7 @@ define(["playerActions", "SliderMesh", "ui/score", "ui/volume", "ui/loading", "u
             game.sample[defaultSet].slidertick.volume = volume;
             game.sample[defaultSet].slidertick.play();
         };
-        this.playHitsound = function(hit, id, time) {
+        this.playHitsound = (hit, id, time) => {
             while (this.curtimingid + 1 < this.track.timingPoints.length && this.track.timingPoints[this.curtimingid + 1].offset <= time) ++this.curtimingid;
             while (this.curtimingid > 0 && this.track.timingPoints[this.curtimingid].offset > time) --this.curtimingid;
 
@@ -649,36 +639,37 @@ define(["playerActions", "SliderMesh", "ui/score", "ui/volume", "ui/loading", "u
             let defaultSet = timing.sampleSet || game.sampleSet;
 
             function playHit(bitmask, normalSet, additionSet) {
-                game.sample[normalSet].hitnormal.volume = volume;
-                game.sample[normalSet].hitnormal.play();
+                let normal = game.sample[normalSet].hitnormal;
+                normal.volume = volume;
+                normal.play();
 
+                let addition = game.sample[additionSet];
                 if (bitmask & 2) {
-                    game.sample[additionSet].hitwhistle.volume = volume;
-                    game.sample[additionSet].hitwhistle.play();
+                    let whistle = addition.hitwhistle;
+                    whistle.volume = volume;
+                    whistle.play();
                 }
                 if (bitmask & 4) {
-                    game.sample[additionSet].hitfinish.volume = volume;
-                    game.sample[additionSet].hitfinish.play();
+                    let finish = addition.hitfinish;
+                    finish.volume = volume;
+                    finish.play();
                 }
                 if (bitmask & 8) {
-                    game.sample[additionSet].hitclap.volume = volume;
-                    game.sample[additionSet].hitclap.play();
+                    let clap = addition.hitclap;
+                    clap.volume = volume;
+                    clap.play();
                 }
             }
             if (hit.type == 'circle' || hit.type == 'spinner') {
-                let toplay = hit.hitSound;
-                let normalSet = hit.hitSample.normalSet || defaultSet;
-                let additionSet = hit.hitSample.additionSet || normalSet;
+                let toplay = hit.hitSound, normalSet = hit.hitSample.normalSet || defaultSet, additionSet = hit.hitSample.additionSet || normalSet;
                 playHit(toplay, normalSet, additionSet);
             }
-            if (hit.type == 'slider') {
-                let toplay = hit.edgeHitsounds[id];
-                let normalSet = hit.edgeSets[id].normalSet || defaultSet;
-                let additionSet = hit.edgeSets[id].additionSet || normalSet;
+            else if (hit.type == 'slider') {
+                let toplay = hit.edgeHitsounds[id], normalSet = hit.edgeSets[id].normalSet || defaultSet, additionSet = hit.edgeSets[id].additionSet || normalSet;
                 playHit(toplay, normalSet, additionSet);
             }
         };
-        this.hitSuccess = function(hit, points, time) {
+        this.hitSuccess = (hit, points, time) => {
             this.scoreOverlay.hit(points, 300, time);
             if (points > 0) {
                 if (hit.type == "spinner") self.playHitsound(hit, 0, hit.endTime);
@@ -694,15 +685,14 @@ define(["playerActions", "SliderMesh", "ui/score", "ui/volume", "ui/loading", "u
             self.invokeJudgement(hit.judgements[0], points, time);
         };
 
-        let futuremost = 0, current = 0;
+        let futuremost = 0, current = 0, waitinghitid = 0;
         if (track.hitObjects.length > 0) futuremost = track.hitObjects[0].time;
-        let waitinghitid = 0;
 
         function destroyHit(o) {
             self.gamefield.removeChild(o);
             o.destroy();
         }
-        this.updateUpcoming = function(time) {
+        this.updateUpcoming = time => {
             while (waitinghitid < self.hits.length && self.hits[waitinghitid].endTime < time) ++waitinghitid;
             function findindex(i) {
                 let l = 0, r = self.gamefield.children.length;
@@ -721,13 +711,11 @@ define(["playerActions", "SliderMesh", "ui/score", "ui/volume", "ui/loading", "u
                 if (hit.time > futuremost) futuremost = hit.time;
             }
             for (let i = 0; i < self.upcomingHits.length; ++i) {
-                let hit = self.upcomingHits[i];
-                let diff = hit.time - time;
-                let despawn = -this.objectDespawnTime;
-
+                let hit = self.upcomingHits[i], despawn = -this.objectDespawnTime;
                 if (hit.type === "slider") despawn -= hit.sliderTimeTotal;
                 else if (hit.type === "spinner") despawn -= hit.endTime - hit.time;
-                if (diff < despawn) {
+
+                if (hit.time - time < despawn) {
                     self.upcomingHits.splice(i--, 1);
                     _.each(hit.objects, destroyHit);
                     _.each(hit.judgements, destroyHit);
@@ -735,35 +723,31 @@ define(["playerActions", "SliderMesh", "ui/score", "ui/volume", "ui/loading", "u
                 }
             }
         }
-        this.updateFollowPoints = function(f, time) {
+        this.updateFollowPoints = (f, time) => {
             for (let i = 0; i < f.children.length; ++i) {
-                let o = f.children[i];
-                let startx = f.x1 + (o.fraction - .1) * f.dx;
-                let starty = f.y1 + (o.fraction - .1) * f.dy;
-                let endx = f.x1 + o.fraction * f.dx;
-                let endy = f.y1 + o.fraction * f.dy;
-                let fadeOutTime = f.t1 + o.fraction * f.dt;
-                let fadeInTime = fadeOutTime - f.preempt;
-                let relpos = clamp01((time - fadeInTime) / f.hit.objectFadeInTime);
+                let o = f.children[i], 
+                    startx = f.x1 + (o.fraction - .1) * f.dx,
+                    starty = f.y1 + (o.fraction - .1) * f.dy,
+                    fadeOutTime = f.t1 + o.fraction * f.dt,
+                    fadeInTime = fadeOutTime - f.preempt,
+                    hitFadeIn = f.hit.objectFadeInTime,
+                    relpos = clamp01((time - fadeInTime) / hitFadeIn);
+
                 relpos *= 2 - relpos;
-                o.x = startx + (endx - startx) * relpos;
-                o.y = starty + (endy - starty) * relpos;
-                o.alpha = .5 * (time < fadeOutTime ? clamp01((time - fadeInTime) / f.hit.objectFadeInTime) : 1 - clamp01((time - fadeOutTime) / f.hit.objectFadeInTime));
+                o.x = startx + ((f.x1 + o.fraction * f.dx) - startx) * relpos;
+                o.y = starty + ((f.y1 + o.fraction * f.dy) - starty) * relpos;
+                o.alpha = .5 * (time < fadeOutTime ? clamp01((time - fadeInTime) / hitFadeIn) : 1 - clamp01((time - fadeOutTime) / hitFadeIn));
             }
         }
-        this.updateHitCircle = function(hit, time) {
+        this.updateHitCircle = (hit, time) => {
             if (hit.followPoints) this.updateFollowPoints(hit.followPoints, time);
-            let diff = hit.time - time;
-            let approachFullAppear = this.approachTime - this.approachFadeInTime;
+            let diff = hit.time - time, opaque = this.approachTime - this.approachFadeInTime;
 
-            if (diff <= this.approachTime && diff > 0) {
-                let scalemul = diff / this.approachTime * this.approachScale + 1;
-                hit.approach.scale.set(.5 * this.hitSpriteScale * scalemul);
-            }
+            if (diff <= this.approachTime && diff > 0) hit.approach.scale.set(.5 * this.hitSpriteScale * (diff / this.approachTime * this.approachScale + 1));
             else hit.approach.scale.set(.5 * this.hitSpriteScale);
 
-            if (diff <= this.approachTime && diff > approachFullAppear) hit.approach.alpha = (this.approachTime - diff) / this.approachFadeInTime;
-            else if (diff <= approachFullAppear && hit.score < 0) hit.approach.alpha = 1;
+            if (diff <= this.approachTime && diff > opaque) hit.approach.alpha = (this.approachTime - diff) / this.approachFadeInTime;
+            else if (diff <= opaque && hit.score < 0) hit.approach.alpha = 1;
             let noteFullAppear = this.approachTime - hit.objectFadeInTime;
 
             function setcircleAlpha(alpha) {
@@ -772,10 +756,8 @@ define(["playerActions", "SliderMesh", "ui/score", "ui/volume", "ui/loading", "u
                 for (let i = 0; i < hit.numbers.length; ++i) hit.numbers[i].alpha = alpha;
                 hit.glow.alpha = alpha * self.glowMaxOpacity;
             }
-            if (diff <= this.approachTime && diff > noteFullAppear) {
-                let alpha = (this.approachTime - diff) / hit.objectFadeInTime;
-                setcircleAlpha(alpha);
-            }
+
+            if (diff <= this.approachTime && diff > noteFullAppear) setcircleAlpha((this.approachTime - diff) / hit.objectFadeInTime);
             else if (diff <= noteFullAppear) {
                 if (-diff > hit.objectFadeOutOffset) {
                     let timeAfter = -diff - hit.objectFadeOutOffset;
@@ -786,9 +768,7 @@ define(["playerActions", "SliderMesh", "ui/score", "ui/volume", "ui/loading", "u
             }
             if (hit.score > 0 && hit.enableflash) {
                 hit.burst.visible = true;
-                let timeAfter = time - hit.clickTime;
-                let t = timeAfter / this.glowFadeOutTime;
-                let newscale = 1 + .5 * t * (2 - t);
+                let timeAfter = time - hit.clickTime, t = timeAfter / this.glowFadeOutTime, newscale = 1 + .5 * t * (2 - t);
 
                 hit.burst.scale.set(newscale * hit.burst.initialscale);
                 hit.glow.scale.set(newscale * hit.glow.initialscale);
@@ -811,7 +791,7 @@ define(["playerActions", "SliderMesh", "ui/score", "ui/volume", "ui/loading", "u
             }
             this.updateJudgement(hit.judgements[0], time);
         }
-        this.updateSlider = function(hit, time) {
+        this.updateSlider = (hit, time) => {
             this.updateHitCircle(hit, time);
             let noteFullAppear = this.approachTime - hit.objectFadeInTime;
             hit.body.startt = 0;
@@ -866,11 +846,7 @@ define(["playerActions", "SliderMesh", "ui/score", "ui/volume", "ui/loading", "u
                 hit.followLasttime = time;
             }
             if (-diff >= 0 && -diff <= hit.fadeOutDuration + hit.sliderTimeTotal) {
-                let t = -diff / hit.sliderTime;
-                let nextRep = Math.floor(t);
-                let prevRep = hit.lastRep;
-
-                let atEnd = false;
+                let t = -diff / hit.sliderTime, nextRep = Math.floor(t), prevRep = hit.lastRep, atEnd = false;
                 if (nextRep > hit.lastrep) {
                     hit.lastrep = nextRep;
                     if (nextRep > 0 && nextRep <= hit.repeat) atEnd = true;
@@ -900,14 +876,9 @@ define(["playerActions", "SliderMesh", "ui/score", "ui/volume", "ui/loading", "u
                     hit.approach.x = at.x;
                     hit.approach.y = at.y;
                 }
-
-                let isfollowing = game.autoplay;
                 if (!game.autoplay) {
-                    let predict = game.mouse(this.realtime);
-                    let dx1 = predict.x - at.x;
-                    let dy1 = predict.y - at.y;
-                    let followPixelSize = hit.followSize * this.circleRadius;
-                    isfollowing = dx1 * dx1 + dy1 * dy1 <= (followPixelSize + predict.r) * (followPixelSize + predict.r);
+                    let predict = game.mouse(this.realtime), dx1 = predict.x - at.x, dy1 = predict.y - at.y, followpx = hit.followSize * this.circleRadius;
+                    var isfollowing = dx1 * dx1 + dy1 * dy1 <= (followpx + predict.r) * (followpx + predict.r);
                 }
                 let activated = game.autoplay || (game.down && isfollowing || hit.followSize > 1.01);
 
@@ -947,7 +918,7 @@ define(["playerActions", "SliderMesh", "ui/score", "ui/volume", "ui/loading", "u
                     resizeFollow(hit, time, -1 / this.followZoomInTime);
                     hit.follow.scale.x = hit.follow.scale.y = hit.followSize * .45 * this.hitSpriteScale;
                     hit.follow.alpha = hit.followSize - 1;
-                    hit.ball.alpha = this.fadeOutEasing(timeAfter / this.ballFadeOutTime);
+                    hit.ball.alpha = fadeOutEasing(timeAfter / this.ballFadeOutTime);
                     hit.ball.scale.x = hit.ball.scale.y = (1 + .15 * timeAfter / this.ballFadeOutTime) * .5 * this.hitSpriteScale;
                 }
                 if (hit.repeat > 1) {
@@ -987,13 +958,10 @@ define(["playerActions", "SliderMesh", "ui/score", "ui/volume", "ui/loading", "u
             }
             for (let i = 0; i < hit.judgements.length; ++i) this.updateJudgement(hit.judgements[i], time);
         }
-        this.updateSpinner = function(hit, time) {
+        this.updateSpinner = (hit, time) => {
             if (time >= hit.time && time <= hit.endTime) {
                 if (game.down && !game.paused) {
-                    let Xr = game.mouseX - hit.x;
-                    let Yr = game.mouseY - hit.y;
-
-                    let mouseAngle = Math.atan2(Yr, Xr);
+                    let Xr = game.mouseX - hit.x, Yr = game.mouseY - hit.y, mouseAngle = Math.atan2(Yr, Xr);
                     if (!hit.clicked) hit.clicked = true;
                     else {
                         let delta = mouseAngle - hit.lastAngle;
@@ -1047,24 +1015,18 @@ define(["playerActions", "SliderMesh", "ui/score", "ui/volume", "ui/loading", "u
             }
             this.updateJudgement(hit.judgements[0], time);
         }
-        this.updateHitObjects = function(time) {
+        this.updateHitObjects = time => {
             self.updateUpcoming(time);
             for (let i = self.upcomingHits.length - 1; i >= 0; --i) {
                 let hit = self.upcomingHits[i];
                 switch (hit.type) {
-                    case "circle":
-                        self.updateHitCircle(hit, time);
-                        break;
-                    case "slider":
-                        self.updateSlider(hit, time);
-                        break;
-                    case "spinner":
-                        self.updateSpinner(hit, time);
-                        break;
+                    case "circle": self.updateHitCircle(hit, time); break;
+                    case "slider": self.updateSlider(hit, time); break;
+                    case "spinner": self.updateSpinner(hit, time); break;
                 }
             }
         }
-        this.updateBackground = function(time) {
+        this.updateBackground = time => {
             if (!self.background) return;
             let fade = game.backgroundDimRate;
             if (time < -self.wait) fade *= Math.max(0, 1 - (-self.wait - time) / self.backgroundFadeTime);
@@ -1072,19 +1034,17 @@ define(["playerActions", "SliderMesh", "ui/score", "ui/volume", "ui/loading", "u
         }
 
         this.breakIndex = 0;
-        this.render = function(timestamp) {
+        this.render = timestamp => {
             this.realtime = new Date().getTime();
             if (window.lastPlaybackRenderTime) window.currentFrameInterval = this.realtime - window.lastPlaybackRenderTime;
             window.lastPlaybackRenderTime = this.realtime;
 
-            let time;
-            if (this.audioReady) time = osu.audio.getPosition() * 1000 + self.offset;
-            if (typeof time !== 'undefined') {
-                let breakEnd;
+            if (this.audioReady) {
+                var time = osu.audio.getPosition() * 1000 + self.offset;
                 for (let i = this.breakIndex; i < track.breaks.length; ++i) {
                     let b = track.breaks[i];
                     if (time >= b.startTime && time <= b.endTime) {
-                        breakEnd = b.endTime;
+                        var breakEnd = b.endTime;
                         this.breakIndex = i;
                         break;
                     }
@@ -1097,7 +1057,7 @@ define(["playerActions", "SliderMesh", "ui/score", "ui/volume", "ui/loading", "u
                 this.updateBackground(time);
                 this.updateHitObjects(time);
                 this.scoreOverlay.update(time);
-                game.updatePlayerActions(time);
+                if (game.autoplay) game.updatePlayerActions(time);
                 this.progressOverlay.update(time);
                 this.errorMeter.update(time);
             }
@@ -1108,15 +1068,15 @@ define(["playerActions", "SliderMesh", "ui/score", "ui/volume", "ui/loading", "u
             if (time > this.endTime) {
                 if (!this.ended) {
                     this.ended = true;
-                    this.pause = function() { };
+                    this.pause = () => { };
                     this.scoreOverlay.visible = false;
                     this.scoreOverlay.showSummary(track.metadata, this.errorMeter.record, this.retry, this.quit);
                 }
                 self.background.tint = 0xffffff;
             }
         }
-        this.destroy = function() {
-            _.each(self.hits, function(hit) {
+        this.destroy = () => {
+            _.each(self.hits, hit => {
                 if (!hit.destroyed) {
                     _.each(hit.objects, destroyHit);
                     _.each(hit.judgements, destroyHit);
@@ -1142,16 +1102,16 @@ define(["playerActions", "SliderMesh", "ui/score", "ui/volume", "ui/loading", "u
             window.removeEventListener('keyup', pauseCallback);
             window.removeEventListener('keydown', skipCallback);
             if (!game.autoplay) game.cleanupPlayerActions();
-            self.render = function() { };
+            self.render = () => { };
         };
-        this.start = function() {
+        this.start = () => {
             self.started = true;
             self.skipped = false;
             osu.audio.gain.gain.value = game.musicVolume * game.masterVolume;
             osu.audio.playbackRate = self.playbackRate;
             osu.audio.play(self.backgroundFadeTime + self.wait);
         };
-        this.retry = function() {
+        this.retry = () => {
             if (!game.paused) {
                 osu.audio.pause();
                 game.paused = true;
@@ -1162,7 +1122,7 @@ define(["playerActions", "SliderMesh", "ui/score", "ui/volume", "ui/loading", "u
             self.audioReady = true;
             self.start();
         }
-        this.quit = function() {
+        this.quit = () => {
             if (!game.paused) {
                 osu.audio.pause();
                 game.paused = true;
@@ -1170,8 +1130,8 @@ define(["playerActions", "SliderMesh", "ui/score", "ui/volume", "ui/loading", "u
             self.destroy();
             if (window.quitGame) window.quitGame();
         }
-        this.skip = function() {
-            if (osu.audio && osu.audio.seekforward(self.skipTime / 1000)) self.skipped = true;
+        this.skip = () => {
+            if (self.started && osu.audio.seekforward(self.skipTime / 1000)) self.skipped = true;
         };
     }
     return Playback;

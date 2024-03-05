@@ -1,4 +1,4 @@
-function setOptionPanel() {
+window.addEventListener('DOMContentLoaded', () => {
     function loadFromLocal() {
         let str = window.localStorage.getItem("osugamesettings");
         if (str) {
@@ -11,35 +11,16 @@ function setOptionPanel() {
     }
 
     let defaultsettings = {
-        dim: 80,
-        blur: 0,
-        cursorsize: 1,
-        showhwmouse: false,
-        snakein: true,
-        snakeout: false,
+        dim: 80, blur: 0,
+        cursorsize: 1, showhwmouse: false,
+        snakein: true, snakeout: false,
 
-        disableWheel: false,
-        disableButton: false,
-        K1name: 'Z',
-        K2name: 'X',
-        K1keycode: 90,
-        K2keycode: 88,
+        disableWheel: false, disableButton: false,
+        K1name: 'Z', K2name: 'X', K1keycode: 90, K2keycode: 88,
 
-        mastervolume: 100,
-        effectvolume: 100,
-        musicvolume: 100,
-        beatmapHitsound: false,
-
-        easy: false,
-        daycore: false,
-        hardrock: false,
-        nightcore: false,
-        hidden: false,
-        autoplay: false,
-
-        hideNumbers: false,
-        hideGreat: true,
-        hideFollowPoints: false
+        mastervolume: 100, effectvolume: 100, musicvolume: 100, beatmapHitsound: false,
+        easy: false, daycore: false, hardrock: false, nightcore: false, hidden: false, autoplay: false,
+        hideNumbers: false, hideGreat: true, hideFollowPoints: false
     };
     window.gamesettings = {};
 
@@ -82,33 +63,28 @@ function setOptionPanel() {
     function bindcheck(id, item) {
         let c = document.getElementById(id);
         c.checked = gamesettings[item];
-        gamesettings.restoreCallbacks.push(function() { c.checked = gamesettings[item]; });
-        c.onclick = function() {
+        gamesettings.restoreCallbacks.push(() => c.checked = gamesettings[item]);
+        c.onclick = () => {
             gamesettings[item] = c.checked;
             gamesettings.loadToGame();
             saveToLocal();
         }
     }
     function bindExclusiveCheck(id1, item1, id2, item2) {
-        let c1 = document.getElementById(id1);
-        let c2 = document.getElementById(id2);
+        let c1 = document.getElementById(id1), c2 = document.getElementById(id2);
         c1.checked = gamesettings[item1];
         c2.checked = gamesettings[item2];
 
-        gamesettings.restoreCallbacks.push(function() {
-            c1.checked = gamesettings[item1];
-        });
-        gamesettings.restoreCallbacks.push(function() {
-            c2.checked = gamesettings[item2];
-        });
-        c1.onclick = function() {
+        gamesettings.restoreCallbacks.push(() => c1.checked = gamesettings[item1]);
+        gamesettings.restoreCallbacks.push(() => c2.checked = gamesettings[item2]);
+        c1.onclick = () => {
             gamesettings[item1] = c1.checked;
             gamesettings[item2] = false;
             c2.checked = false;
             gamesettings.loadToGame();
             saveToLocal();
         }
-        c2.onclick = function() {
+        c2.onclick = () => {
             gamesettings[item2] = c2.checked;
             gamesettings[item1] = false;
             c1.checked = false;
@@ -190,11 +166,10 @@ function setOptionPanel() {
     bindcheck("hidegreat-check", "hideGreat");
     bindcheck("hidefollowpoints-check", "hideFollowPoints");
 
-    document.getElementById("restoredefault-btn").onclick = function() {
+    document.getElementById("restoredefault-btn").onclick = () => {
         Object.assign(gamesettings, defaultsettings);
         for (let i = 0; i < gamesettings.restoreCallbacks.length; ++i) gamesettings.restoreCallbacks[i]();
         gamesettings.loadToGame();
         saveToLocal();
     }
-}
-window.addEventListener('DOMContentLoaded', setOptionPanel);
+});

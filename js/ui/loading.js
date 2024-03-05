@@ -43,7 +43,7 @@ define([], () => {
         this.loading.scale.set(1, .6);
         this.addChild(this.loading);
 
-        this.resize = function(windowfield) {
+        this.resize = windowfield => {
             this.bg.x = windowfield.width / 2;
             this.bg.y = windowfield.height / 2;
             this.titletext.x = windowfield.width / 2;
@@ -61,13 +61,9 @@ define([], () => {
         }
         this.resize(windowfield);
 
-        this.hide = function(_e) {
-            this.hidden = true;
-        }
-        this.updateloading = function(timestamp) {
-            this.loading.rotation = timestamp * .0075;
-        }
-        this.update = function(timestamp) {
+        this.hide = _e => this.hidden = true;
+        this.updateloading = timestamp => this.loading.rotation = timestamp * .0075;
+        this.update = timestamp => {
             if (!this.visible) return;
             if (!this.hidden) {
                 this.updateloading(timestamp);
@@ -89,7 +85,7 @@ define([], () => {
     LoadingMenu.prototype.constructor = LoadingMenu;
     LoadingMenu.prototype.destroy = function destroy(options) {
         PIXI.Container.prototype.destroy.call(this, options);
-    };
+};
 
     return LoadingMenu;
 });

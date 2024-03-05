@@ -35,85 +35,77 @@ define([], () => {
         return result = hit.score < 0 && dx * dx + dy * dy < r * r && Math.abs(predict.time - hit.time) < playback.MehTime;
     }
     function playerActions(playback) {
-        if (playback.autoplay) {
-            playback.auto = {
-                currentObject: null,
-                curid: 0,
-                lastx: playback.game.mouseX,
-                lasty: playback.game.mouseY,
-                lasttime: 0
-            }
+        if (playback.autoplay) playback.auto = {
+            currentObject: null, curid: 0, lastx: playback.game.mouseX, lasty: playback.game.mouseY, lasttime: 0
         }
         playback.game.updatePlayerActions = function (time) {
-            if (playback.autoplay) {
-                const spinRadius = 60;
-                let cur = playback.auto.currentObject;
-                if (playback.game.down && cur) {
-                    if (cur.type == "circle" || time > cur.endTime) {
-                        playback.game.down = false;
-                        playback.auto.currentObject = null;
-                        playback.auto.lasttime = time;
-                        playback.auto.lastx = playback.game.mouseX;
-                        playback.auto.lasty = playback.game.mouseY;
-                    }
-                    else if (cur.type == "slider") {
-                        playback.game.mouseX = cur.ball.x || cur.x;
-                        playback.game.mouseY = cur.ball.y || cur.y;
-                    }
-                    else if (!playback.game.paused) {
-                        let ang = Math.atan2(playback.game.mouseY - cur.y, playback.game.mouseX - cur.x) + .75;
-                        playback.game.mouseX = cur.x + spinRadius * Math.cos(ang);
-                        playback.game.mouseY = cur.y + spinRadius * Math.sin(ang);
-                    }
-                }
-
-                cur = playback.auto.currentObject;
-                while (playback.auto.curid < playback.hits.length && playback.hits[playback.auto.curid].time < time) {
-                    let hit = playback.hits[playback.auto.curid];
-                    if (hit.score < 0) {
-                        let targX = hit.x;
-                        let targY = hit.y;
-                        if (hit.type === "spinner") {
-                            let ang = Math.atan2(playback.game.mouseY - targY, playback.game.mouseX - targX);
-                            targX += spinRadius * Math.cos(ang);
-                            targY += spinRadius * Math.sin(ang);
-                        }
-                        playback.game.mouseX = targX;
-                        playback.game.mouseY = targY;
-
-                        playback.game.down = true;
-                        checkClickdown();
-                    }
-                    ++playback.auto.curid;
-                }
-                if (!cur && playback.auto.curid < playback.hits.length) {
-                    cur = playback.hits[playback.auto.curid];
-                    playback.auto.currentObject = cur;
-                }
-                if (!cur || cur.time > time + playback.approachTime) {
+            const spinRadius = 60;
+            let cur = playback.auto.currentObject;
+            if (playback.game.down && cur) {
+                if (cur.type == "circle" || time > cur.endTime) {
+                    playback.game.down = false;
+                    playback.auto.currentObject = null;
                     playback.auto.lasttime = time;
-                    return;
+                    playback.auto.lastx = playback.game.mouseX;
+                    playback.auto.lasty = playback.game.mouseY;
                 }
-                if (!playback.game.down) {
-                    let targX = cur.x;
-                    let targY = cur.y;
-                    if (cur.type === "spinner") {
+                else if (cur.type == "slider") {
+                    playback.game.mouseX = cur.ball.x || cur.x;
+                    playback.game.mouseY = cur.ball.y || cur.y;
+                }
+                else if (!playback.game.paused) {
+                    let ang = Math.atan2(playback.game.mouseY - cur.y, playback.game.mouseX - cur.x) + .75;
+                    playback.game.mouseX = cur.x + spinRadius * Math.cos(ang);
+                    playback.game.mouseY = cur.y + spinRadius * Math.sin(ang);
+                }
+            }
+
+            cur = playback.auto.currentObject;
+            while (playback.auto.curid < playback.hits.length && playback.hits[playback.auto.curid].time < time) {
+                let hit = playback.hits[playback.auto.curid];
+                if (hit.score < 0) {
+                    let targX = hit.x;
+                    let targY = hit.y;
+                    if (hit.type === "spinner") {
                         let ang = Math.atan2(playback.game.mouseY - targY, playback.game.mouseX - targX);
                         targX += spinRadius * Math.cos(ang);
                         targY += spinRadius * Math.sin(ang);
                     }
-                    let t = (time - playback.auto.lasttime) / (cur.time - playback.auto.lasttime);
+                    playback.game.mouseX = targX;
+                    playback.game.mouseY = targY;
 
-                    t = Math.max(0, Math.min(1, t));
-                    t = .5 - Math.sin((Math.pow(1 - t, 1.5) - .5) * Math.PI) / 2;
+                    playback.game.down = true;
+                    checkClickdown();
+                }
+                ++playback.auto.curid;
+            }
+            if (!cur && playback.auto.curid < playback.hits.length) {
+                cur = playback.hits[playback.auto.curid];
+                playback.auto.currentObject = cur;
+            }
+            if (!cur || cur.time > time + playback.approachTime) {
+                playback.auto.lasttime = time;
+                return;
+            }
+            if (!playback.game.down) {
+                let targX = cur.x;
+                let targY = cur.y;
+                if (cur.type === "spinner") {
+                    let ang = Math.atan2(playback.game.mouseY - targY, playback.game.mouseX - targX);
+                    targX += spinRadius * Math.cos(ang);
+                    targY += spinRadius * Math.sin(ang);
+                }
+                let t = (time - playback.auto.lasttime) / (cur.time - playback.auto.lasttime);
 
-                    playback.game.mouseX = t * targX + (1 - t) * playback.auto.lastx;
-                    playback.game.mouseY = t * targY + (1 - t) * playback.auto.lasty;
+                t = Math.max(0, Math.min(1, t));
+                t = .5 - Math.sin((Math.pow(1 - t, 1.5) - .5) * Math.PI) / 2;
 
-                    if (time + 13 >= cur.time) {
-                        playback.game.down = true;
-                        checkClickdown();
-                    }
+                playback.game.mouseX = t * targX + (1 - t) * playback.auto.lastx;
+                playback.game.mouseY = t * targY + (1 - t) * playback.auto.lasty;
+
+                if (time + 13 >= cur.time) {
+                    playback.game.down = true;
+                    checkClickdown();
                 }
             }
         };
@@ -125,7 +117,7 @@ define([], () => {
                 let m = movehistory;
                 let i = 0;
                 while (i < m.length - 1 && m[0].t - m[i].t < 40 && t - m[i].t < 100) ++i;
-    
+
                 let velocity = i == 0 ? {
                     x: 0, y: 0
                 } : {
@@ -156,7 +148,7 @@ define([], () => {
                     playback.game.M2down = true;
                 }
                 else return;
-    
+
                 e.preventDefault();
                 e.stopPropagation();
                 playback.game.down = playback.game.K1down || playback.game.K2down || playback.game.M1down || playback.game.M2down;
@@ -167,7 +159,7 @@ define([], () => {
                 if (e.button == 0) playback.game.M1down = false;
                 else if (e.button == 2) playback.game.M2down = false;
                 else return;
-    
+
                 e.preventDefault();
                 e.stopPropagation();
                 playback.game.down = playback.game.K1down || playback.game.K2down || playback.game.M1down || playback.game.M2down;
@@ -182,7 +174,7 @@ define([], () => {
                     playback.game.K2down = true;
                 }
                 else return;
-    
+
                 e.preventDefault();
                 e.stopPropagation();
                 playback.game.down = playback.game.K1down || playback.game.K2down || playback.game.M1down || playback.game.M2down;
@@ -192,7 +184,7 @@ define([], () => {
                 if (e.keyCode == playback.game.K1keycode) playback.game.K1down = false;
                 else if (e.keyCode == playback.game.K2keycode) playback.game.K2down = false;
                 else return;
-    
+
                 e.preventDefault();
                 e.stopPropagation();
                 playback.game.down = playback.game.K1down || playback.game.K2down || playback.game.M1down || playback.game.M2down;
@@ -216,11 +208,8 @@ define([], () => {
         }
     }
     if (!Array.prototype.find) Object.defineProperty(Array.prototype, 'find', {
-        value: function (predicate) {
-            let k = 0;
-            let o = Object(this);
-            let thisArg = arguments[1];
-
+        value: predicate => {
+            let k = 0, o = Object(this), thisArg = arguments[1];
             while (k < (o.length >>> 0)) {
                 let kValue = o[k];
                 if (predicate.call(thisArg, kValue, k++, o)) return kValue;

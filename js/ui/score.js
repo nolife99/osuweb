@@ -34,12 +34,8 @@ define([], () => {
         this.judgeTotal = 0;
         this.maxJudgeTotal = 0;
         this.HP = 1;
-
         this.judgecnt = {
-            great: 0,
-            good: 0,
-            meh: 0,
-            miss: 0
+            great: 0, good: 0, meh: 0, miss: 0
         }
 
         this.score4display = new LazyNumber(0);
@@ -47,7 +43,7 @@ define([], () => {
         this.accuracy4display = new LazyNumber(100);
         this.HP4display = new LazyNumber(1);
 
-        this.newSpriteArray = function(len, scaleMul, tint = 0xffffff) {
+        this.newSpriteArray = (len, scaleMul, tint = 0xffffff) => {
             let a = new Array(len);
             for (let i = 0; i < len; ++i) {
                 a[i] = new PIXI.Sprite();
@@ -164,14 +160,13 @@ define([], () => {
             this.setSpriteArrayText(this.comboDigits, this.combo4display.valueAt(time).toFixed(0) + "x");
             this.setSpriteArrayText(this.accuracyDigits, this.accuracy4display.valueAt(time).toFixed(2) + "%");
 
-            let basex = this.field.width * .5;
-            let basey = this.field.height * .017;
+            let basex = this.field.width * .5, basey = this.field.height * .017;
             let unit = Math.min(this.field.width / 640, this.field.height / 480);
             this.setSpriteArrayPos(this.scoreDigits, basex - this.scoreDigits.width / 2, basey);
             this.setSpriteArrayPos(this.accuracyDigits, basex - this.scoreDigits.width / 2 - this.accuracyDigits.width - 16 * unit, basey + 3 * unit);
             this.setSpriteArrayPos(this.comboDigits, basex + this.scoreDigits.width / 2 + 16 * unit, basey + 3 * unit);
         }
-        this.showSummary = function(metadata, a, retryCallback, quitCallback) {
+        this.showSummary = (metadata, a, retryCallback, quitCallback) => {
             function grade(acc) {
                 if (acc >= 1) return 'SS';
                 if (acc >= .95) return 'S';
@@ -183,13 +178,12 @@ define([], () => {
             function errortext() {
                 let sum = 0;
                 for (let i = 0; i < a.length; ++i) sum += a[i];
-                let avg = sum / a.length;
-                let sumsqerr = 0;
-                for (let i = 0; i < a.length; ++i) sumsqerr += (a[i] - avg) * (a[i] - avg);
-                let letiance = sumsqerr / a.length;
-                let stdev = Math.sqrt(letiance);
-
-                let sgnavg = avg.toFixed(0);
+                let avg = sum / a.length, sumsqerr = 0;
+                for (let i = 0; i < a.length; ++i) {
+                    let base = a[i] - avg;
+                    sumsqerr += base * base;
+                }
+                let letiance = sumsqerr / a.length, stdev = Math.sqrt(letiance), sgnavg = avg.toFixed(0);
                 if (sgnavg[0] != '-') sgnavg = '+' + sgnavg;
                 return sgnavg + "±" + stdev.toFixed(0) + "ms";
             }
@@ -214,14 +208,11 @@ define([], () => {
                 return div;
             }
 
-            let acc = this.judgeTotal / this.maxJudgeTotal;
-            let rank = grade(acc);
-            let grading = newdiv(null, "grading");
+            let acc = this.judgeTotal / this.maxJudgeTotal, rank = grade(acc), grading = newdiv(null, "grading");
             grading.classList.add("transparent");
             document.body.appendChild(grading);
 
-            let top = newdiv(grading, "top");
-            let info = newdiv(top, "beatmap-info");
+            let top = newdiv(grading, "top"), info = newdiv(top, "beatmap-info");
             newdiv(info, "title", metadata.Title);
             newdiv(info, "artist", metadata.Artist);
             newdiv(info, "version", metadata.Version);
@@ -241,8 +232,7 @@ define([], () => {
             newdiv(left, "block placeholder");
             newdiv(left, "block combo", this.maxcombo.toString() + "/" + this.fullcombo.toString() + "x");
 
-            let b1 = newdiv(grading, "btn retry");
-            let b2 = newdiv(grading, "btn quit");
+            let b1 = newdiv(grading, "btn retry"), b2 = newdiv(grading, "btn quit");
             newdiv(b1, "inner", "Retry");
             newdiv(b2, "inner", "Quit");
 

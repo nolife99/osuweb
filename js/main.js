@@ -107,10 +107,9 @@ require(["osu", "underscore", "sound", "playback"], (Osu, _, _sound, Playback) =
             app.renderer.autoDensity = true;
             app.renderer.backgroundColor = 0x111111;
 
-            let scrollTop = document.body.scrollTop;
-            let defaultAlert = window.alert;
+            let scrollTop = document.body.scrollTop, defaultAlert = window.alert;
 
-            document.addEventListener("contextmenu", function (e) {
+            document.addEventListener("contextmenu", e => {
                 e.preventDefault();
                 return false;
             });
@@ -123,8 +122,7 @@ require(["osu", "underscore", "sound", "playback"], (Osu, _, _sound, Playback) =
                 game.stage.addChild(game.cursor);
             }
 
-            let pGameArea = document.getElementById("game-area");
-            var pMainPage = document.getElementById("main-page");
+            let pGameArea = document.getElementById("game-area"), pMainPage = document.getElementById("main-page");
             pGameArea.appendChild(app.view);
 
             if (game.autoplay) {
@@ -182,11 +180,9 @@ require(["osu", "underscore", "sound", "playback"], (Osu, _, _sound, Playback) =
             window.requestAnimationFrame(gameLoop);
         }
         createBeatmapBox() {
-            let map = this;
-            let pBeatmapBox = document.createElement("div");
-            let pBeatmapCover = document.createElement("img");
-            let pBeatmapTitle = document.createElement("div");
-            let pBeatmapAuthor = document.createElement("div");
+            let map = this, 
+                pBeatmapBox = document.createElement("div"), pBeatmapCover = document.createElement("img"),
+                pBeatmapTitle = document.createElement("div"), pBeatmapAuthor = document.createElement("div");
 
             pBeatmapBox.className = "beatmapbox";
             pBeatmapCover.className = "beatmapcover";
@@ -207,15 +203,13 @@ require(["osu", "underscore", "sound", "playback"], (Osu, _, _sound, Playback) =
                 let length = map.osu.tracks[0].length;
                 pBeatmapLength.innerText = Math.floor(length / 60) + ":" + (length % 60 < 10 ? "0" : "") + Math.round(length % 60);
             }
-            pBeatmapBox.onclick = function (e) {
+            pBeatmapBox.onclick = function(e) {
                 if (!window.showingDifficultyBox) {
                     e.stopPropagation();
                     let difficultyBox = document.createElement("div");
                     difficultyBox.className = "difficulty-box";
 
-                    let rect = this.getBoundingClientRect();
-                    let x = e.clientX - rect.left;
-                    let y = e.clientY - rect.top;
+                    let rect = this.getBoundingClientRect(), x = e.clientX - rect.left, y = e.clientY - rect.top;
                     difficultyBox.style.left = x + "px";
                     difficultyBox.style.top = y + "px";
 
@@ -262,20 +256,21 @@ require(["osu", "underscore", "sound", "playback"], (Osu, _, _sound, Playback) =
         }
     }
 
-    let pDragbox = document.getElementById("beatmap-dragbox");
-    let pDragboxInner = document.getElementById("beatmap-dragbox-inner");
-    let pDragboxHint = document.getElementById("beatmap-dragbox-hint");
-    let pBeatmapList = document.getElementById("beatmap-list");
+    let pDragbox = document.getElementById("beatmap-dragbox"), 
+        pDragboxInner = document.getElementById("beatmap-dragbox-inner"),
+        pDragboxHint = document.getElementById("beatmap-dragbox-hint"),
+        pBeatmapList = document.getElementById("beatmap-list");
+
     pDragboxHint.defaultHint = "Drag and drop a beatmap (.osz) file here";
     pDragboxHint.modeErrHint = "Only supports osu! (std) mode beatmaps. Drop another file.";
     pDragboxHint.nonValidHint = "Not a valid osz file. Drop another file.";
     pDragboxHint.noTransferHint = "Not receiving any file. Please retry.";
     pDragboxHint.nonOszHint = "Not an osz file. Drop another file.";
     pDragboxHint.loadingHint = "loading...";
-    let beatmapFileList = [];
 
-    localforage.getItem("beatmapfilelist", function (err, names) {
-        if (!err && names && typeof names.length !== undefined) {
+    let beatmapFileList = [];
+    localforage.getItem("beatmapfilelist", (err, names) => {
+        if (!err && names && names.length) {
             console.log("local beatmap list:", names);
             document.getElementById('bm-total-counter').innerText = names.length;
 
@@ -314,7 +309,7 @@ require(["osu", "underscore", "sound", "playback"], (Osu, _, _sound, Playback) =
         map.filename = osz.filename;
         console.log("adding beatmap filename:", osz.filename);
 
-        map.osu.ondecoded = function () {
+        map.osu.ondecoded = () => {
             map.osu.filterTracks();
             map.osu.sortTracks();
             map.osu.requestStar();

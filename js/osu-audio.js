@@ -87,6 +87,5 @@ define([], () => {
             };
         }
     }
-
     return OsuAudio;
 });

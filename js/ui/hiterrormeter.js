@@ -91,12 +91,12 @@ define([], () => {
         this.resize(windowfield);
 
         this.record = [];
-        this.hit = function(hiterror, time) {
+        this.hit = (hiterror, time) => {
             this.barl.hit(hiterror, time);
             this.barr.hit(hiterror, time);
             this.record.push(hiterror);
         }
-        this.update = function(time) {
+        this.update = time => {
             this.barl.update(time);
             this.barr.update(time);
         }

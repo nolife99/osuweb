@@ -41,13 +41,13 @@ define([], () => {
         this.number.y = -40;
         this.addChild(this.number);
 
-        this.resize = function(windowfield) {
+        this.resize = windowfield => {
             this.x = windowfield.width / 2;
             this.y = windowfield.height / 2;
         }
         this.resize(windowfield);
 
-        this.countdown = function(nextapproachtime, time) {
+        this.countdown = (nextapproachtime, time) => {
             if (nextapproachtime - time > this.appearthreshold && !this.visible) {
                 this.visible = true;
                 this.starttime = time;
@@ -59,8 +59,7 @@ define([], () => {
                 return;
             }
 
-            let t = this.nextapproachtime - time;
-            let radius = 200 * t / (this.nextapproachtime - this.starttime);
+            let t = this.nextapproachtime - time, radius = 200 * t / (this.nextapproachtime - this.starttime);
             this.barmid.width = 2 * radius;
             this.barleft.x = -radius;
             this.barright.x = radius;
@@ -74,7 +73,7 @@ define([], () => {
     BreakOverlay.prototype.constructor = BreakOverlay;
     BreakOverlay.prototype.destroy = function destroy(options) {
         PIXI.Container.prototype.destroy.call(this, options);
-    };
+};
 
     return BreakOverlay;
 });

@@ -1,4 +1,4 @@
-(function(global) {
+(global => {
     "use strict";
 
     var MAX_BITS = 15;

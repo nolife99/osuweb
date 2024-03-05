@@ -7,18 +7,14 @@ define(["underscore", "curve/BSpline"], (_, BSpline) => {
             this.startAngle = 0;
             this.endAngle = 0;
 
-            var beziers = [];
-            var points = [];
-            var lastPoi = null;
-
-            for (var i = -1; i < hit.keyframes.length; ++i) {
-                var tpoi;
+            let beziers = [], points = [], lastPoi = null;
+            for (let i = -1; i < hit.keyframes.length; ++i) {
+                let tpoi;
                 if (i !== -1) tpoi = hit.keyframes[i];
                 else tpoi = {
                     x: hit.x,
                     y: hit.y
                 };
-
                 if (line) {
                     if (lastPoi !== null) {
                         points.push(tpoi);
@@ -30,7 +26,6 @@ define(["underscore", "curve/BSpline"], (_, BSpline) => {
                     if (points.length >= 2) beziers.push(new BSpline(points));
                     points.splice(0);
                 }
-
                 points.push(tpoi);
                 lastPoi = tpoi;
             }
@@ -38,18 +33,13 @@ define(["underscore", "curve/BSpline"], (_, BSpline) => {
                 beziers.push(new BSpline(points));
                 points.splice(0);
             }
-            var distanceAt = 0;
-            var curPoint = 0;
-            var curCurveIndex = 0;
-            var curCurve = beziers[0];
-            var lastCurve = curCurve.curve[0];
-            var lastDistanceAt = 0;
+            let distanceAt = 0, curPoint = 0, curCurveIndex = 0, curCurve = beziers[0], lastCurve = curCurve.curve[0], lastDistanceAt = 0;
 
             this.ncurve = Math.floor(hit.pixelLength / 4);
             this.curve = new Array(this.ncurve + 1);
 
-            for (var i = 0; i < this.curve.length; ++i) {
-                var prefDistance = i * hit.pixelLength / this.ncurve;
+            for (let i = 0; i < this.curve.length; ++i) {
+                let prefDistance = i * hit.pixelLength / this.ncurve;
                 while (distanceAt < prefDistance) {
                     lastDistanceAt = distanceAt;
                     lastCurve = curCurve.curve[curPoint++];
@@ -67,10 +57,10 @@ define(["underscore", "curve/BSpline"], (_, BSpline) => {
                     distanceAt += curCurve.curveDistance[curPoint];
                 }
 
-                var thisCurve = curCurve.curve[curPoint];
+                let thisCurve = curCurve.curve[curPoint];
                 if (lastCurve == thisCurve) this.curve[i] = thisCurve;
                 else {
-                    var t = (prefDistance - lastDistanceAt) / (distanceAt - lastDistanceAt);
+                    let t = (prefDistance - lastDistanceAt) / (distanceAt - lastDistanceAt);
                     this.curve[i] = {
                         x: lerp(lastCurve.x, thisCurve.x, t),
                         y: lerp(lastCurve.y, thisCurve.y, t),
@@ -80,13 +70,10 @@ define(["underscore", "curve/BSpline"], (_, BSpline) => {
             }
         }
         pointAt(t) {
-            var indexF = t * this.ncurve;
-            var index = Math.floor(indexF);
+            let indexF = t * this.ncurve, index = Math.floor(indexF);
             if (index >= this.ncurve) return this.curve[this.ncurve];
             else {
-                var poi = this.curve[index];
-                var poi2 = this.curve[index + 1];
-                var t = indexF - index;
+                let poi = this.curve[index], poi2 = this.curve[index + 1], t = indexF - index;
                 return {
                     x: lerp(poi.x, poi2.x, t),
                     y: lerp(poi.y, poi2.y, t)

@@ -1,7 +1,4 @@
-define([], () => {
-    Container = PIXI.Container;
-
-    const vertexSrc = `
+const vertexSrc = `
     precision lowp float;
     attribute vec4 position;
     varying float dist;
@@ -9,9 +6,7 @@ define([], () => {
     void main() {
         dist = position[3];
         gl_Position = vec4(position[0] * dx + ox, position[1] * dy + oy, position[3] + 2.0 * float(position[2] * dt > ot), 1.0);
-    }`;
-
-    const fragmentSrc = `
+    }`, fragmentSrc = `
     precision lowp float;
     varying float dist;
     uniform sampler2D uSampler2;
@@ -20,32 +15,22 @@ define([], () => {
         gl_FragColor = alpha * texture2D(uSampler2, vec2(dist, texturepos));
     }`;
 
+define([], () => {
+    Container = PIXI.Container;
     function newTexture(colors, SliderTrackOverride, SliderBorder) {
-        const borderwidth = .128;
-        const innerPortion = 1 - borderwidth;
-        const edgeOpacity = .8;
-        const centerOpacity = .3;
-        const blurrate = .015;
-        const width = 200;
+        const borderwidth = .128, innerPortion = 1 - borderwidth,
+            edgeOpacity = .8, centerOpacity = .3, blurrate = .015, width = 200;
 
-        let bordertint = typeof SliderBorder != 'undefined' ? SliderBorder : 0xffffff;
-        let borderR = bordertint >> 16;
-        let borderG = (bordertint >> 8) & 255;
-        let borderB = bordertint & 255;
-        let borderA = 1;
-        let innerA = 1;
+        let bordertint = SliderBorder ? SliderBorder : 0xffffff,
+            borderR = bordertint >> 16, borderG = (bordertint >> 8) & 255, borderB = bordertint & 255, borderA = 1, innerA = 1;
 
         let buff = new Uint8Array(colors.length * width * 4);
         for (let k = 0; k < colors.length; ++k) {
-            let tint = typeof SliderTrackOverride != 'undefined' ? SliderTrackOverride : colors[k];
-            let innerR = tint >> 16;
-            let innerG = (tint >> 8) & 255;
-            let innerB = tint & 255;
+            let tint = SliderTrackOverride ? SliderTrackOverride : colors[k];
+            let innerR = tint >> 16, innerG = (tint >> 8) & 255, innerB = tint & 255;
 
             for (let i = 0; i < width; ++i) {
-                let position = i / width;
-                let R, G, B, A;
-
+                let position = i / width, R, G, B, A;
                 if (position >= innerPortion) {
                     R = borderR;
                     G = borderG;
@@ -62,9 +47,9 @@ define([], () => {
                 G *= A;
                 B *= A;
 
-                var ease = 1 - position;
+                let ease = 1 - position;
                 if (ease < blurrate) {
-                    var aa = ease / blurrate;
+                    let aa = ease / blurrate;
                     R *= aa;
                     G *= aa;
                     B *= aa;
@@ -73,8 +58,7 @@ define([], () => {
 
                 let diff = innerPortion - position;
                 if (diff > 0 && diff < blurrate) {
-                    let mu = diff / blurrate;
-                    let ea = (1 - mu) * borderA;
+                    let mu = diff / blurrate, ea = (1 - mu) * borderA;
                     R = mu * R + ea * borderR;
                     G = mu * G + ea * borderG;
                     B = mu * B + ea * borderB;
@@ -97,17 +81,10 @@ define([], () => {
         vert.push(curve[0].x, curve[0].y, curve[0].t, 0);
 
         for (let i = 1; i < curve.length; ++i) {
-            let x = curve[i].x;
-            let y = curve[i].y;
-            let t = curve[i].t;
-            let lx = curve[i - 1].x;
-            let ly = curve[i - 1].y;
-            let lt = curve[i - 1].t;
-            let dx = x - lx;
-            let dy = y - ly;
-            let length = Math.hypot(dx, dy);
-            let ox = radius * -dy / length;
-            let oy = radius * dx / length;
+            let x = curve[i].x, y = curve[i].y, t = curve[i].t, 
+                lx = curve[i - 1].x, ly = curve[i - 1].y, lt = curve[i - 1].t,
+                dx = x - lx, dy = y - ly, length = Math.hypot(dx, dy), 
+                ox = radius * -dy / length, oy = radius * dx / length;
 
             vert.push(lx + ox, ly + oy, lt, 1);
             vert.push(lx - ox, ly - oy, lt, 1);
@@ -120,17 +97,18 @@ define([], () => {
             index.push(n - 6, n - 4, n - 1, n - 4, n - 1, n - 2);
         }
         function addArc(c, p1, p2, t) {
-            let theta_1 = Math.atan2(vert[4 * p1 + 1] - vert[4 * c + 1], vert[4 * p1] - vert[4 * c])
-            let theta_2 = Math.atan2(vert[4 * p2 + 1] - vert[4 * c + 1], vert[4 * p2] - vert[4 * c])
-            if (theta_1 > theta_2) theta_2 += 2 * Math.PI;
+            let vY = vert[4 * c + 1], vX = vert[4 * c];
+            let theta_1 = Math.atan2(vert[4 * p1 + 1] - vY, vert[4 * p1] - vX),
+                theta_2 = Math.atan2(vert[4 * p2 + 1] - vY, vert[4 * p2] - vX)
+            if (theta_1 > theta_2) theta_2 += twoPi;
             let theta = theta_2 - theta_1;
 
-            let divs = DIVIDES * Math.abs(theta) / 2 / Math.PI;
+            let divs = DIVIDES * Math.abs(theta) / twoPi;
             theta /= divs;
             let last = p1;
 
             for (let i = 1; i < divs; ++i) {
-                vert.push(vert[4 * c] + radius * Math.cos(theta_1 + i * theta), vert[4 * c + 1] + radius * Math.sin(theta_1 + i * theta), t, 1);
+                vert.push(vX + radius * Math.cos(theta_1 + i * theta), vY + radius * Math.sin(theta_1 + i * theta), t, 1);
                 let newv = vert.length / 4 - 1;
                 index.push(c, last, newv);
                 last = newv;
@@ -141,10 +119,8 @@ define([], () => {
         addArc(5 * curve.length - 5, 5 * curve.length - 6, 5 * curve.length - 7, curve[curve.length - 1].t);
 
         for (let i = 1; i < curve.length - 1; ++i) {
-            let dx1 = curve[i].x - curve[i - 1].x;
-            let dy1 = curve[i].y - curve[i - 1].y;
-            let dx2 = curve[i + 1].x - curve[i].x;
-            let dy2 = curve[i + 1].y - curve[i].y;
+            let dx1 = curve[i].x - curve[i - 1].x, dy1 = curve[i].y - curve[i - 1].y,
+                dx2 = curve[i + 1].x - curve[i].x, dy2 = curve[i + 1].y - curve[i].y;
 
             let quint = i * 5;
             if (dx1 * dy2 > dx2 * dy1) addArc(quint, quint - 1, quint + 2);
@@ -157,7 +133,7 @@ define([], () => {
         vert.push(0, 0, 0, 0);
 
         for (let i = 0; i < DIVIDES; ++i) {
-            let theta = 2 * Math.PI / DIVIDES * i;
+            let theta = twoPi / DIVIDES * i;
             vert.push(radius * Math.cos(theta), radius * Math.sin(theta), 0, 1);
             index.push(0, i + 1, (i + 1) % DIVIDES + 1);
         }
@@ -207,7 +183,7 @@ define([], () => {
         this._renderDefault(renderer);
     };
     SliderMesh.prototype._renderDefault = function(renderer) {
-        var shader = this.shader;
+        let shader = this.shader;
         shader.alpha = this.worldAlpha;
         if (shader.update) shader.update();
         renderer.batch.flush();
@@ -218,7 +194,7 @@ define([], () => {
         this.uniforms.dt = 0;
         this.uniforms.ot = .5;
 
-        const gl = renderer.gl;
+        let gl = renderer.gl;
         gl.clearDepth(1);
         gl.clear(gl.DEPTH_BUFFER_BIT);
         gl.colorMask(false, false, false, false);
