@@ -62,11 +62,10 @@ define([], () => {
         this.resize(windowfield);
 
         this.hide = _e => this.hidden = true;
-        this.updateloading = timestamp => this.loading.rotation = timestamp * .0075;
         this.update = timestamp => {
             if (!this.visible) return;
             if (!this.hidden) {
-                this.updateloading(timestamp);
+                this.loading.rotation = timestamp * .0075;
                 return;
             }
             if (this.hidden && !this.t0) {
@@ -78,14 +77,11 @@ define([], () => {
             if (dt > this.fadetime) this.visible = false;
             else this.alpha = 1 - dt / this.fadetime;
         }
+        this.destroy = options => PIXI.Container.prototype.destroy.call(this, options);
     }
 
     if (PIXI.Container) LoadingMenu.__proto__ = PIXI.Container;
     LoadingMenu.prototype = Object.create(PIXI.Container && PIXI.Container.prototype);
     LoadingMenu.prototype.constructor = LoadingMenu;
-    LoadingMenu.prototype.destroy = function destroy(options) {
-        PIXI.Container.prototype.destroy.call(this, options);
-};
-
     return LoadingMenu;
 });

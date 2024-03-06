@@ -40,14 +40,11 @@ define([], () => {
             this.remaining.text = timeformat(this.endtime - time);
             this.past.text = timeformat(time - this.starttime);
         }
+        this.destroy = options => PIXI.Container.prototype.destroy.call(this, options);
     }
 
     if (PIXI.Container) ProgressOverlay.__proto__ = PIXI.Container;
     ProgressOverlay.prototype = Object.create(PIXI.Container && PIXI.Container.prototype);
     ProgressOverlay.prototype.constructor = ProgressOverlay;
-    ProgressOverlay.prototype.destroy = function(options) {
-        PIXI.Container.prototype.destroy.call(this, options);
-    };
-
     return ProgressOverlay;
 });

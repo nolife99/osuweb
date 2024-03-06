@@ -6,7 +6,7 @@
     <title>osu! web</title>
     <link rel="icon" href="asset/favicon.png">
     <link href="https://cdn.jsdelivr.net/npm/picnic@7.1.0/picnic.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="asset/style.css">
+    <link href="asset/style.css" rel="stylesheet">
     <script src="js/lib/zip.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/5.3.12/pixi.min.js"></script>
     <script src="js/lib/localforage.min.js"></script>
@@ -16,10 +16,6 @@
         require.config({
             paths: {
                 underscore: 'lib/underscore', sound: 'lib/sound'
-            }, shim: {
-                "underscore": {
-                    exports: "_"
-                }
             }
         });
     </script>

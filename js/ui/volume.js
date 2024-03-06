@@ -47,14 +47,11 @@ define([], () => {
             if (dt > this.fadetime) this.visible = false;
             else this.alpha = 1 - Math.pow(dt / this.fadetime, 5);
         }
+        this.destroy = options => PIXI.Container.prototype.destroy.call(this, options);
     }
 
     if (PIXI.Container) VolumeMenu.__proto__ = PIXI.Container;
     VolumeMenu.prototype = Object.create(PIXI.Container && PIXI.Container.prototype);
     VolumeMenu.prototype.constructor = VolumeMenu;
-    VolumeMenu.prototype.destroy = function(options) {
-        PIXI.Container.prototype.destroy.call(this, options);
-    };
-
     return VolumeMenu;
 });

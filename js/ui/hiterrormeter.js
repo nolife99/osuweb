@@ -51,27 +51,27 @@ define([], () => {
         }
         this.poolptr = 0;
         this.avgerror = 0;
+
+        this.update = time => {
+            for (let i = 0; i < this.ticks.length; ++i) {
+                let tick = this.ticks[i];
+                tick.alpha = Math.exp(-(time - tick.t0) / 1000);
+            }
+        }
+        this.hit = (hiterror, time) => {
+            let tick = this.ticks[this.poolptr];
+            this.poolptr = (this.poolptr + 1) % this.ticks.length;
+            tick.t0 = time;
+            tick.y = hiterror * this.lscale;
+            this.avgerror = this.avgerror * .9 + hiterror * .1;
+            this.avgmarker.y = this.avgerror * this.lscale;
+        }
+        this.destroy = options => PIXI.Container.prototype.destroy.call(this, options);
     }
+
     if (PIXI.Container) ErrorMeter.__proto__ = PIXI.Container;
     ErrorMeter.prototype = Object.create(PIXI.Container && PIXI.Container.prototype);
     ErrorMeter.prototype.constructor = ErrorMeter;
-    ErrorMeter.prototype.destroy = function(options) {
-        PIXI.Container.prototype.destroy.call(this, options);
-    };
-    ErrorMeter.prototype.update = function(time) {
-        for (let i = 0; i < this.ticks.length; ++i) {
-            let tick = this.ticks[i];
-            tick.alpha = Math.exp(-(time - tick.t0) / 1000);
-        }
-    }
-    ErrorMeter.prototype.hit = function(hiterror, time) {
-        let tick = this.ticks[this.poolptr];
-        this.poolptr = (this.poolptr + 1) % this.ticks.length;
-        tick.t0 = time;
-        tick.y = hiterror * this.lscale;
-        this.avgerror = this.avgerror * .9 + hiterror * .1;
-        this.avgmarker.y = this.avgerror * this.lscale;
-    }
 
     function ErrorMeterOverlay(windowfield, r300, r100, r50) {
         PIXI.Container.call(this);
@@ -100,14 +100,12 @@ define([], () => {
             this.barl.update(time);
             this.barr.update(time);
         }
+        this.destroy = options => PIXI.Container.prototype.destroy.call(this, options);
     }
 
     if (PIXI.Container) ErrorMeterOverlay.__proto__ = PIXI.Container;
     ErrorMeterOverlay.prototype = Object.create(PIXI.Container && PIXI.Container.prototype);
     ErrorMeterOverlay.prototype.constructor = ErrorMeterOverlay;
-    ErrorMeterOverlay.prototype.destroy = function(options) {
-        PIXI.Container.prototype.destroy.call(this, options);
-    };
 
     return ErrorMeterOverlay;
 });

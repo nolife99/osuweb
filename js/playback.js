@@ -141,7 +141,7 @@ define(["playerActions", "SliderMesh", "ui/score", "ui/volume", "ui/loading", "u
             this.AR = Math.min(this.AR * 1.4, 10);
             this.HP = Math.min(this.HP * 1.4, 10);
         }
-        if (game.easy) {
+        else if (game.easy) {
             this.OD /= 2;
             this.CS /= 2;
             this.AR /= 2;
@@ -530,7 +530,7 @@ define(["playerActions", "SliderMesh", "ui/score", "ui/volume", "ui/loading", "u
 
             let spinPerSec = 1.5 * this.OD < 5 ? 3 + .4 * this.OD: 2.5 + .5 * this.OD;
             hit.clearRotations = spinPerSec / this.playbackRate * Math.PI * (hit.endTime - hit.time) / 1000;
-            
+
             function newsprite(spritename) {
                 let sprite = new PIXI.Sprite(Skin[spritename]);
                 sprite.anchor.set(.5);
@@ -725,7 +725,7 @@ define(["playerActions", "SliderMesh", "ui/score", "ui/volume", "ui/loading", "u
         }
         this.updateFollowPoints = (f, time) => {
             for (let i = 0; i < f.children.length; ++i) {
-                let o = f.children[i], 
+                let o = f.children[i],
                     startx = f.x1 + (o.fraction - .1) * f.dx,
                     starty = f.y1 + (o.fraction - .1) * f.dy,
                     fadeOutTime = f.t1 + o.fraction * f.dt,

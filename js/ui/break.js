@@ -66,14 +66,11 @@ define([], () => {
             this.number.text = Math.ceil(t / 1000).toString();
             this.alpha = Math.max(0, Math.min(1, Math.min(t, time - this.starttime - 500) / this.fadetime));
         }
+        this.destroy = options => PIXI.Container.prototype.destroy.call(this, options);
     }
 
     if (PIXI.Container) BreakOverlay.__proto__ = PIXI.Container;
     BreakOverlay.prototype = Object.create(PIXI.Container && PIXI.Container.prototype);
     BreakOverlay.prototype.constructor = BreakOverlay;
-    BreakOverlay.prototype.destroy = function destroy(options) {
-        PIXI.Container.prototype.destroy.call(this, options);
-};
-
     return BreakOverlay;
 });

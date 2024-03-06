@@ -1,6 +1,6 @@
+const HIT_TYPE_CIRCLE = 1, HIT_TYPE_SLIDER = 2, HIT_TYPE_NEWCOMBO = 4, HIT_TYPE_SPINNER = 8;
 define(["underscore", "osu-audio", "curve/LinearBezier", "curve/ArcPath"], (_, OsuAudio, LinearBezier, ArcPath) => {
-    const HIT_TYPE_CIRCLE = 1, HIT_TYPE_SLIDER = 2, HIT_TYPE_NEWCOMBO = 4, HIT_TYPE_SPINNER = 8;
-    const stackHitObjects = track => {
+    function stackHitObjects(track) {
         let AR = track.difficulty.ApproachRate, approachTime = AR < 5 ? 1800 - 120 * AR : 1950 - 150 * AR,
             stackDistance = 3, stackThreshold = approachTime * track.general.StackLeniency;
 

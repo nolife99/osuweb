@@ -1,7 +1,7 @@
 define([], () => {
     function checkClickdown() {
         let click = {
-            x: playback.game.mouseX, y: playback.game.mouseY,
+            x: window.game.mouseX, y: window.game.mouseY,
             time: playback.osu.audio.getPosition() * 1000
         };
         let hit = playback.upcomingHits.find(inUpcoming(click));
@@ -36,27 +36,27 @@ define([], () => {
     }
     function playerActions(playback) {
         if (playback.autoplay) playback.auto = {
-            currentObject: null, curid: 0, lastx: playback.game.mouseX, lasty: playback.game.mouseY, lasttime: 0
+            currentObject: null, curid: 0, lastx: window.game.mouseX, lasty: window.game.mouseY, lasttime: 0
         }
-        playback.game.updatePlayerActions = function (time) {
+        window.game.updatePlayerActions = time => {
             const spinRadius = 60;
             let cur = playback.auto.currentObject;
-            if (playback.game.down && cur) {
+            if (window.game.down && cur) {
                 if (cur.type == "circle" || time > cur.endTime) {
-                    playback.game.down = false;
+                    window.game.down = false;
                     playback.auto.currentObject = null;
                     playback.auto.lasttime = time;
-                    playback.auto.lastx = playback.game.mouseX;
-                    playback.auto.lasty = playback.game.mouseY;
+                    playback.auto.lastx = window.game.mouseX;
+                    playback.auto.lasty = window.game.mouseY;
                 }
                 else if (cur.type == "slider") {
-                    playback.game.mouseX = cur.ball.x || cur.x;
-                    playback.game.mouseY = cur.ball.y || cur.y;
+                    window.game.mouseX = cur.ball.x || cur.x;
+                    window.game.mouseY = cur.ball.y || cur.y;
                 }
-                else if (!playback.game.paused) {
-                    let ang = Math.atan2(playback.game.mouseY - cur.y, playback.game.mouseX - cur.x) + .75;
-                    playback.game.mouseX = cur.x + spinRadius * Math.cos(ang);
-                    playback.game.mouseY = cur.y + spinRadius * Math.sin(ang);
+                else if (!window.game.paused) {
+                    let ang = Math.atan2(window.game.mouseY - cur.y, window.game.mouseX - cur.x) + .75;
+                    window.game.mouseX = cur.x + spinRadius * Math.cos(ang);
+                    window.game.mouseY = cur.y + spinRadius * Math.sin(ang);
                 }
             }
 
@@ -67,14 +67,14 @@ define([], () => {
                     let targX = hit.x;
                     let targY = hit.y;
                     if (hit.type === "spinner") {
-                        let ang = Math.atan2(playback.game.mouseY - targY, playback.game.mouseX - targX);
+                        let ang = Math.atan2(window.game.mouseY - targY, window.game.mouseX - targX);
                         targX += spinRadius * Math.cos(ang);
                         targY += spinRadius * Math.sin(ang);
                     }
-                    playback.game.mouseX = targX;
-                    playback.game.mouseY = targY;
+                    window.game.mouseX = targX;
+                    window.game.mouseY = targY;
 
-                    playback.game.down = true;
+                    window.game.down = true;
                     checkClickdown();
                 }
                 ++playback.auto.curid;
@@ -87,11 +87,11 @@ define([], () => {
                 playback.auto.lasttime = time;
                 return;
             }
-            if (!playback.game.down) {
+            if (!window.game.down) {
                 let targX = cur.x;
                 let targY = cur.y;
                 if (cur.type === "spinner") {
-                    let ang = Math.atan2(playback.game.mouseY - targY, playback.game.mouseX - targX);
+                    let ang = Math.atan2(window.game.mouseY - targY, window.game.mouseX - targX);
                     targX += spinRadius * Math.cos(ang);
                     targY += spinRadius * Math.sin(ang);
                 }
@@ -100,11 +100,11 @@ define([], () => {
                 t = Math.max(0, Math.min(1, t));
                 t = .5 - Math.sin((Math.pow(1 - t, 1.5) - .5) * Math.PI) / 2;
 
-                playback.game.mouseX = t * targX + (1 - t) * playback.auto.lastx;
-                playback.game.mouseY = t * targY + (1 - t) * playback.auto.lasty;
+                window.game.mouseX = t * targX + (1 - t) * playback.auto.lastx;
+                window.game.mouseY = t * targY + (1 - t) * playback.auto.lasty;
 
                 if (time + 13 >= cur.time) {
-                    playback.game.down = true;
+                    window.game.down = true;
                     checkClickdown();
                 }
             }
@@ -112,8 +112,8 @@ define([], () => {
         if (!playback.autoplay) {
             let movehistory = [{
                 x: 256, y: 192, t: new Date().getTime()
-            }];
-            playback.game.mouse = function (t) {
+            }], k1, k2, m1, m2;
+            window.game.mouse = t => {
                 let m = movehistory;
                 let i = 0;
                 while (i < m.length - 1 && m[0].t - m[i].t < 40 && t - m[i].t < 100) ++i;
@@ -130,75 +130,75 @@ define([], () => {
                 };
             }
             function mousemoveCallback(e) {
-                playback.game.mouseX = (e.clientX - gfx.xoffset) / gfx.width * 512;
-                playback.game.mouseY = (e.clientY - gfx.yoffset) / gfx.height * 384;
+                window.game.mouseX = (e.clientX - gfx.xoffset) / gfx.width * 512;
+                window.game.mouseY = (e.clientY - gfx.yoffset) / gfx.height * 384;
                 movehistory.unshift({
-                    x: playback.game.mouseX, y: playback.game.mouseY, t: new Date().getTime()
+                    x: window.game.mouseX, y: window.game.mouseY, t: new Date().getTime()
                 });
                 if (movehistory.length > 10) movehistory.pop();
             }
             function mousedownCallback(e) {
                 mousemoveCallback(e);
                 if (e.button == 0) {
-                    if (playback.game.M1down) return;
-                    playback.game.M1down = true;
+                    if (m1) return;
+                    m1 = true;
                 }
                 else if (e.button == 2) {
-                    if (playback.game.M2down) return;
-                    playback.game.M2down = true;
+                    if (m2) return;
+                    m2 = true;
                 }
                 else return;
 
                 e.preventDefault();
                 e.stopPropagation();
-                playback.game.down = playback.game.K1down || playback.game.K2down || playback.game.M1down || playback.game.M2down;
+                window.game.down = k1 || k2 || m1 || m2;
                 checkClickdown();
             }
             function mouseupCallback(e) {
                 mousemoveCallback(e);
-                if (e.button == 0) playback.game.M1down = false;
-                else if (e.button == 2) playback.game.M2down = false;
+                if (e.button == 0) m1 = false;
+                else if (e.button == 2) m2 = false;
                 else return;
 
                 e.preventDefault();
                 e.stopPropagation();
-                playback.game.down = playback.game.K1down || playback.game.K2down || playback.game.M1down || playback.game.M2down;
+                window.game.down = k1 || k2 || m1 || m2;
             }
             function keydownCallback(e) {
-                if (e.keyCode == playback.game.K1keycode) {
-                    if (playback.game.K1down) return;
-                    playback.game.K1down = true;
+                if (e.keyCode == window.game.K1keycode) {
+                    if (k1) return;
+                    k1 = true;
                 }
-                else if (e.keyCode == playback.game.K2keycode) {
-                    if (playback.game.K2down) return;
-                    playback.game.K2down = true;
+                else if (e.keyCode == window.game.K2keycode) {
+                    if (k2) return;
+                    k2 = true;
                 }
                 else return;
 
                 e.preventDefault();
                 e.stopPropagation();
-                playback.game.down = playback.game.K1down || playback.game.K2down || playback.game.M1down || playback.game.M2down;
+                window.game.down = k1 || k2 || m1 || m2;
                 checkClickdown();
             }
             function keyupCallback(e) {
-                if (e.keyCode == playback.game.K1keycode) playback.game.K1down = false;
-                else if (e.keyCode == playback.game.K2keycode) playback.game.K2down = false;
+                if (e.keyCode == window.game.K1keycode) k1 = false;
+                else if (e.keyCode == window.game.K2keycode) k2 = false;
                 else return;
 
                 e.preventDefault();
                 e.stopPropagation();
-                playback.game.down = playback.game.K1down || playback.game.K2down || playback.game.M1down || playback.game.M2down;
+                window.game.down = k1 || k2 || m1 || m2;
             }
 
             window.addEventListener("mousemove", mousemoveCallback);
-            if (playback.game.allowMouseButton) {
+            if (window.game.allowMouseButton) {
                 window.addEventListener("mousedown", mousedownCallback);
                 window.addEventListener("mouseup", mouseupCallback);
             }
             window.addEventListener("keydown", keydownCallback);
             window.addEventListener("keyup", keyupCallback);
 
-            playback.game.cleanupPlayerActions = () => {
+            window.game.cleanupPlayerActions = () => {
                 window.removeEventListener("mousemove", mousemoveCallback);
                 window.removeEventListener("mousedown", mousedownCallback);
                 window.removeEventListener("mouseup", mouseupCallback);

@@ -18,7 +18,6 @@ define([], () => {
             return this.value;
         }
     }
-
     function ScoreOverlay(windowfield, HPdrain, scoreMultiplier) {
         PIXI.Container.call(this);
 
@@ -72,13 +71,13 @@ define([], () => {
         this.HPbar[1].y = -7 * this.scaleMul;
         this.HPbar[2].y = -7 * this.scaleMul;
 
+        function f(a, mul) {
+            for (let i = 0; i < a.length; ++i) a[i].scale.x = a[i].scale.y = mul;
+        };
         this.resize = windowfield => {
             this.field = windowfield;
             this.scaleMul = windowfield.height / 800;
 
-            function f(a, mul) {
-                for (let i = 0; i < a.length; ++i) a[i].scale.x = a[i].scale.y = mul;
-            };
             f(this.scoreDigits, this.scaleMul * .4);
             f(this.comboDigits, this.scaleMul * .2);
             f(this.accuracyDigits, this.scaleMul * .2);
@@ -246,14 +245,11 @@ define([], () => {
             }
             window.setTimeout(() => grading.classList.remove("transparent"), 100);
         }
+        this.destroy = options => PIXI.Container.prototype.destroy.call(this, options);
     }
 
     if (PIXI.Container) ScoreOverlay.__proto__ = PIXI.Container;
     ScoreOverlay.prototype = Object.create(PIXI.Container && PIXI.Container.prototype);
     ScoreOverlay.prototype.constructor = ScoreOverlay;
-    ScoreOverlay.prototype.destroy = function(options) {
-        PIXI.Container.prototype.destroy.call(this, options);
-    };
-
     return ScoreOverlay;
 });
