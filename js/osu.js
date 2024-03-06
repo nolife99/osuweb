@@ -1,7 +1,7 @@
 define(["underscore", "osu-audio", "curve/LinearBezier", "curve/ArcPath"], (_, OsuAudio, LinearBezier, ArcPath) => {
     const HIT_TYPE_CIRCLE = 1, HIT_TYPE_SLIDER = 2, HIT_TYPE_NEWCOMBO = 4, HIT_TYPE_SPINNER = 8;
     const stackHitObjects = track => {
-        let AR = track.difficulty.ApproachRate, approachTime = AR < 5 ? 1800 - 120 * AR : 1950 - 150 * AR, 
+        let AR = track.difficulty.ApproachRate, approachTime = AR < 5 ? 1800 - 120 * AR : 1950 - 150 * AR,
             stackDistance = 3, stackThreshold = approachTime * track.general.StackLeniency;
 
         function getintv(A, B) {
@@ -9,7 +9,7 @@ define(["underscore", "osu-audio", "curve/LinearBezier", "curve/ArcPath"], (_, O
             if (A.type == "slider") endTime += A.repeat * A.timing.millisecondsPerBeat * (A.pixelLength / track.difficulty.SliderMultiplier) / 100;
             return B.time - endTime;
         }
-        function getdist (A, B) {
+        function getdist(A, B) {
             let x = A.x, y = A.y;
             if (A.type == "slider" && A.repeat % 2 == 1) {
                 x = A.curve.curve[A.curve.curve.length - 1].x;

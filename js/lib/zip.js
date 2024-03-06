@@ -17,18 +17,20 @@
     }
     catch (e) { }
 
-    function Crc32() {
-        this.crc = -1;
+    class Crc32 {
+        constructor() {
+            this.crc = -1;
+        }
+        append(data) {
+            var crc = this.crc | 0, table = this.table;
+            for (var i = 0, len = data.length | 0; i < len; ++i) crc = (crc >>> 8) ^ table[(crc ^ data[i]) & 0xFF];
+            this.crc = crc;
+        }
+        get() {
+            return ~this.crc;
+        }
     }
-    Crc32.prototype.append = function(data) {
-        var crc = this.crc | 0, table = this.table;
-        for (var i = 0, len = data.length | 0; i < len; ++i) crc = (crc >>> 8) ^ table[(crc ^ data[i]) & 0xFF];
-        this.crc = crc;
-    };
-    Crc32.prototype.get = function() {
-        return ~this.crc;
-    };
-    Crc32.prototype.table = (function() {
+    Crc32.prototype.table = (() => {
         var i, j, t, table = [];
         for (i = 0; i < 256; ++i) {
             t = i;
@@ -41,13 +43,13 @@
         return table;
     })();
 
-    const blobSlice = (blob, index, length) => {
+    function blobSlice(blob, index, length) {
         if (blob.slice) return blob.slice(index, index + length);
         else if (blob.webkitSlice) return blob.webkitSlice(index, index + length);
         else if (blob.mozSlice) return blob.mozSlice(index, index + length);
         else if (blob.msSlice) return blob.msSlice(index, index + length);
     }
-    const getDataHelper = (byteLength, bytes) => {
+    function getDataHelper(byteLength, bytes) {
         var dataBuffer, dataArray;
         dataBuffer = new ArrayBuffer(byteLength);
         dataArray = new Uint8Array(dataBuffer);
@@ -63,7 +65,7 @@
     function TextReader(text) {
         var blobReader;
         this.size = 0;
-        this.init = function(callback, onerror) {
+        this.init = function (callback, onerror) {
             var blob = new Blob([text], {
                 type: TEXT_PLAIN
             });
@@ -90,7 +92,7 @@
 
         that.size = 0;
         that.init = init;
-        that.readUint8Array = function(index, length, callback) {
+        that.readUint8Array = function (index, length, callback) {
             var i, data = getDataHelper(length);
             var start = Math.floor(index / 3) * 4;
             var end = Math.ceil((index + length) / 3) * 4;
@@ -105,7 +107,7 @@
 
     function BlobReader(blob) {
         this.size = 0;
-        this.init = function(callback) {
+        this.init = function (callback) {
             this.size = blob.size;
             callback();
         };
@@ -125,7 +127,7 @@
     BlobReader.prototype.constructor = BlobReader;
 
     function Writer() { }
-    Writer.prototype.getData = function(callback) {
+    Writer.prototype.getData = function (callback) {
         callback(this.data);
     };
 
@@ -194,16 +196,14 @@
 
     function launchWorkerProcess(worker, initialMessage, reader, writer, offset, size, onprogress, onend, onreaderror, onwriteerror) {
         var chunkIndex = 0, index, outputSize, sn = initialMessage.sn, crc;
-        const onflush = () => {
+        function onflush() {
             worker.removeEventListener('message', onmessage, false);
             onend(outputSize, crc);
         }
-        const onmessage = event => {
+        function onmessage(event) {
             var message = event.data, data = message.data, err = message.error;
             if (err) {
-                err.toString = function() { 
-                    return 'Error: ' + this.message; 
-                };
+                err.toString = () => 'Error: ' + this.message;
                 onreaderror(err);
                 return;
             }
@@ -237,12 +237,12 @@
                 default: console.warn('zip.js:launchWorkerProcess: unknown message: ', message);
             }
         }
-        const step = () => {
+        function step() {
             index = chunkIndex * CHUNK_SIZE;
             if (index < size) reader.readUint8Array(offset + index, Math.min(CHUNK_SIZE, size - index), array => {
                 if (onprogress) onprogress(index, size);
-                var msg = index === 0 ? initialMessage : { 
-                    sn: sn 
+                var msg = index === 0 ? initialMessage : {
+                    sn: sn
                 };
                 msg.type = 'append';
                 msg.data = array;
@@ -265,9 +265,9 @@
         worker.addEventListener('message', onmessage, false);
         step();
     }
-    const launchProcess = (process, reader, writer, offset, size, crcType, onprogress, onend, onreaderror, onwriteerror) => {
+    function launchProcess(process, reader, writer, offset, size, crcType, onprogress, onend, onreaderror, onwriteerror) {
         var chunkIndex = 0, index, outputSize = 0, crcInput = crcType === 'input', crcOutput = crcType === 'output', crc = new Crc32();
-        const step = () => {
+        function step() {
             var outputData;
             index = chunkIndex * CHUNK_SIZE;
             if (index < size) reader.readUint8Array(offset + index, Math.min(CHUNK_SIZE, size - index), inputData => {
@@ -314,7 +314,7 @@
         }
         step();
     }
-    const inflate = (worker, sn, reader, writer, offset, size, computeCrc32, onend, onprogress, onreaderror, onwriteerror) => {
+    function inflate(worker, sn, reader, writer, offset, size, computeCrc32, onend, onprogress, onreaderror, onwriteerror) {
         var crcType = computeCrc32 ? 'output' : 'none';
         if (obj.zip.useWebWorkers) launchWorkerProcess(worker, {
             sn: sn,
@@ -323,7 +323,7 @@
         }, reader, writer, offset, size, onprogress, onend, onreaderror, onwriteerror);
         else launchProcess(new obj.zip.Inflater(), reader, writer, offset, size, crcType, onprogress, onend, onreaderror, onwriteerror);
     }
-    const decodeASCII = str => {
+    function decodeASCII(str) {
         var i, out = "", charCode, extendedASCII = ['\u00C7', '\u00FC', '\u00E9', '\u00E2', '\u00E4', '\u00E0', '\u00E5', '\u00E7', '\u00EA', '\u00EB',
             '\u00E8', '\u00EF', '\u00EE', '\u00EC', '\u00C4', '\u00C5', '\u00C9', '\u00E6', '\u00C6', '\u00F4', '\u00F6', '\u00F2', '\u00FB', '\u00F9',
             '\u00FF', '\u00D6', '\u00DC', '\u00F8', '\u00A3', '\u00D8', '\u00D7', '\u0192', '\u00E1', '\u00ED', '\u00F3', '\u00FA', '\u00F1', '\u00D1',
@@ -342,19 +342,19 @@
     }
     const decodeUTF8 = string => decodeURIComponent(escape(string));
 
-    const getString = bytes => {
+    function getString(bytes) {
         var str = "";
         for (var i = 0; i < bytes.length; ++i) str += String.fromCharCode(bytes[i]);
         return str;
     }
-    const getDate = timeRaw => {
+    function getDate(timeRaw) {
         var date = (timeRaw & 0xffff0000) >> 16, time = timeRaw & 0x0000ffff;
         try {
             return new Date(1980 + ((date & 0xfe00) >> 9), ((date & 0x01e0) >> 5) - 1, date & 0x001f, (time & 0xf800) >> 11, (time & 0x07e0) >> 5, (time & 0x001f) * 2, 0);
         }
         catch (e) { }
     }
-    const readCommonHeader = (entry, data, index, centralDirectory, onerror) => {
+    function readCommonHeader(entry, data, index, centralDirectory, onerror) {
         entry.version = data.view.getUint16(index, true);
         entry.bitFlag = data.view.getUint16(index + 2, true);
         entry.compressionMethod = data.view.getUint16(index + 4, true);
@@ -376,54 +376,54 @@
         entry.filenameLength = data.view.getUint16(index + 22, true);
         entry.extraFieldLength = data.view.getUint16(index + 24, true);
     }
-    const createZipReader = (reader, callback, onerror) => {
+    function createZipReader(reader, callback, onerror) {
         var inflateSN = 0;
 
-        function Entry() { }
-        Entry.prototype.getData = function(writer, onend, onprogress, checkCrc32) {
-            const testCrc32 = crc32 => {
-                var dataCrc32 = getDataHelper(4);
-                dataCrc32.view.setUint32(0, crc32);
-                return this.crc32 == dataCrc32.view.getUint32(0);
-            }
-            const getWriterData = (uncompressedSize, crc32) => {
-                if (checkCrc32 && !testCrc32(crc32)) onerror(ERR_CRC);
-                else writer.getData(data => onend(data));
-            }
-            const onreaderror = err => onerror(err || ERR_READ_DATA);
-            const onwriteerror = err => onerror(err || ERR_WRITE_DATA);
+        class Entry {
+            constructor() { }
+            getData(writer, onend, onprogress, checkCrc32) {
+                function testCrc32(crc32) {
+                    var dataCrc32 = getDataHelper(4);
+                    dataCrc32.view.setUint32(0, crc32);
+                    return this.crc32 == dataCrc32.view.getUint32(0);
+                };
+                function getWriterData(_e, crc32) {
+                    if (checkCrc32 && !testCrc32(crc32)) onerror(ERR_CRC);
+                    else writer.getData(data => onend(data));
+                };
+                const onreaderror = err => onerror(err || ERR_READ_DATA);
+                const onwriteerror = err => onerror(err || ERR_WRITE_DATA);
 
-            reader.readUint8Array(this.offset, 30, bytes => {
-                var data = getDataHelper(bytes.length, bytes), dataOffset;
-                if (data.view.getUint32(0) != 0x504b0304) {
-                    onerror(ERR_BAD_FORMAT);
-                    return;
-                }
-                readCommonHeader(this, data, 4, false, onerror);
-                dataOffset = this.offset + 30 + this.filenameLength + this.extraFieldLength;
-                writer.init(() => inflate(this._worker, inflateSN++, reader, writer, dataOffset, this.compressedSize, checkCrc32, getWriterData, onprogress, onreaderror, onwriteerror), onwriteerror);
-            }, onreaderror);
-        };
-        const seekEOCDR = eocdrCallback => {
+                reader.readUint8Array(this.offset, 30, bytes => {
+                    var data = getDataHelper(bytes.length, bytes), dataOffset;
+                    if (data.view.getUint32(0) != 0x504b0304) {
+                        onerror(ERR_BAD_FORMAT);
+                        return;
+                    }
+                    readCommonHeader(this, data, 4, false, onerror);
+                    dataOffset = this.offset + 30 + this.filenameLength + this.extraFieldLength;
+                    writer.init(() => inflate(this._worker, inflateSN++, reader, writer, dataOffset, this.compressedSize, checkCrc32, getWriterData, onprogress, onreaderror, onwriteerror), onwriteerror);
+                }, onreaderror);
+            }
+        }
+        function seekEOCDR(eocdrCallback) {
             var EOCDR_MIN = 22;
             if (reader.size < EOCDR_MIN) {
                 onerror(ERR_BAD_FORMAT);
                 return;
             }
             var ZIP_COMMENT_MAX = 256 * 256, EOCDR_MAX = EOCDR_MIN + ZIP_COMMENT_MAX;
-            const doSeek = (length, eocdrNotFoundCallback) => {
-                reader.readUint8Array(reader.size - length, length, bytes => {
-                    for (var i = bytes.length - EOCDR_MIN; i >= 0; --i) if (bytes[i] === 0x50 && bytes[i + 1] === 0x4b && bytes[i + 2] === 0x05 && bytes[i + 3] === 0x06) {
-                        eocdrCallback(new DataView(bytes.buffer, i, EOCDR_MIN));
-                        return;
-                    }
-                    eocdrNotFoundCallback();
-                }, () => onerror(ERR_READ));
-            }
+            const doSeek = (length, eocdrNotFoundCallback) => reader.readUint8Array(reader.size - length, length, bytes => {
+                for (var i = bytes.length - EOCDR_MIN; i >= 0; --i) if (bytes[i] === 0x50 && bytes[i + 1] === 0x4b && bytes[i + 2] === 0x05 && bytes[i + 3] === 0x06) {
+                    eocdrCallback(new DataView(bytes.buffer, i, EOCDR_MIN));
+                    return;
+                }
+                eocdrNotFoundCallback();
+            }, () => onerror(ERR_READ));
             doSeek(EOCDR_MIN, () => doSeek(Math.min(EOCDR_MAX, reader.size), () => onerror(ERR_BAD_FORMAT)));
         }
         var zipReader = {
-            getEntries: function(callback) {
+            getEntries: function (callback) {
                 var worker = this._worker;
                 seekEOCDR(dataView => {
                     var datalength, fileslength;
@@ -458,7 +458,7 @@
                     }, () => onerror(ERR_READ));
                 });
             },
-            close: function(callback) {
+            close: function (callback) {
                 if (this._worker) {
                     this._worker.terminate();
                     this._worker = null;
@@ -474,7 +474,7 @@
             callback(zipReader);
         }, err => onerror(err));
     }
-    const resolveURLs = urls => {
+    function resolveURLs(urls) {
         var a = document.createElement('a');
         return urls.map(url => {
             a.href = url;
@@ -485,12 +485,12 @@
     var DEFAULT_WORKER_SCRIPTS = {
         inflater: ['z-worker.js', 'inflate.js']
     };
-    const createWorker = (type, callback, onerror) => {
-        const errorHandler = err => {
+    function createWorker(type, callback, onerror) {
+        function errorHandler(err) {
             worker.terminate();
             onerror(err);
         }
-        const onmessage = ev => {
+        function onmessage(ev) {
             var msg = ev.data;
             if (msg.error) {
                 worker.terminate();
@@ -546,7 +546,7 @@
         workerScripts: null
     };
 })(this);
-(function() {
+(() => {
     "use strict";
 
     var CHUNK_SIZE = 524288;
@@ -563,7 +563,7 @@
         var that = this, blobReader;
         function getData(callback) {
             if (that.data) callback();
-            else entry.getData(new BlobWriter(), function(data) {
+            else entry.getData(new BlobWriter(), function (data) {
                 that.data = data;
                 blobReader = new BlobReader(data);
                 callback();
@@ -571,7 +571,7 @@
         }
 
         that.size = 0;
-        that.init = function(callback) {
+        that.init = callback => {
             that.size = entry.uncompressedSize;
             callback();
         };
@@ -581,22 +581,22 @@
     ZipBlobReader.prototype.constructor = ZipBlobReader;
     ZipBlobReader.prototype.checkCrc32 = false;
 
-    const getTotalSize = entry => {
+    function getTotalSize(entry) {
         var size = 0;
-        const process = entry => {
+        function process(entry) {
             size += entry.uncompressedSize || 0;
             entry.children.forEach(process);
         }
         process(entry);
         return size;
     }
-    const initReaders = (entry, onend, onerror) => {
+    function initReaders(entry, onend, onerror) {
         var index = 0;
-        const next = () => {
+        function next() {
             if (index++ < entry.children.length) process(entry.children[index]);
             else onend();
         }
-        const process = child => {
+        function process(child) {
             if (child.directory) initReaders(child, next, onerror);
             else {
                 child.reader = new child.Reader(child.data, onerror);
@@ -609,12 +609,12 @@
         if (entry.children.length) process(entry.children[index]);
         else onend();
     }
-    const getFileEntry = (fileEntry, entry, onend, onprogress, onerror, totalSize, checkCrc32) => {
+    function getFileEntry(fileEntry, entry, onend, onprogress, onerror, totalSize, checkCrc32) {
         var currentIndex = 0;
-        const process = (fileEntry, entry, onend, onprogress, onerror, totalSize) => {
+        function process(fileEntry, entry, onend, onprogress, onerror, totalSize) {
             var childIndex = 0;
-            const addChild = child => {
-                const nextChild = childFileEntry => {
+            function addChild(child) {
+                function nextChild(childFileEntry) {
                     currentIndex += child.uncompressedSize || 0;
                     process(childFileEntry, child, () => {
                         ++childIndex;
@@ -630,7 +630,7 @@
                     if (onprogress) onprogress(currentIndex + index, totalSize);
                 }, checkCrc32), onerror);
             }
-            const processChild = () => {
+            function processChild() {
                 var child = entry.children[childIndex];
                 if (child) addChild(child);
                 else onend();
@@ -640,13 +640,13 @@
         if (entry.directory) process(fileEntry, entry, onend, onprogress, onerror, totalSize);
         else entry.getData(new zip.FileWriter(fileEntry, zip.getMimeType(entry.name)), onend, onprogress, checkCrc32);
     }
-    const resetFS = fs => {
+    function resetFS(fs) {
         fs.entries = [];
         fs.root = new ZipDirectoryEntry(fs);
     }
-    const bufferedCopy = (reader, writer, onend, onprogress, onerror) => {
+    function bufferedCopy(reader, writer, onend, onprogress, onerror) {
         var chunkIndex = 0;
-        const stepCopy = () => {
+        function stepCopy() {
             var index = chunkIndex * CHUNK_SIZE;
             if (onprogress) onprogress(index, reader.size);
             if (index < reader.size) reader.readUint8Array(index, Math.min(CHUNK_SIZE, reader.size - index), array => writer.writeUint8Array(new Uint8Array(array), () => {
@@ -659,9 +659,9 @@
     }
     const addChild = (parent, name, params, directory) => directory ? new ZipDirectoryEntry(parent.fs, name, params, parent) : new ZipFileEntry(parent.fs, name, params, parent);
 
-    function ZipEntry() { }
-    ZipEntry.prototype = {
-        init: function(fs, name, params, parent) {
+    class ZipEntry {
+        constructor() { }
+        init(fs, name, params, parent) {
             if (!params) params = {};
             this.fs = fs;
             this.name = name;
@@ -672,25 +672,24 @@
             this.uncompressedSize = 0;
             fs.entries.push(this);
             if (parent) this.parent.children.push(this);
-        },
-        getFileEntry: function(fileEntry, onend, onprogress, onerror, checkCrc32) {
+        }
+        getFileEntry(fileEntry, onend, onprogress, onerror, checkCrc32) {
             initReaders(this, () => getFileEntry(fileEntry, this, onend, onprogress, onerror, getTotalSize(that), checkCrc32), onerror);
-        },
-        getFullname: function() {
+        }
+        getFullname() {
             var fullname = this.name, entry = this.parent;
             while (entry) {
                 fullname = (entry.name ? entry.name + "/" : "") + fullname;
                 entry = entry.parent;
             }
             return fullname;
-        },
-        isDescendantOf: function(ancestor) {
+        }
+        isDescendantOf(ancestor) {
             var entry = this.parent;
             while (entry && entry.id != ancestor.id) entry = entry.parent;
             return !!entry;
         }
-    };
-    ZipEntry.prototype.constructor = ZipEntry;
+    }
 
     var ZipFileEntryProto;
     function ZipFileEntry(fs, name, params, parent) {
@@ -703,7 +702,7 @@
     }
     ZipFileEntry.prototype = ZipFileEntryProto = new ZipEntry();
     ZipFileEntryProto.constructor = ZipFileEntry;
-    ZipFileEntryProto.getData = function(writer, onend, onprogress, onerror) {
+    ZipFileEntryProto.getData = function (writer, onend, onprogress, onerror) {
         var that = this;
         if (!writer || (writer.constructor == that.Writer && that.data)) onend(that.data);
         else {
@@ -711,13 +710,13 @@
             that.reader.init(() => writer.init(() => bufferedCopy(that.reader, writer, onend, onprogress, onerror), onerror));
         }
     };
-    ZipFileEntryProto.getText = function(onend, onprogress, checkCrc32, encoding) {
+    ZipFileEntryProto.getText = function (onend, onprogress, checkCrc32, encoding) {
         this.getData(new TextWriter(encoding), onend, onprogress, checkCrc32);
     };
-    ZipFileEntryProto.getBlob = function(mimeType, onend, onprogress, checkCrc32) {
+    ZipFileEntryProto.getBlob = function (mimeType, onend, onprogress, checkCrc32) {
         this.getData(new BlobWriter(mimeType), onend, onprogress, checkCrc32);
     };
-    ZipFileEntryProto.getData64URI = function(mimeType, onend, onprogress, checkCrc32) {
+    ZipFileEntryProto.getData64URI = function (mimeType, onend, onprogress, checkCrc32) {
         this.getData(new Data64URIWriter(mimeType), onend, onprogress, checkCrc32);
     };
 
@@ -729,16 +728,16 @@
     }
     ZipDirectoryEntry.prototype = ZipDirectoryEntryProto = new ZipEntry();
     ZipDirectoryEntryProto.constructor = ZipDirectoryEntry;
-    ZipDirectoryEntryProto.importBlob = function(blob, onend, onerror) {
+    ZipDirectoryEntryProto.importBlob = function (blob, onend, onerror) {
         this.importZip(new BlobReader(blob), onend, onerror);
     };
-    ZipDirectoryEntryProto.importText = function(text, onend, onerror) {
+    ZipDirectoryEntryProto.importText = function (text, onend, onerror) {
         this.importZip(new TextReader(text), onend, onerror);
     };
-    ZipDirectoryEntryProto.importData64URI = function(dataURI, onend, onerror) {
+    ZipDirectoryEntryProto.importData64URI = function (dataURI, onend, onerror) {
         this.importZip(new Data64URIReader(dataURI), onend, onerror);
     };
-    ZipDirectoryEntryProto.importZip = function(reader, onend, onerror) {
+    ZipDirectoryEntryProto.importZip = function (reader, onend, onerror) {
         createReader(reader, zipReader => zipReader.getEntries(entries => {
             entries.forEach(entry => {
                 var parent = this, path = entry.filename.split("/"), name = path.pop();
@@ -751,7 +750,7 @@
             onend();
         }), onerror);
     };
-    ZipDirectoryEntryProto.getChildByName = function(name) {
+    ZipDirectoryEntryProto.getChildByName = function (name) {
         var i, child;
         for (i = 0; i < this.children.length; ++i) {
             child = this.children[i];
@@ -763,23 +762,23 @@
         resetFS(this);
     }
     FS.prototype = {
-        find: function(fullname) {
+        find: function (fullname) {
             var i, path = fullname.split("/"), node = this.root;
             for (i = 0; node && i < path.length; ++i) node = node.getChildByName(path[i]);
             return node;
         },
-        getById: function(id) {
+        getById: function (id) {
             return this.entries[id];
         },
-        importBlob: function(blob, onend, onerror) {
+        importBlob: function (blob, onend, onerror) {
             resetFS(this);
             this.root.importBlob(blob, onend, onerror);
         },
-        importText: function(text, onend, onerror) {
+        importText: function (text, onend, onerror) {
             resetFS(this);
             this.root.importText(text, onend, onerror);
         },
-        importData64URI: function(dataURI, onend, onerror) {
+        importData64URI: function (dataURI, onend, onerror) {
             resetFS(this);
             this.root.importData64URI(dataURI, onend, onerror);
         }
@@ -789,7 +788,5 @@
         ZipDirectoryEntry: ZipDirectoryEntry,
         ZipFileEntry: ZipFileEntry
     };
-    zip.getMimeType = function() {
-        return "application/octet-stream";
-    };
+    zip.getMimeType = () => "application/octet-stream"
 })();

@@ -1,5 +1,5 @@
 define([], () => {
-    const syncStream = node => {
+    function syncStream(node) {
         let buf8 = new Uint8Array(node.buf);
         buf8.indexOf = Array.prototype.indexOf;
 
@@ -12,7 +12,7 @@ define([], () => {
         }
         if (i != -1) {
             let tmp = node.buf.slice(i);
-            delete (node.buf);
+            delete node.buf;
             node.buf = null;
             node.buf = tmp;
             node.sync = i;
@@ -71,11 +71,10 @@ define([], () => {
                 return true;
             };
             this.seekforward = time => {
-                let ofs = time;
-                if (ofs > self.audio.currentTime - self.started) {
-                    self.position = ofs;
+                if (self.playing && self.getPosition() > 0 && time > self.audio.currentTime - self.started) {
+                    self.position = time;
                     self.source.stop();
-                    self.source = self.audio.createBufferSource();
+                    self.source = new AudioBufferSourceNode(self.audio);
                     self.source.playbackRate.value = self.playbackRate;
                     self.source.buffer = self.decoded;
                     self.source.connect(self.gain);

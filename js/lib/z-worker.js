@@ -17,7 +17,7 @@
         importScripts: doImportScripts,
         newTask: newTask,
         append: processData,
-        flush: processData,
+        flush: processData
     }, tasks = {};
 
     function doImportScripts(msg) {

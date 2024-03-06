@@ -47,9 +47,7 @@
             };
             else {
                 node.internal_stop = node.stop;
-                node.stop = function(when) {
-                    node.internal_stop(when || 0);
-                };
+                node.stop = when => node.internal_stop(when || 0);
             }
             fixSetTarget(node.playbackRate);
             return node;
@@ -86,18 +84,14 @@
                 };
                 else {
                     node.internal_start = node.start;
-                    node.start = function(when) {
-                        node.internal_start(when || 0);
-                    };
+                    node.start = when => node.internal_start(when || 0);
                 }
                 if (!node.stop) node.stop = function(when) {
                     this.noteOff(when || 0);
                 };
                 else {
                     node.internal_stop = node.stop;
-                    node.stop = function(when) {
-                        node.internal_stop(when || 0);
-                    };
+                    node.stop = when => node.internal_stop(when || 0);
                 }
 
                 if (!node.setPeriodicWave) node.setPeriodicWave = node.setWaveTable;
@@ -117,14 +111,14 @@ var sounds = {
     audioExtensions: ["mp3", "ogg", "wav", "webm"],
     whenLoaded: undefined,
     onProgress: undefined,
-    onFailed: function(source, error) {
+    onFailed: (source, error) => {
         throw new Error("Audio could not be loaded: " + source);
     },
     load: function(sources) {
         console.log("Loading sounds..");
         var self = this;
         self.toLoad = sources.length;
-        sources.forEach(function(source) {
+        sources.forEach(source => {
             var extension = source.split('.').pop();
             if (self.audioExtensions.indexOf(extension) !== -1) {
                 var soundSprite = makeSound(source, self.loadHandler.bind(self), true, self.onFailed);
@@ -206,27 +200,25 @@ function makeSound(source, loadHandler, shouldLoadSound, failHandler) {
         o.soundNode.start(0, o.startOffset % o.buffer.duration);
         o.playing = true;
     };
-    o.pause = function() {
+    o.pause = () => {
         if (o.playing) {
             o.soundNode.stop(0);
             o.startOffset += actx.currentTime - o.startTime;
             o.playing = false;
         }
     };
-    o.getPosition = function() {
-        return actx.currentTime - o.startTime + o.startOffset;
-    };
-    o.restart = function() {
+    o.getPosition = () => actx.currentTime - o.startTime + o.startOffset;
+    o.restart = () => {
         if (o.playing) o.soundNode.stop(0);
         o.startOffset = 0;
         o.play();
     };
-    o.playFrom = function(value) {
+    o.playFrom = value => {
         if (o.playing) o.soundNode.stop(0);
         o.startOffset = value;
         o.play();
     };
-    o.setEcho = function(delayValue, feedbackValue, filterValue) {
+    o.setEcho = (delayValue, feedbackValue, filterValue) => {
         if (delayValue === undefined) delayValue = .3;
         if (feedbackValue === undefined) feedbackValue = .3;
         if (filterValue === undefined) filterValue = 0;
@@ -235,14 +227,14 @@ function makeSound(source, loadHandler, shouldLoadSound, failHandler) {
         o.filterValue = filterValue;
         o.echo = true;
     };
-    o.setReverb = function(duration, decay, reverse) {
+    o.setReverb = (duration, decay, reverse) => {
         if (duration === undefined) duration = 2;
         if (decay === undefined) decay = 2;
         if (reverse === undefined) reverse = false;
         o.reverbImpulse = impulseResponse(duration, decay, reverse, actx);
         o.reverb = true;
     };
-    o.fade = function(endValue, durationInSeconds) {
+    o.fade = (endValue, durationInSeconds) => {
         if (o.playing) {
             o.volumeNode.gain.linearRampToValueAtTime(
                 o.volumeNode.gain.value, actx.currentTime
@@ -252,30 +244,27 @@ function makeSound(source, loadHandler, shouldLoadSound, failHandler) {
             );
         }
     };
-    o.fadeIn = function(durationInSeconds) {
+    o.fadeIn = (durationInSeconds) => {
         o.volumeNode.gain.value = 0;
         o.fade(1, durationInSeconds);
     };
-    o.fadeOut = function(durationInSeconds) {
-        o.fade(0, durationInSeconds);
-    };
+    o.fadeOut = durationInSeconds => o.fade(0, durationInSeconds);
+
     Object.defineProperties(o, {
         volume: {
-            get: function() {
-                return o.volumeValue;
-            },
-            set: function(value) {
+            get: () => o.volumeValue,
+            set: value => {
                 o.volumeNode.gain.value = value;
                 o.volumeValue = value;
             },
             enumerable: true, configurable: true
         },
         pan: {
-            get: function() {
+            get: () => {
                 if (!actx.createStereoPanner) return o.panValue;
                 else return o.panNode.pan.value;
             },
-            set: function(value) {
+            set: value => {
                 if (!actx.createStereoPanner) {
                     var x = value, y = 0, z = 1 - Math.abs(x);
                     o.panNode.setPosition(x, y, z);
@@ -286,7 +275,6 @@ function makeSound(source, loadHandler, shouldLoadSound, failHandler) {
             enumerable: true, configurable: true
         }
     });
-
     if (shouldLoadSound) fetch(source).then(response => response.arrayBuffer())
         .then(buf => actx.decodeAudioData(buf, buffer => {
             o.buffer = buffer;

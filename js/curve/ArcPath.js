@@ -35,12 +35,12 @@ define([], () => {
         let expectAng = hit.pixelLength / radius;
         if (arcRange > expectAng * .97) arcRange = expectAng;
 
-        const pointAt = t => {
+        function pointAt(t) {
             let ang = thetaStart + direct * t * arcRange;
             return {
                 x: Math.cos(ang) * radius + center.x, y: Math.sin(ang) * radius + center.y, t: t
             };
-        };
+        }
 
         let verts = 2 * radius <= circTolerance ? 2 : Math.max(2, Math.floor(arcRange / (2 * Math.acos(1 - circTolerance / radius))));
         if (!verts) return [];
