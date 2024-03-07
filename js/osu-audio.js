@@ -34,15 +34,13 @@ define([], () => {
             self.gain.connect(self.audio.destination);
             self.playbackRate = 1;
 
-            const decode = node => {
-                self.audio.decodeAudioData(node.buf, decoded => {
-                    self.decoded = decoded;
-                    if (typeof callback !== "undefined") callback(self);
-                }, _e => {
-                    console.log("Error decode audio");
-                    if (syncStream(node)) decode(node);
-                });
-            };
+            const decode = node => self.audio.decodeAudioData(node.buf, decoded => {
+                self.decoded = decoded;
+                if (typeof callback !== "undefined") callback(self);
+            }, _e => {
+                console.log("Error decode audio");
+                if (syncStream(node)) decode(node);
+            });
             decode({
                 buf: buffer, sync: 0, retry: 0
             });

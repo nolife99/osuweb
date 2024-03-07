@@ -1,13 +1,13 @@
-const bernstein = (i, n, t) => binomialCoefficient(n, i) * Math.pow(t, i) * Math.pow(1 - t, n - i), binomialCoefficient = (n, k) => {
-    if (k < 0 || k > n) return 0;
-    if (k == 0 || k == n) return 1;
-    k = Math.min(k, n - k);
-
-    let c = 1;
-    for (let i = 0; i < k; ++i) c *= (n - i) / (i + 1);
-    return c;
-};
 define(["underscore"], _ => {
+    const bernstein = (i, n, t) => binomialCoefficient(n, i) * Math.pow(t, i) * Math.pow(1 - t, n - i), binomialCoefficient = (n, k) => {
+        if (k < 0 || k > n) return 0;
+        if (k == 0 || k == n) return 1;
+        k = Math.min(k, n - k);
+
+        let c = 1;
+        for (let i = 0; i < k; ++i) c *= (n - i) / (i + 1);
+        return c;
+    };
     class BSpline {
         constructor(points) {
             this.curve = [];

@@ -1,5 +1,5 @@
-const lerp = (a, b, t) => a * (1 - t) + b * t;
 define(["underscore", "curve/BSpline"], (_, BSpline) => {
+    const lerp = (a, b, t) => a * (1 - t) + b * t;
     class LinearBeizer {
         constructor(hit, line) {
             this.hitObject = hit;

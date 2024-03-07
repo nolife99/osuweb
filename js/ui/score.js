@@ -1,4 +1,5 @@
 define([], () => {
+    const charSpacing = 10;
     class LazyNumber {
         constructor(value) {
             this.value = value;
@@ -18,31 +19,112 @@ define([], () => {
             return this.value;
         }
     }
-    function ScoreOverlay(windowfield, HPdrain, scoreMultiplier) {
-        PIXI.Container.call(this);
-
-        this.field = windowfield;
-        this.HPdrain = HPdrain;
-        this.scaleMul = windowfield.height / 800;
-        this.scoreMultiplier = scoreMultiplier;
-
-        this.score = 0;
-        this.combo = 0;
-        this.maxcombo = 0;
-        this.fullcombo = 0;
-        this.judgeTotal = 0;
-        this.maxJudgeTotal = 0;
-        this.HP = 1;
-        this.judgecnt = {
-            great: 0, good: 0, meh: 0, miss: 0
+    function grade(acc) {
+        if (acc >= 1) return 'SS';
+        if (acc >= .95) return 'S';
+        if (acc >= .9) return 'A';
+        if (acc >= .8) return 'B';
+        if (acc >= .7) return 'C';
+        return 'D';
+    }
+    function errortext(a) {
+        let sum = 0;
+        for (let i = 0; i < a.length; ++i) sum += a[i];
+        let avg = sum / a.length, sumsqerr = 0;
+        for (let i = 0; i < a.length; ++i) {
+            let base = a[i] - avg;
+            sumsqerr += base * base;
+        }
+        let letiance = sumsqerr / a.length, stdev = Math.sqrt(letiance), sgnavg = avg.toFixed(0);
+        if (sgnavg[0] != '-') sgnavg = '+' + sgnavg;
+        return sgnavg + "±" + stdev.toFixed(0) + "ms";
+    }
+    function modstext() {
+        let l = [], game = window.game;
+        if (game.easy) l.push("EZ");
+        if (game.daycore) l.push("DC");
+        if (game.hidden) l.push("HD");
+        if (game.hardrock) l.push("HR");
+        if (game.nightcore) l.push("NC");
+        if (game.autoplay) l.push("AT");
+        if (l.length == 0) return "";
+        let s = l[0];
+        for (let i = 1; i < l.length; ++i) s = s + '+' + l[i];
+        return s;
+    }
+    function newdiv(parent, classname, text) {
+        let div = document.createElement("div");
+        if (parent) parent.appendChild(div);
+        if (classname) div.className = classname;
+        if (text) div.innerText = text;
+        return div;
+    }
+    function f(a, mul) {
+        for (let i = 0; i < a.length; ++i) a[i].scale.x = a[i].scale.y = mul;
+    }
+    function setSpriteArrayText(arr, str) {
+        arr.width = 0;
+        for (let i = 0; i < str.length; ++i) {
+            let digit = arr[i], ch = str[i];
+            digit.texture = Skin["score-" + (ch === '%' ? "percent" : ch) + ".png"];
+            digit.knownwidth = digit.scale.x * (digit.texture.width + charSpacing);
+            digit.visible = true;
+            arr.width += digit.knownwidth;
         }
 
-        this.score4display = new LazyNumber(0);
-        this.combo4display = new LazyNumber(0);
-        this.accuracy4display = new LazyNumber(100);
-        this.HP4display = new LazyNumber(1);
+        for (let i = str.length; i < arr.length; ++i) arr[i].visible = false;
+        arr.useLength = str.length;
+    }
+    function setSpriteArrayPos(arr, x, y) {
+        let curx = x;
+        for (let i = 0; i < arr.useLength; ++i) {
+            arr[i].x = curx + arr[i].scale.x * charSpacing / 2;
+            arr[i].y = y;
+            curx += arr[i].knownwidth;
+        }
+    }
+    class ScoreOverlay extends PIXI.Container {
+        constructor(windowfield, HPdrain, scoreMultiplier) {
+            super();
+            PIXI.Container.call(this);
 
-        this.newSpriteArray = (len, scaleMul, tint = 0xffffff) => {
+            this.field = windowfield;
+            this.HPdrain = HPdrain;
+            this.scaleMul = windowfield.height / 800;
+            this.scoreMultiplier = scoreMultiplier;
+
+            this.score = 0;
+            this.combo = 0;
+            this.maxcombo = 0;
+            this.fullcombo = 0;
+            this.judgeTotal = 0;
+            this.maxJudgeTotal = 0;
+            this.HP = 1;
+            this.judgecnt = {
+                great: 0, good: 0, meh: 0, miss: 0
+            };
+
+            this.score4display = new LazyNumber(0);
+            this.combo4display = new LazyNumber(0);
+            this.accuracy4display = new LazyNumber(100);
+            this.HP4display = new LazyNumber(1);
+
+            this.scoreDigits = this.newSpriteArray(10, .4, 0xddffff);
+            this.comboDigits = this.newSpriteArray(6, .2, 0xddffff);
+            this.accuracyDigits = this.newSpriteArray(7, .2, 0xddffff);
+
+            this.HPbar = this.newSpriteArray(3, .5);
+            this.HPbar[0].texture = Skin["hpbarleft.png"];
+            this.HPbar[1].texture = Skin["hpbarright.png"];
+            this.HPbar[2].texture = Skin["hpbarmid.png"];
+            this.HPbar[0].anchor.x = 1;
+            this.HPbar[0].scale.x = this.field.width / 500;
+            this.HPbar[1].scale.x = this.field.width / 500;
+            this.HPbar[0].y = -7 * this.scaleMul;
+            this.HPbar[1].y = -7 * this.scaleMul;
+            this.HPbar[2].y = -7 * this.scaleMul;
+        }
+        newSpriteArray(len, scaleMul, tint = 0xffffff) {
             let a = new Array(len);
             for (let i = 0; i < len; ++i) {
                 a[i] = new PIXI.Sprite();
@@ -55,26 +137,7 @@ define([], () => {
             }
             return a;
         }
-
-        this.scoreDigits = this.newSpriteArray(10, .4, 0xddffff);
-        this.comboDigits = this.newSpriteArray(6, .2, 0xddffff);
-        this.accuracyDigits = this.newSpriteArray(7, .2, 0xddffff);
-
-        this.HPbar = this.newSpriteArray(3, .5);
-        this.HPbar[0].texture = Skin["hpbarleft.png"];
-        this.HPbar[1].texture = Skin["hpbarright.png"];
-        this.HPbar[2].texture = Skin["hpbarmid.png"];
-        this.HPbar[0].anchor.x = 1;
-        this.HPbar[0].scale.x = this.field.width / 500;
-        this.HPbar[1].scale.x = this.field.width / 500;
-        this.HPbar[0].y = -7 * this.scaleMul;
-        this.HPbar[1].y = -7 * this.scaleMul;
-        this.HPbar[2].y = -7 * this.scaleMul;
-
-        function f(a, mul) {
-            for (let i = 0; i < a.length; ++i) a[i].scale.x = a[i].scale.y = mul;
-        };
-        this.resize = windowfield => {
+        resize(windowfield) {
             this.field = windowfield;
             this.scaleMul = windowfield.height / 800;
 
@@ -89,7 +152,7 @@ define([], () => {
             this.HPbar[1].y = -7 * this.scaleMul;
             this.HPbar[2].y = -7 * this.scaleMul;
         }
-        this.HPincreasefor = result => {
+        HPincreasefor(result) {
             switch (result) {
                 case 0: return -.02 * this.HPdrain;
                 case 50: return .01 * (4 - this.HPdrain);
@@ -98,7 +161,7 @@ define([], () => {
                 default: return 0;
             }
         }
-        this.hit = (result, maxresult, time) => {
+        hit(result, maxresult, time) {
             if (maxresult == 300) {
                 if (result == 300) ++this.judgecnt.great;
                 else if (result == 100) ++this.judgecnt.good;
@@ -126,87 +189,23 @@ define([], () => {
             this.accuracy4display.set(time, this.judgeTotal / this.maxJudgeTotal * 100);
             this.HP4display.set(time, this.HP);
         }
-
-        this.charspacing = 10;
-        this.setSpriteArrayText = (arr, str) => {
-            arr.width = 0;
-            for (let i = 0; i < str.length; ++i) {
-                let digit = arr[i], ch = str[i];
-                digit.texture = Skin["score-" + (ch === '%' ? "percent" : ch) + ".png"];
-                digit.knownwidth = digit.scale.x * (digit.texture.width + this.charspacing);
-                digit.visible = true;
-                arr.width += digit.knownwidth;
-            }
-
-            for (let i = str.length; i < arr.length; ++i) arr[i].visible = false;
-            arr.useLength = str.length;
-        }
-        this.setSpriteArrayPos = (arr, x, y) => {
-            let curx = x;
-            for (let i = 0; i < arr.useLength; ++i) {
-                arr[i].x = curx + arr[i].scale.x * this.charspacing / 2;
-                arr[i].y = y;
-                curx += arr[i].knownwidth;
-            }
-        }
-        this.update = time => {
+        update(time) {
             let HPpos = this.HP4display.valueAt(time) * this.field.width;
             this.HPbar[0].x = HPpos;
             this.HPbar[1].x = HPpos;
             this.HPbar[2].x = HPpos;
 
-            this.setSpriteArrayText(this.scoreDigits, this.score4display.valueAt(time).toFixed(0).padStart(6, '0'));
-            this.setSpriteArrayText(this.comboDigits, this.combo4display.valueAt(time).toFixed(0) + "x");
-            this.setSpriteArrayText(this.accuracyDigits, this.accuracy4display.valueAt(time).toFixed(2) + "%");
+            setSpriteArrayText(this.scoreDigits, this.score4display.valueAt(time).toFixed(0).padStart(6, '0'));
+            setSpriteArrayText(this.comboDigits, this.combo4display.valueAt(time).toFixed(0) + "x");
+            setSpriteArrayText(this.accuracyDigits, this.accuracy4display.valueAt(time).toFixed(2) + "%");
 
             let basex = this.field.width * .5, basey = this.field.height * .017;
             let unit = Math.min(this.field.width / 640, this.field.height / 480);
-            this.setSpriteArrayPos(this.scoreDigits, basex - this.scoreDigits.width / 2, basey);
-            this.setSpriteArrayPos(this.accuracyDigits, basex - this.scoreDigits.width / 2 - this.accuracyDigits.width - 16 * unit, basey + 3 * unit);
-            this.setSpriteArrayPos(this.comboDigits, basex + this.scoreDigits.width / 2 + 16 * unit, basey + 3 * unit);
+            setSpriteArrayPos(this.scoreDigits, basex - this.scoreDigits.width / 2, basey);
+            setSpriteArrayPos(this.accuracyDigits, basex - this.scoreDigits.width / 2 - this.accuracyDigits.width - 16 * unit, basey + 3 * unit);
+            setSpriteArrayPos(this.comboDigits, basex + this.scoreDigits.width / 2 + 16 * unit, basey + 3 * unit);
         }
-        this.showSummary = (metadata, a, retryCallback, quitCallback) => {
-            function grade(acc) {
-                if (acc >= 1) return 'SS';
-                if (acc >= .95) return 'S';
-                if (acc >= .9) return 'A';
-                if (acc >= .8) return 'B';
-                if (acc >= .7) return 'C';
-                return 'D';
-            }
-            function errortext() {
-                let sum = 0;
-                for (let i = 0; i < a.length; ++i) sum += a[i];
-                let avg = sum / a.length, sumsqerr = 0;
-                for (let i = 0; i < a.length; ++i) {
-                    let base = a[i] - avg;
-                    sumsqerr += base * base;
-                }
-                let letiance = sumsqerr / a.length, stdev = Math.sqrt(letiance), sgnavg = avg.toFixed(0);
-                if (sgnavg[0] != '-') sgnavg = '+' + sgnavg;
-                return sgnavg + "±" + stdev.toFixed(0) + "ms";
-            }
-            function modstext() {
-                let l = [], game = window.game;
-                if (game.easy) l.push("EZ");
-                if (game.daycore) l.push("DC");
-                if (game.hidden) l.push("HD");
-                if (game.hardrock) l.push("HR");
-                if (game.nightcore) l.push("NC");
-                if (game.autoplay) l.push("AT");
-                if (l.length == 0) return "";
-                let s = l[0];
-                for (let i = 1; i < l.length; ++i) s = s + '+' + l[i];
-                return s;
-            }
-            function newdiv(parent, classname, text) {
-                let div = document.createElement("div");
-                if (parent) parent.appendChild(div);
-                if (classname) div.className = classname;
-                if (text) div.innerText = text;
-                return div;
-            }
-
+        showSummary(metadata, a, retryCallback, quitCallback) {
             let acc = this.judgeTotal / this.maxJudgeTotal, rank = grade(acc), grading = newdiv(null, "grading");
             grading.classList.add("transparent");
             document.body.appendChild(grading);
@@ -223,7 +222,7 @@ define([], () => {
             let left = newdiv(grading, "left");
             newdiv(left, "block score", this.score.toFixed(0));
             newdiv(left, "block acc", (acc * 100).toFixed(2) + "%");
-            newdiv(left, "block err", errortext());
+            newdiv(left, "block err", errortext(a));
             newdiv(left, "block great", this.judgecnt.great.toString());
             newdiv(left, "block good", this.judgecnt.good.toString());
             newdiv(left, "block meh", this.judgecnt.meh.toString());
@@ -238,18 +237,16 @@ define([], () => {
             b1.onclick = () => {
                 grading.remove();
                 retryCallback();
-            }
+            };
             b2.onclick = () => {
                 grading.remove();
                 quitCallback();
-            }
+            };
             window.setTimeout(() => grading.classList.remove("transparent"), 100);
         }
-        this.destroy = options => PIXI.Container.prototype.destroy.call(this, options);
+        destroy(options) {
+            PIXI.Container.prototype.destroy.call(this, options)
+        }
     }
-
-    if (PIXI.Container) ScoreOverlay.__proto__ = PIXI.Container;
-    ScoreOverlay.prototype = Object.create(PIXI.Container && PIXI.Container.prototype);
-    ScoreOverlay.prototype.constructor = ScoreOverlay;
     return ScoreOverlay;
 });

@@ -339,15 +339,6 @@ define(["underscore", "osu-audio", "curve/LinearBezier", "curve/ArcPath"], (_, O
                     }
                 }
             };
-            this.requestStar = () => fetch("https://api.sayobot.cn/beatmapinfo?1=" + this.tracks[0].metadata.BeatmapSetID)
-                .then(response => response.json()).then(info => {
-                    if (info.status == 0) info.data.forEach(data => this.tracks.forEach(track => {
-                        if (track.metadata.BeatmapID == data.bid) {
-                            track.difficulty.star = data.star;
-                            track.length = data.length;
-                        }
-                    }));
-                });
             this.filterTracks = () => self.tracks = self.tracks.filter(t => t.general.Mode !== 3);
             this.sortTracks = () => self.tracks.sort((a, b) => a.difficulty.OverallDifficulty - b.difficulty.OverallDifficulty);
 
@@ -359,6 +350,16 @@ define(["underscore", "osu-audio", "curve/LinearBezier", "curve/ArcPath"], (_, O
                     });
                     reader.readAsArrayBuffer(blob);
                 });
+        }
+        requestStar() {
+            fetch("https://api.sayobot.cn/beatmapinfo?1=" + this.tracks[0].metadata.BeatmapSetID).then(r => r.json()).then(e => {
+                if (e.status == 0) e.data.forEach(data => this.tracks.forEach(track => {
+                    if (track.metadata.BeatmapID == data.bid) {
+                        track.difficulty.star = data.star;
+                        track.length = data.length;
+                    }
+                }));
+            });
         }
     };
     return Osu;

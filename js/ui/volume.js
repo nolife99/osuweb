@@ -1,41 +1,44 @@
 define([], () => {
-    function VolumeMenu(windowfield) {
-        PIXI.Container.call(this);
-        this.fadetime = 1000;
-        this.visible = false;
-        this.alpha = 1;
-        this.t0 = 0;
+    class VolumeMenu extends PIXI.Container {
+        constructor(windowfield) {
+            super();
+            PIXI.Container.call(this);
 
-        this.mastertext = new PIXI.BitmapText('MASTER', {
-            font: {
-                name: 'Venera', size: 20
-            }
-        });
-        this.mastertext.anchor.set(.5);
+            this.fadetime = 1000;
+            this.visible = false;
+            this.alpha = 1;
+            this.t0 = 0;
 
-        this.volumetext = new PIXI.BitmapText('', {
-            font: {
-                name: 'Venera', size: 40
-            }
-        });
-        this.volumetext.anchor.set(.5);
+            this.mastertext = new PIXI.BitmapText('MASTER', {
+                font: {
+                    name: 'Venera', size: 20
+                }
+            });
+            this.mastertext.anchor.set(.5);
 
-        this.addChild(this.mastertext);
-        this.addChild(this.volumetext);
+            this.volumetext = new PIXI.BitmapText('', {
+                font: {
+                    name: 'Venera', size: 40
+                }
+            });
+            this.volumetext.anchor.set(.5);
 
-        this.resize = windowfield => {
+            this.addChild(this.mastertext);
+            this.addChild(this.volumetext);
+
+            this.resize(windowfield);
+        }
+        resize(windowfield) {
             this.mastertext.x = windowfield.width - 100;
             this.mastertext.y = windowfield.height / 2 - 30;
             this.volumetext.x = windowfield.width - 100;
             this.volumetext.y = windowfield.height / 2 + 10;
         }
-        this.resize(windowfield);
-
-        this.setVolume = volume => {
+        setVolume(volume) {
             this.changed = true;
             this.volumetext.text = volume.toFixed(0);
         }
-        this.update = timestamp => {
+        update(timestamp) {
             if (this.changed) {
                 this.visible = true;
                 this.t0 = timestamp;
@@ -47,11 +50,9 @@ define([], () => {
             if (dt > this.fadetime) this.visible = false;
             else this.alpha = 1 - Math.pow(dt / this.fadetime, 5);
         }
-        this.destroy = options => PIXI.Container.prototype.destroy.call(this, options);
+        destroy(options) {
+            PIXI.Container.prototype.destroy.call(this, options);
+        }
     }
-
-    if (PIXI.Container) VolumeMenu.__proto__ = PIXI.Container;
-    VolumeMenu.prototype = Object.create(PIXI.Container && PIXI.Container.prototype);
-    VolumeMenu.prototype.constructor = VolumeMenu;
     return VolumeMenu;
 });

@@ -1,9 +1,10 @@
-const circTolerance = .15, twoPi = 2 * Math.PI, dotlen = a => a.x * a.x + a.y * a.y, vecsub = (a, b) => {
-    return {
-        x: a.x - b.x, y: a.y - b.y
-    };
-}, vecdot = (a, b) => a.x * b.x + a.y * b.y;
+const twoPi = 2 * Math.PI;
 define([], () => {
+    const circTolerance = .15, dotlen = a => a.x * a.x + a.y * a.y, vecsub = (a, b) => {
+        return {
+            x: a.x - b.x, y: a.y - b.y
+        };
+    }, vecdot = (a, b) => a.x * b.x + a.y * b.y;
     function ArcPath(hit) {
         let a = {
             x: hit.x, y: hit.y

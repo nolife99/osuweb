@@ -1,49 +1,54 @@
 define([], () => {
-    function LoadingMenu(windowfield, track) {
-        PIXI.Container.call(this);
-        this.fadetime = 200;
-        this.alpha = 1;
-        this.hidden = false;
+    class LoadingMenu extends PIXI.Container {
+        constructor(windowfield, track) {
+            super();
+            PIXI.Container.call(this);
 
-        this.bg = new PIXI.Sprite(Skin['hpbarright.png']);
-        this.bg.rotation = Math.PI / 2;
-        this.bg.anchor.set(.5);
-        this.bg.scale.set(.6, 500);
-        this.bg.alpha = .8;
-        this.addChild(this.bg);
+            this.fadetime = 200;
+            this.alpha = 1;
+            this.hidden = false;
 
-        let allFont = {
-            font: {
-                name: 'Venera', size: 14
-            }
-        };
-        this.titletext = new PIXI.BitmapText(track.metadata.Title || '-', {
-            font: {
-                name: 'Venera', size: 24
-            }
-        });
-        this.artisttext = new PIXI.BitmapText(track.metadata.Artist || '-', allFont);
-        this.versiontext = new PIXI.BitmapText(track.metadata.Version || '-', allFont);
-        this.sourcetext = new PIXI.BitmapText("Source: " + (track.metadata.Source || '-'), allFont);
-        this.mappertext = new PIXI.BitmapText("Mapper: " + (track.metadata.Creator || '-'), allFont);
-        this.titletext.anchor.set(.5);
-        this.artisttext.anchor.set(.5);
-        this.versiontext.anchor.set(.5);
-        this.sourcetext.anchor.set(.5);
-        this.mappertext.anchor.set(.5);
+            this.bg = new PIXI.Sprite(Skin['hpbarright.png']);
+            this.bg.rotation = Math.PI / 2;
+            this.bg.anchor.set(.5);
+            this.bg.scale.set(.6, 500);
+            this.bg.alpha = .8;
+            this.addChild(this.bg);
 
-        this.addChild(this.titletext);
-        this.addChild(this.artisttext);
-        this.addChild(this.versiontext);
-        this.addChild(this.sourcetext);
-        this.addChild(this.mappertext);
+            let allFont = {
+                font: {
+                    name: 'Venera', size: 14
+                }
+            };
+            this.titletext = new PIXI.BitmapText(track.metadata.Title || '-', {
+                font: {
+                    name: 'Venera', size: 24
+                }
+            });
+            this.artisttext = new PIXI.BitmapText(track.metadata.Artist || '-', allFont);
+            this.versiontext = new PIXI.BitmapText(track.metadata.Version || '-', allFont);
+            this.sourcetext = new PIXI.BitmapText("Source: " + (track.metadata.Source || '-'), allFont);
+            this.mappertext = new PIXI.BitmapText("Mapper: " + (track.metadata.Creator || '-'), allFont);
+            this.titletext.anchor.set(.5);
+            this.artisttext.anchor.set(.5);
+            this.versiontext.anchor.set(.5);
+            this.sourcetext.anchor.set(.5);
+            this.mappertext.anchor.set(.5);
 
-        this.loading = new PIXI.Sprite(Skin['dot.png']);
-        this.loading.anchor.set(.5, .3);
-        this.loading.scale.set(1, .6);
-        this.addChild(this.loading);
+            this.addChild(this.titletext);
+            this.addChild(this.artisttext);
+            this.addChild(this.versiontext);
+            this.addChild(this.sourcetext);
+            this.addChild(this.mappertext);
 
-        this.resize = windowfield => {
+            this.loading = new PIXI.Sprite(Skin['dot.png']);
+            this.loading.anchor.set(.5, .3);
+            this.loading.scale.set(1, .6);
+            this.addChild(this.loading);
+
+            this.resize(windowfield);
+        }
+        resize(windowfield) {
             this.bg.x = windowfield.width / 2;
             this.bg.y = windowfield.height / 2;
             this.titletext.x = windowfield.width / 2;
@@ -59,10 +64,10 @@ define([], () => {
             this.loading.x = windowfield.width / 2;
             this.loading.y = windowfield.height / 2;
         }
-        this.resize(windowfield);
-
-        this.hide = _e => this.hidden = true;
-        this.update = timestamp => {
+        hide(_e) {
+            this.hidden = true
+        }
+        update(timestamp) {
             if (!this.visible) return;
             if (!this.hidden) {
                 this.loading.rotation = timestamp * .0075;
@@ -77,11 +82,9 @@ define([], () => {
             if (dt > this.fadetime) this.visible = false;
             else this.alpha = 1 - dt / this.fadetime;
         }
-        this.destroy = options => PIXI.Container.prototype.destroy.call(this, options);
+        destroy(options) {
+            PIXI.Container.prototype.destroy.call(this, options);
+        }
     }
-
-    if (PIXI.Container) LoadingMenu.__proto__ = PIXI.Container;
-    LoadingMenu.prototype = Object.create(PIXI.Container && PIXI.Container.prototype);
-    LoadingMenu.prototype.constructor = LoadingMenu;
     return LoadingMenu;
 });
