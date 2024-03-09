@@ -348,7 +348,7 @@ define(["underscore", "osu-audio", "curve/LinearBezier", "curve/ArcPath"], (_, O
                 });
         }
         requestStar() {
-            fetch("https://api.sayobot.cn/beatmapinfo?1=" + this.tracks[0].metadata.BeatmapSetID).then(r => r.json()).then(e => {
+            fetch("https://api.sayobot.cn/v2/beatmapinfo?0=" + this.tracks[0].metadata.BeatmapSetID).then(r => r.json()).then(e => {
                 if (e.status == 0) e.data.forEach(data => this.tracks.forEach(track => {
                     if (track.metadata.BeatmapID == data.bid) {
                         track.difficulty.star = data.star;

@@ -51,7 +51,6 @@ require(["osu", "underscore", "sound", "playback"], (Osu, _, _sound, Playback) =
         document.getElementById("skin-progress").classList.add("finished");
         Skin = PIXI.Loader.shared.resources["asset/skin/sprites.json"].textures;
     });
-
     let sample = [
         'asset/hitsound/normal-hitnormal.ogg',
         'asset/hitsound/normal-hitwhistle.ogg',

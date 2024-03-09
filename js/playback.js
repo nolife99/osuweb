@@ -462,13 +462,13 @@ define(["playerActions", "SliderMesh", "ui/score", "ui/volume", "ui/loading", "u
             hit.body.depth = 4.9999 - .0001 * hit.hitIndex;
             hit.objects.push(hit.body);
 
-            function newSprite(spritename, x, y, scalemul = 1) {
+            function newSprite(spritename, x, y, scalemul = 1, isReverse) {
                 let sprite = new PIXI.Sprite(Skin[spritename]);
                 sprite.scale.set(self.hitSpriteScale * scalemul);
                 sprite.anchor.set(.5);
                 sprite.x = x;
                 sprite.y = y;
-                sprite.depth = 4.9999 - .0001 * hit.hitIndex;
+                sprite.depth = (isReverse ? 9.9999 : 4.9999) - .0001 * hit.hitIndex;
                 sprite.alpha = 0;
                 hit.objects.push(sprite);
                 return sprite;
@@ -491,12 +491,12 @@ define(["playerActions", "SliderMesh", "ui/score", "ui/volume", "ui/loading", "u
             }
             if (hit.repeat > 1) {
                 let p = hit.curve.curve[hit.curve.curve.length - 1], p2 = hit.curve.curve[hit.curve.curve.length - 2];
-                hit.reverse = newSprite("reversearrow.png", p.x, p.y, .36);
+                hit.reverse = newSprite("reversearrow.png", p.x, p.y, .36, true);
                 hit.reverse.rotation = Math.atan2(p2.y - p.y, p2.x - p.x);
             }
             if (hit.repeat > 2) {
                 let p = hit.curve.curve[0], p2 = hit.curve.curve[1];
-                hit.reverse_b = newSprite("reversearrow.png", p.x, p.y, .36);
+                hit.reverse_b = newSprite("reversearrow.png", p.x, p.y, .36, true);
                 hit.reverse_b.rotation = Math.atan2(p2.y - p.y, p2.x - p.x);
                 hit.reverse_b.visible = false;
             }
@@ -573,9 +573,7 @@ define(["playerActions", "SliderMesh", "ui/score", "ui/volume", "ui/loading", "u
             let rotation = Math.atan2(container.dy, container.dx), distance = Math.floor(Math.hypot(container.dx, container.dy));
 
             for (let d = spacing * 1.5; d < distance - spacing; d += spacing) {
-                let frac = d / distance;
-
-                let p = new PIXI.Sprite(Skin["followpoint.png"]);
+                let frac = d / distance, p = new PIXI.Sprite(Skin["followpoint.png"]);
                 p.scale.set(this.hitSpriteScale * .4, this.hitSpriteScale * .3);
                 p.x = x1 + container.dx * frac;
                 p.y = y1 + container.dy * frac;
