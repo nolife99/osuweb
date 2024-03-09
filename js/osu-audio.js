@@ -36,7 +36,7 @@ define([], () => {
 
             const decode = node => self.audio.decodeAudioData(node.buf, decoded => {
                 self.decoded = decoded;
-                if (typeof callback !== "undefined") callback(self);
+                if (callback) callback(self);
             }, _e => {
                 console.log("Error decode audio");
                 if (syncStream(node)) decode(node);

@@ -245,7 +245,7 @@ define([], () => {
             window.setTimeout(() => grading.classList.remove("transparent"), 100);
         }
         destroy(options) {
-            PIXI.Container.prototype.destroy.call(this, options)
+            PIXI.Container.prototype.destroy.call(this, options);
         }
     }
     return ScoreOverlay;

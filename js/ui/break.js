@@ -70,7 +70,7 @@ define([], () => {
             this.alpha = Math.max(0, Math.min(1, Math.min(t, time - this.starttime - 500) / this.fadetime));
         }
         destroy(options) {
-            PIXI.Container.prototype.destroy.call(this, options)
+            PIXI.Container.prototype.destroy.call(this, options);
         }
     }
     return BreakOverlay;

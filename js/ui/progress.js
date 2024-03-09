@@ -1,7 +1,6 @@
 define([], () => {
     function timeformat(ms) {
-        let s = ms / 1000;
-        let prefix = '';
+        let s = ms / 1000, prefix = '';
         if (s < 0) {
             prefix = '-';
             s = -s;
@@ -44,7 +43,7 @@ define([], () => {
             this.past.text = timeformat(time - this.starttime);
         }
         destroy(options) {
-            PIXI.Container.prototype.destroy.call(this, options)
+            PIXI.Container.prototype.destroy.call(this, options);
         }
     }
     return ProgressOverlay;

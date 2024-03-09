@@ -65,7 +65,7 @@ define([], () => {
             this.loading.y = windowfield.height / 2;
         }
         hide(_e) {
-            this.hidden = true
+            this.hidden = true;
         }
         update(timestamp) {
             if (!this.visible) return;

@@ -88,11 +88,7 @@ define(["underscore", "osu-audio", "curve/LinearBezier", "curve/ArcPath"], (_, O
             this.hitObjects = [];
 
             this.decode = _.bind(() => {
-                let lines = self.track.replace("\r", "").split("\n");
-                let section = null;
-                let combo = 0, index = 0;
-                let forceNewCombo = false;
-
+                let lines = self.track.replace("\r", "").split("\n"), section = null, combo = 0, index = 0, forceNewCombo = false;
                 for (let i = 0; i < lines.length; ++i) {
                     let line = lines[i].trim();
                     if (line === "" || line.indexOf("//") === 0) continue;

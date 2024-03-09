@@ -121,7 +121,7 @@ window.addEventListener('DOMContentLoaded', () => {
     }
     function bindkeyselector(id, keynameitem, keycodeitem) {
         let btn = document.getElementById(id);
-        let activate = () => {
+        function activate() {
             let deactivate = () => {
                 btn.onclick = activate;
                 btn.classList.remove("using");

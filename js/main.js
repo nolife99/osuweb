@@ -180,7 +180,7 @@ require(["osu", "underscore", "sound", "playback"], (Osu, _, _sound, Playback) =
             window.requestAnimationFrame(gameLoop);
         }
         createBeatmapBox() {
-            let map = this, 
+            let map = this,
                 pBeatmapBox = document.createElement("div"), pBeatmapCover = document.createElement("img"),
                 pBeatmapTitle = document.createElement("div"), pBeatmapAuthor = document.createElement("div");
 
@@ -256,7 +256,7 @@ require(["osu", "underscore", "sound", "playback"], (Osu, _, _sound, Playback) =
         }
     }
 
-    let pDragbox = document.getElementById("beatmap-dragbox"), 
+    let pDragbox = document.getElementById("beatmap-dragbox"),
         pDragboxInner = document.getElementById("beatmap-dragbox-inner"),
         pDragboxHint = document.getElementById("beatmap-dragbox-hint"),
         pBeatmapList = document.getElementById("beatmap-list");
@@ -372,5 +372,5 @@ require(["osu", "underscore", "sound", "playback"], (Osu, _, _sound, Playback) =
             parent.removeChild(this);
             parent.addChild(this);
         }
-    }
+    };
 });

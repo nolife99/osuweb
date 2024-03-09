@@ -3,8 +3,7 @@ define([], () => {
         let click = {
             x: window.game.mouseX, y: window.game.mouseY,
             time: playback.osu.audio.getPosition() * 1000
-        };
-        let hit = playback.upcomingHits.find(inUpcoming(click));
+        }, hit = playback.upcomingHits.find(inUpcoming(click));
         if (!hit && game.mouse) {
             let res = game.mouse(new Date().getTime());
             res.time = click.time;
@@ -27,8 +26,7 @@ define([], () => {
         let dx = click.x - hit.x;
         let dy = click.y - hit.y;
         return hit.score < 0 && dx * dx + dy * dy < playback.circleRadius * playback.circleRadius && Math.abs(click.time - hit.time) < playback.MehTime;
-    };
-    const inUpcoming_grace = predict => hit => {
+    }, inUpcoming_grace = predict => hit => {
         var dx = predict.x - hit.x;
         var dy = predict.y - hit.y;
         var r = predict.r + playback.circleRadius;
@@ -207,17 +205,5 @@ define([], () => {
             }
         }
     }
-    if (!Array.prototype.find) Object.defineProperty(Array.prototype, 'find', {
-        value: predicate => {
-            let k = 0, o = Object(this), thisArg = arguments[1];
-            while (k < (o.length >>> 0)) {
-                let kValue = o[k];
-                if (predicate.call(thisArg, kValue, k++, o)) return kValue;
-            }
-            return undefined;
-        },
-        configurable: true,
-        writable: true
-    });
     return playerActions;
 });

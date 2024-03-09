@@ -1,4 +1,4 @@
-(function(global, exports, perf) {
+((global, exports, perf) => {
     'use strict';
 
     function fixSetTarget(param) {
@@ -15,34 +15,34 @@
         if (!AudioContext.prototype.hasOwnProperty('createPeriodicWave')) AudioContext.prototype.createPeriodicWave = AudioContext.prototype.createWaveTable;
 
         AudioContext.prototype.internal_createGain = AudioContext.prototype.createGain;
-        AudioContext.prototype.createGain = function() {
-            var node = this.internal_createGain();
+        AudioContext.prototype.createGain = function () {
+            let node = this.internal_createGain();
             fixSetTarget(node.gain);
             return node;
         };
 
         AudioContext.prototype.internal_createDelay = AudioContext.prototype.createDelay;
-        AudioContext.prototype.createDelay = function(maxDelayTime) {
-            var node = maxDelayTime ? this.internal_createDelay(maxDelayTime) : this.internal_createDelay();
+        AudioContext.prototype.createDelay = function (maxDelayTime) {
+            let node = maxDelayTime ? this.internal_createDelay(maxDelayTime) : this.internal_createDelay();
             fixSetTarget(node.delayTime);
             return node;
         };
 
         AudioContext.prototype.internal_createBufferSource = AudioContext.prototype.createBufferSource;
-        AudioContext.prototype.createBufferSource = function() {
-            var node = this.internal_createBufferSource();
-            if (!node.start) node.start = function(when, offset, duration) {
+        AudioContext.prototype.createBufferSource = function () {
+            let node = this.internal_createBufferSource();
+            if (!node.start) node.start = function (when, offset, duration) {
                 if (offset || duration) this.noteGrainOn(when || 0, offset, duration);
                 else this.noteOn(when || 0);
             };
             else {
                 node.internal_start = node.start;
-                node.start = function(when, offset, duration) {
-                    if (typeof duration !== 'undefined') node.internal_start(when || 0, offset, duration);
+                node.start = function (when, offset, duration) {
+                    if (duration) node.internal_start(when || 0, offset, duration);
                     else node.internal_start(when || 0, offset || 0);
                 };
             }
-            if (!node.stop) node.stop = function(when) {
+            if (!node.stop) node.stop = function (when) {
                 this.noteOff(when || 0);
             };
             else {
@@ -54,8 +54,8 @@
         };
 
         AudioContext.prototype.internal_createDynamicsCompressor = AudioContext.prototype.createDynamicsCompressor;
-        AudioContext.prototype.createDynamicsCompressor = function() {
-            var node = this.internal_createDynamicsCompressor();
+        AudioContext.prototype.createDynamicsCompressor = function () {
+            let node = this.internal_createDynamicsCompressor();
             fixSetTarget(node.threshold);
             fixSetTarget(node.knee);
             fixSetTarget(node.ratio);
@@ -66,8 +66,8 @@
         };
 
         AudioContext.prototype.internal_createBiquadFilter = AudioContext.prototype.createBiquadFilter;
-        AudioContext.prototype.createBiquadFilter = function() {
-            var node = this.internal_createBiquadFilter();
+        AudioContext.prototype.createBiquadFilter = function () {
+            let node = this.internal_createBiquadFilter();
             fixSetTarget(node.frequency);
             fixSetTarget(node.detune);
             fixSetTarget(node.Q);
@@ -77,16 +77,16 @@
 
         if (AudioContext.prototype.hasOwnProperty('createOscillator')) {
             AudioContext.prototype.internal_createOscillator = AudioContext.prototype.createOscillator;
-            AudioContext.prototype.createOscillator = function() {
-                var node = this.internal_createOscillator();
-                if (!node.start) node.start = function(when) {
+            AudioContext.prototype.createOscillator = function () {
+                let node = this.internal_createOscillator();
+                if (!node.start) node.start = function (when) {
                     this.noteOn(when || 0);
                 };
                 else {
                     node.internal_start = node.start;
                     node.start = when => node.internal_start(when || 0);
                 }
-                if (!node.stop) node.stop = function(when) {
+                if (!node.stop) node.stop = function (when) {
                     this.noteOff(when || 0);
                 };
                 else {
@@ -102,24 +102,24 @@
         }
     }
     if (window.hasOwnProperty('webkitOfflineAudioContext') && !window.hasOwnProperty('OfflineAudioContext')) window.OfflineAudioContext = webkitOfflineAudioContext;
-}(window));
+})(window);
 
-var actx = new AudioContext();
-var sounds = {
+let actx = new AudioContext();
+let sounds = {
     toLoad: 0,
     loaded: 0,
     audioExtensions: ["mp3", "ogg", "wav", "webm"],
     whenLoaded: undefined,
     onProgress: undefined,
-    onFailed: (source, error) => {
+    onFailed: (source, _e) => {
         throw new Error("Audio could not be loaded: " + source);
     },
-    load: function(sources) {
+    load: function (sources) {
         console.log("Loading sounds..");
-        var self = this;
+        let self = this;
         self.toLoad = sources.length;
         sources.forEach(source => {
-            var extension = source.split('.').pop();
+            let extension = source.split('.').pop();
             if (self.audioExtensions.indexOf(extension) !== -1) {
                 var soundSprite = makeSound(source, self.loadHandler.bind(self), true, self.onFailed);
                 soundSprite.name = source;
@@ -127,8 +127,8 @@ var sounds = {
             }
         });
     },
-    loadHandler: function(source) {
-        var self = this;
+    loadHandler: function (source) {
+        let self = this;
         ++self.loaded;
 
         if (self.onProgress) self.onProgress(100 * self.loaded / self.toLoad, {
@@ -142,7 +142,7 @@ var sounds = {
     }
 };
 function makeSound(source, loadHandler, shouldLoadSound, failHandler) {
-    var o = {};
+    let o = {};
     o.volumeNode = actx.createGain();
     o.panNode = actx.createStereoPanner ? actx.createStereoPanner() : actx.createPanner();
     o.delayNode = actx.createDelay();
@@ -166,7 +166,7 @@ function makeSound(source, loadHandler, shouldLoadSound, failHandler) {
     o.filterValue = 0;
     o.reverb = false;
     o.reverbImpulse = null;
-    o.play = function() {
+    o.play = function () {
         o.startTime = actx.currentTime;
         o.soundNode = actx.createBufferSource();
         o.soundNode.buffer = o.buffer;
@@ -219,29 +219,25 @@ function makeSound(source, loadHandler, shouldLoadSound, failHandler) {
         o.play();
     };
     o.setEcho = (delayValue, feedbackValue, filterValue) => {
-        if (delayValue === undefined) delayValue = .3;
-        if (feedbackValue === undefined) feedbackValue = .3;
-        if (filterValue === undefined) filterValue = 0;
+        if (!delayValue) delayValue = .3;
+        if (!feedbackValue) feedbackValue = .3;
+        if (!filterValue) filterValue = 0;
         o.delayValue = delayValue;
         o.feebackValue = feedbackValue;
         o.filterValue = filterValue;
         o.echo = true;
     };
     o.setReverb = (duration, decay, reverse) => {
-        if (duration === undefined) duration = 2;
-        if (decay === undefined) decay = 2;
-        if (reverse === undefined) reverse = false;
+        if (!duration) duration = 2;
+        if (!decay) decay = 2;
+        if (!reverse) reverse = false;
         o.reverbImpulse = impulseResponse(duration, decay, reverse, actx);
         o.reverb = true;
     };
     o.fade = (endValue, durationInSeconds) => {
         if (o.playing) {
-            o.volumeNode.gain.linearRampToValueAtTime(
-                o.volumeNode.gain.value, actx.currentTime
-            );
-            o.volumeNode.gain.linearRampToValueAtTime(
-                endValue, actx.currentTime + durationInSeconds
-            );
+            o.volumeNode.gain.linearRampToValueAtTime(o.volumeNode.gain.value, actx.currentTime);
+            o.volumeNode.gain.linearRampToValueAtTime(endValue, actx.currentTime + durationInSeconds);
         }
     };
     o.fadeIn = (durationInSeconds) => {
@@ -275,13 +271,12 @@ function makeSound(source, loadHandler, shouldLoadSound, failHandler) {
             enumerable: true, configurable: true
         }
     });
-    if (shouldLoadSound) fetch(source).then(response => response.arrayBuffer())
-        .then(buf => actx.decodeAudioData(buf, buffer => {
-            o.buffer = buffer;
-            o.hasLoaded = true;
-            if (loadHandler) loadHandler(o.source);
-        }, error => {
-            if (failHandler) failHandler(o.source, error);
-        }));
+    if (shouldLoadSound) fetch(source).then(response => response.arrayBuffer()).then(buf => actx.decodeAudioData(buf, buffer => {
+        o.buffer = buffer;
+        o.hasLoaded = true;
+        if (loadHandler) loadHandler(o.source);
+    }, error => {
+        if (failHandler) failHandler(o.source, error);
+    }));
     return o;
 }
