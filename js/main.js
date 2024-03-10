@@ -156,7 +156,7 @@ class BeatmapController {
             gameLoop = null;
         };
 
-        let playback = new Playback(window.game, this.osu, this.osu.tracks[trackid]);
+        let playback = new Playback(game, this.osu, this.osu.tracks[trackid]);
         playback.load();
 
         gameLoop = time => {

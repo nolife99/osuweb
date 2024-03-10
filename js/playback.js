@@ -24,7 +24,6 @@ function repeatclamp(a) {
 export default function Playback(game, osu, track) {
     let self = this;
     window.playback = this;
-    self.game = game;
     self.osu = osu;
     self.track = track;
     self.background = null;

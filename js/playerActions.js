@@ -29,18 +29,18 @@ const inUpcoming = click => hit => {
     return hit.score < 0 && dx * dx + dy * dy < r * r && Math.abs(predict.time - hit.time) < playback.MehTime;
 }, spinRadius = 60;
 export default function playerActions(playback) {
-    if (playback.autoplay) playback.auto = {
+    if (playback.autoplay) var auto = {
         curObj: null, curid: 0, lastx: window.game.mouseX, lasty: window.game.mouseY, lasttime: 0
     }
     window.game.updatePlayerActions = time => {
-        let cur = playback.auto.curObj;
+        let cur = auto.curObj;
         if (window.game.down && cur) {
             if (cur.type == 'circle' || time > cur.endTime) {
                 window.game.down = false;
-                playback.auto.curObj = null;
-                playback.auto.lasttime = time;
-                playback.auto.lastx = window.game.mouseX;
-                playback.auto.lasty = window.game.mouseY;
+                auto.curObj = null;
+                auto.lasttime = time;
+                auto.lastx = window.game.mouseX;
+                auto.lasty = window.game.mouseY;
             }
             else if (cur.type == 'slider') {
                 window.game.mouseX = cur.ball.x || cur.x;
@@ -53,9 +53,9 @@ export default function playerActions(playback) {
             }
         }
 
-        cur = playback.auto.curObj;
-        while (playback.auto.curid < playback.hits.length && playback.hits[playback.auto.curid].time < time) {
-            let hit = playback.hits[playback.auto.curid];
+        cur = auto.curObj;
+        while (auto.curid < playback.hits.length && playback.hits[auto.curid].time < time) {
+            let hit = playback.hits[auto.curid];
             if (hit.score < 0) {
                 let targX = hit.x, targY = hit.y;
                 if (hit.type === 'spinner') {
@@ -69,14 +69,14 @@ export default function playerActions(playback) {
                 window.game.down = true;
                 triggerTap();
             }
-            ++playback.auto.curid;
+            ++auto.curid;
         }
-        if (!cur && playback.auto.curid < playback.hits.length) {
-            cur = playback.hits[playback.auto.curid];
-            playback.auto.curObj = cur;
+        if (!cur && auto.curid < playback.hits.length) {
+            cur = playback.hits[auto.curid];
+            auto.curObj = cur;
         }
         if (!cur || cur.time > time + playback.approachTime) {
-            playback.auto.lasttime = time;
+            auto.lasttime = time;
             return;
         }
         if (!window.game.down) {
@@ -86,13 +86,13 @@ export default function playerActions(playback) {
                 targX += spinRadius * Math.cos(ang);
                 targY += spinRadius * Math.sin(ang);
             }
-            let t = (time - playback.auto.lasttime) / (cur.time - playback.auto.lasttime);
+            let t = (time - auto.lasttime) / (cur.time - auto.lasttime);
 
             t = Math.max(0, Math.min(1, t));
             t = .5 - Math.sin((Math.pow(1 - t, 1.5) - .5) * Math.PI) / 2;
 
-            window.game.mouseX = t * targX + (1 - t) * playback.auto.lastx;
-            window.game.mouseY = t * targY + (1 - t) * playback.auto.lasty;
+            window.game.mouseX = t * targX + (1 - t) * auto.lastx;
+            window.game.mouseY = t * targY + (1 - t) * auto.lasty;
 
             if (time + 13 >= cur.time) {
                 window.game.down = true;
