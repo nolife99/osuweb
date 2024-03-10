@@ -1,5 +1,4 @@
 import Osu from "./osu.js";
-import _ from "./lib/underscore.js";
 import { sounds } from "./lib/sound.js";
 import Playback from "./playback.js";
 
@@ -28,7 +27,7 @@ let game = {
     hidden: false,
     hideNumbers: false,
     hideGreat: false,
-    hideFollowPoints: false,
+    hideFollow: false,
     mouseX: 0,
     mouseY: 0,
     mouse: null,
@@ -44,8 +43,6 @@ let game = {
 window.game = game;
 
 if (window.gamesettings) window.gamesettings.loadToGame();
-window.soundReady = false;
-window.scriptReady = false;
 game.stage = new PIXI.Container();
 game.cursor = null;
 
@@ -88,15 +85,11 @@ sounds.whenLoaded = () => {
     game.sample[3].hitclap = sounds[sample[13]];
     game.sample[3].slidertick = sounds[sample[14]];
     game.sampleComboBreak = sounds[sample[15]];
-    window.soundReady = true;
     document.getElementById("sound-progress").classList.add("finished");
 };
 sounds.load(sample);
 
 class BeatmapController {
-    constructor() {
-        this.osuReady = false;
-    }
     startGame(trackid) {
         if (window.app) return;
         let app = window.app = new PIXI.Application({
@@ -313,9 +306,8 @@ function addbeatmap(osz, f) {
         map.osu.filterTracks();
         map.osu.sortTracks();
         map.osu.requestStar();
-        map.osuReady = true;
 
-        if (!_.some(map.osu.tracks, t => t.general.Mode !== 3)) {
+        if (!map.osu.tracks.some(t => t.general.Mode !== 3)) {
             pDragboxHint.innerText = pDragboxHint.modeErrHint;
             return;
         }
@@ -363,7 +355,6 @@ window.addEventListener('drop', e => (e || event).preventDefault(), false);
 
 pDragboxHint.innerText = pDragboxHint.defaultHint;
 pDragboxInner.hidden = false;
-window.scriptReady = true;
 document.getElementById("script-progress").classList.add("finished");
 
 PIXI.Sprite.prototype.bringToFront = function () {

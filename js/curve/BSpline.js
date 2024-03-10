@@ -1,5 +1,3 @@
-import _ from "../lib/underscore.js";
-
 const bernstein = (i, n, t) => binomialCoefficient(n, i) * Math.pow(t, i) * Math.pow(1 - t, n - i), binomialCoefficient = (n, k) => {
     if (k < 0 || k > n) return 0;
     if (k == 0 || k == n) return 1;

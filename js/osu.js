@@ -1,4 +1,3 @@
-import _ from "./lib/underscore.js";
 import OsuAudio from "./osu-audio.js";
 import LinearBezier from "./curve/LinearBezier.js";
 import ArcPath from "./curve/ArcPath.js";
@@ -10,7 +9,7 @@ function stackHitObjects(track) {
 
     function getintv(A, B) {
         let endTime = A.time;
-        if (A.type == "slider") endTime += A.repeat * A.timing.millisecondsPerBeat * (A.pixelLength / track.difficulty.SliderMultiplier) / 100;
+        if (A.type == "slider") endTime += A.repeat * A.timing.beatMs * (A.pixelLength / track.difficulty.SliderMultiplier) / 100;
         return B.time - endTime;
     }
     function getdist(A, B) {
@@ -88,10 +87,10 @@ class Track {
         this.colors = [];
         this.breaks = [];
         this.events = [];
-        this.timingPoints = [];
+        this.timing = [];
         this.hitObjects = [];
 
-        this.decode = _.bind(() => {
+        this.decode = (() => {
             let lines = self.track.replace("\r", "").split("\n"), section = null, combo = 0, index = 0, forceNewCombo = false;
             for (let i = 0; i < lines.length; ++i) {
                 let line = lines[i].trim();
@@ -133,16 +132,16 @@ class Track {
                         parts = line.split(",");
                         let t = {
                             offset: +parts[0],
-                            millisecondsPerBeat: +parts[1],
+                            beatMs: +parts[1],
                             meter: +parts[2],
                             sampleSet: +parts[3],
                             sampleIndex: +parts[4],
                             volume: +parts[5],
-                            uninherited: +parts[6],
+                            uninherit: +parts[6],
                             kaiMode: +parts[7]
                         };
-                        if (t.millisecondsPerBeat < 0) t.uninherited = 0;
-                        this.timingPoints.push(t);
+                        if (t.beatMs < 0) t.uninherit = 0;
+                        this.timing.push(t);
                         break;
 
                     case "[Colours]":
@@ -261,32 +260,32 @@ class Track {
                 this.difficulty.ApproachRate = this.difficulty.ApproachRate || this.difficulty.OverallDifficulty;
             }
 
-            let last = this.timingPoints[0];
-            for (let i = 0; i < this.timingPoints.length; ++i) {
-                let point = this.timingPoints[i];
-                if (point.uninherited === 0) {
-                    point.uninherited = 1;
-                    point.millisecondsPerBeat *= -.01 * last.millisecondsPerBeat;
-                    point.trueMillisecondsPerBeat = last.trueMillisecondsPerBeat;
+            let last = this.timing[0];
+            for (let i = 0; i < this.timing.length; ++i) {
+                let point = this.timing[i];
+                if (point.uninherit === 0) {
+                    point.uninherit = 1;
+                    point.beatMs *= -.01 * last.beatMs;
+                    point.truebeatMs = last.truebeatMs;
                 }
                 else {
                     last = point;
-                    point.trueMillisecondsPerBeat = point.millisecondsPerBeat;
+                    point.truebeatMs = point.beatMs;
                 }
             }
             for (let i = 0, j = 0; i < this.hitObjects.length; ++i) {
                 let hit = this.hitObjects[i];
-                while (j + 1 < this.timingPoints.length && this.timingPoints[j + 1].offset <= hit.time) ++j;
-                hit.timing = this.timingPoints[j];
+                while (j + 1 < this.timing.length && this.timing[j + 1].offset <= hit.time) ++j;
+                hit.timing = this.timing[j];
 
                 if (hit.type == "circle") hit.endTime = hit.time;
                 else if (hit.type == "slider") {
-                    hit.sliderTime = hit.timing.millisecondsPerBeat * (hit.pixelLength / this.difficulty.SliderMultiplier) / 100;
+                    hit.sliderTime = hit.timing.beatMs * (hit.pixelLength / this.difficulty.SliderMultiplier) / 100;
                     hit.sliderTimeTotal = hit.sliderTime * hit.repeat;
                     hit.endTime = hit.time + hit.sliderTimeTotal;
 
                     if (hit.sliderType === "P" && hit.keyframes.length == 2) {
-                        hit.curve = new ArcPath(hit);
+                        hit.curve = ArcPath(hit);
                         if (hit.curve.length == 0) hit.curve = new LinearBezier(hit, false);
                     }
                     else hit.curve = new LinearBezier(hit, hit.keyframes.length == 1);
@@ -297,7 +296,7 @@ class Track {
             stackHitObjects(this);
 
             if (this.ondecoded !== null) this.ondecoded(this);
-        }, this);
+        }).bind(this);
     }
 }
 export default class Osu {
@@ -314,15 +313,13 @@ export default class Osu {
             if (++count == self.raw_tracks.length && self.ondecoded !== null) self.ondecoded(this);
         };
         this.load = () => {
-            self.raw_tracks = _.filter(zip.children, c => c.name.indexOf(".osu") === c.name.length - 4);
-            if (!_.isEmpty(self.raw_tracks)) _.each(self.raw_tracks, function (t) {
-                t.getText(text => {
-                    let track = new Track(zip, text);
-                    self.tracks.push(track);
-                    track.ondecoded = self.track_decoded;
-                    track.decode();
-                });
-            });
+            self.raw_tracks = zip.children.filter(c => c.name.indexOf(".osu") === c.name.length - 4);
+            self.raw_tracks.forEach(t => t.getText(text => {
+                let track = new Track(zip, text);
+                self.tracks.push(track);
+                track.ondecoded = self.track_decoded;
+                track.decode();
+            }));
         };
         this.getCoverSrc = img => {
             for (let i = 0; i < this.tracks.length; ++i) {
@@ -342,7 +339,7 @@ export default class Osu {
         this.filterTracks = () => self.tracks = self.tracks.filter(t => t.general.Mode !== 3);
         this.sortTracks = () => self.tracks.sort((a, b) => a.difficulty.OverallDifficulty - b.difficulty.OverallDifficulty);
 
-        this.load_mp3 = () => _.find(zip.children, c => c.name.toLowerCase() === self.tracks[0].general.AudioFilename.toLowerCase())
+        this.load_mp3 = () => zip.children.find(c => c.name.toLowerCase() === self.tracks[0].general.AudioFilename.toLowerCase())
             .getBlob("audio/mpeg", blob => {
                 let reader = new FileReader();
                 reader.onload = e => self.audio = new OsuAudio(e.target.result, () => {

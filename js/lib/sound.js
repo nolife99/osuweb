@@ -113,13 +113,12 @@ export let sounds = {
         throw new Error("Audio could not be loaded: " + source);
     },
     load: function (sources) {
-        console.log("Loading sounds..");
         let self = this;
         self.toLoad = sources.length;
         sources.forEach(source => {
             let extension = source.split('.').pop();
             if (self.audioExtensions.indexOf(extension) !== -1) {
-                var soundSprite = makeSound(source, self.loadHandler.bind(self), true, self.onFailed);
+                let soundSprite = makeSound(source, self.loadHandler.bind(self), true, self.onFailed);
                 soundSprite.name = source;
                 self[soundSprite.name] = soundSprite;
             }
@@ -157,7 +156,7 @@ function makeSound(source, loadHandler, shouldLoadSound, failHandler) {
     o.volumeValue = 1;
     o.startTime = 0;
     o.startOffset = 0;
-    o.playbackRate = 1;
+    o.speed = 1;
     o.echo = false;
     o.delayValue = .3;
     o.feebackValue = .3;
@@ -168,7 +167,7 @@ function makeSound(source, loadHandler, shouldLoadSound, failHandler) {
         o.startTime = actx.currentTime;
         o.soundNode = actx.createBufferSource();
         o.soundNode.buffer = o.buffer;
-        o.soundNode.playbackRate.value = this.playbackRate;
+        o.soundNode.playbackRate.value = this.speed;
         o.soundNode.connect(o.volumeNode);
         if (!o.reverb) o.volumeNode.connect(o.panNode);
         else {
@@ -205,7 +204,7 @@ function makeSound(source, loadHandler, shouldLoadSound, failHandler) {
             o.playing = false;
         }
     };
-    o.getPosition = () => actx.currentTime - o.startTime + o.startOffset;
+    o.getPos = () => actx.currentTime - o.startTime + o.startOffset;
     o.restart = () => {
         if (o.playing) o.soundNode.stop(0);
         o.startOffset = 0;

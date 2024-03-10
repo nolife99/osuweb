@@ -1,4 +1,3 @@
-import _ from "../lib/underscore.js";
 import BSpline from "./BSpline.js";
 
 const lerp = (a, b, t) => a * (1 - t) + b * t;

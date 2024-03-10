@@ -20,7 +20,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
         mastervolume: 100, effectvolume: 100, musicvolume: 100, beatmapHitsound: false,
         easy: false, daycore: false, hardrock: false, nightcore: false, hidden: false, autoplay: false,
-        hideNumbers: false, hideGreat: true, hideFollowPoints: false
+        hideNumbers: false, hideGreat: true, hideFollow: false
     };
     window.gamesettings = {};
 
@@ -54,7 +54,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
             window.game.hideNumbers = this.hideNumbers;
             window.game.hideGreat = this.hideGreat;
-            window.game.hideFollowPoints = this.hideFollowPoints;
+            window.game.hideFollow = this.hideFollow;
         }
     }
     gamesettings.loadToGame();
@@ -164,7 +164,7 @@ window.addEventListener('DOMContentLoaded', () => {
     bindcheck("autoplay-check", "autoplay");
     bindcheck("hidenumbers-check", "hideNumbers");
     bindcheck("hidegreat-check", "hideGreat");
-    bindcheck("hidefollowpoints-check", "hideFollowPoints");
+    bindcheck("hidefollowpoints-check", "hideFollow");
 
     document.getElementById("restoredefault-btn").onclick = () => {
         Object.assign(gamesettings, defaultsettings);
