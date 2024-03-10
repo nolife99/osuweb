@@ -1,13 +1,13 @@
 window.addEventListener('DOMContentLoaded', () => {
     function loadFromLocal() {
-        let str = window.localStorage.getItem("osugamesettings");
+        let str = window.localStorage.getItem('osugamesettings');
         if (str) {
             let s = JSON.parse(str);
             if (s) Object.assign(gamesettings, s);
         }
     }
     function saveToLocal() {
-        window.localStorage.setItem("osugamesettings", JSON.stringify(window.gamesettings));
+        window.localStorage.setItem('osugamesettings', JSON.stringify(window.gamesettings));
     }
 
     let defaultsettings = {
@@ -94,7 +94,7 @@ window.addEventListener('DOMContentLoaded', () => {
     }
     function bindrange(id, item, feedback) {
         let range = document.getElementById(id);
-        let indicator = document.getElementById(id + "-indicator");
+        let indicator = document.getElementById(id + '-indicator');
         range.onmousedown = function() {
             indicator.hidden = false;
         }
@@ -107,7 +107,7 @@ window.addEventListener('DOMContentLoaded', () => {
             let val = parseFloat(range.value);
             let pos = (val - min) / (max - min);
             let length = range.clientWidth - 20;
-            indicator.style.left = (pos * length + 13) + "px";
+            indicator.style.left = (pos * length + 13) + 'px';
             indicator.innerText = feedback(val);
         }
         range.value = gamesettings[item];
@@ -124,8 +124,8 @@ window.addEventListener('DOMContentLoaded', () => {
         function activate() {
             let deactivate = () => {
                 btn.onclick = activate;
-                btn.classList.remove("using");
-                document.removeEventListener("keydown", listenkey);
+                btn.classList.remove('using');
+                document.removeEventListener('keydown', listenkey);
             }
             let listenkey = e => {
                 e = e || window.event;
@@ -136,8 +136,8 @@ window.addEventListener('DOMContentLoaded', () => {
                 saveToLocal();
                 deactivate();
             }
-            btn.classList.add("using");
-            document.addEventListener("keydown", listenkey);
+            btn.classList.add('using');
+            document.addEventListener('keydown', listenkey);
             btn.onclick = deactivate;
         }
         btn.onclick = activate;
@@ -145,28 +145,28 @@ window.addEventListener('DOMContentLoaded', () => {
         gamesettings.restoreCallbacks.push(() => btn.value = gamesettings[keynameitem]);
     }
 
-    bindrange("dim-range", "dim", v => v + "%");
-    bindrange("blur-range", "blur", v => v + "%");
-    bindrange("cursorsize-range", "cursorsize", v => v.toFixed(2) + "x");
-    bindcheck("showhwmouse-check", "showhwmouse");
-    bindcheck("snakein-check", "snakein");
-    bindcheck("snakeout-check", "snakeout");
-    bindcheck("disable-wheel-check", "disableWheel");
-    bindcheck("disable-button-check", "disableButton");
-    bindkeyselector("lbutton1select", "K1name", "K1keycode");
-    bindkeyselector("rbutton1select", "K2name", "K2keycode");
-    bindrange("mastervolume-range", "mastervolume", v => v + "%");
-    bindrange("effectvolume-range", "effectvolume", v => v + "%");
-    bindrange("musicvolume-range", "musicvolume", v => v + "%");
-    bindExclusiveCheck("easy-check", "easy", "hardrock-check", "hardrock");
-    bindExclusiveCheck("daycore-check", "daycore", "nightcore-check", "nightcore");
-    bindcheck("hidden-check", "hidden");
-    bindcheck("autoplay-check", "autoplay");
-    bindcheck("hidenumbers-check", "hideNumbers");
-    bindcheck("hidegreat-check", "hideGreat");
-    bindcheck("hidefollowpoints-check", "hideFollow");
+    bindrange('dim-range', 'dim', v => v + '%');
+    bindrange('blur-range', 'blur', v => v + '%');
+    bindrange('cursorsize-range', 'cursorsize', v => v.toFixed(2) + 'x');
+    bindcheck('showhwmouse-check', 'showhwmouse');
+    bindcheck('snakein-check', 'snakein');
+    bindcheck('snakeout-check', 'snakeout');
+    bindcheck('disable-wheel-check', 'disableWheel');
+    bindcheck('disable-button-check', 'disableButton');
+    bindkeyselector('lbutton1select', 'K1name', 'K1keycode');
+    bindkeyselector('rbutton1select', 'K2name', 'K2keycode');
+    bindrange('mastervolume-range', 'mastervolume', v => v + '%');
+    bindrange('effectvolume-range', 'effectvolume', v => v + '%');
+    bindrange('musicvolume-range', 'musicvolume', v => v + '%');
+    bindExclusiveCheck('easy-check', 'easy', 'hardrock-check', 'hardrock');
+    bindExclusiveCheck('daycore-check', 'daycore', 'nightcore-check', 'nightcore');
+    bindcheck('hidden-check', 'hidden');
+    bindcheck('autoplay-check', 'autoplay');
+    bindcheck('hidenumbers-check', 'hideNumbers');
+    bindcheck('hidegreat-check', 'hideGreat');
+    bindcheck('hidefollowpoints-check', 'hideFollow');
 
-    document.getElementById("restoredefault-btn").onclick = () => {
+    document.getElementById('restoredefault-btn').onclick = () => {
         Object.assign(gamesettings, defaultsettings);
         for (let i = 0; i < gamesettings.restoreCallbacks.length; ++i) gamesettings.restoreCallbacks[i]();
         gamesettings.loadToGame();

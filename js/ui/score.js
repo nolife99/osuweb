@@ -36,23 +36,23 @@ function errortext(a) {
     }
     let letiance = sumsqerr / a.length, stdev = Math.sqrt(letiance), sgnavg = avg.toFixed(0);
     if (sgnavg[0] != '-') sgnavg = '+' + sgnavg;
-    return sgnavg + "±" + stdev.toFixed(0) + "ms";
+    return sgnavg + '±' + stdev.toFixed(0) + 'ms';
 }
 function modstext() {
     let l = [], game = window.game;
-    if (game.easy) l.push("EZ");
-    if (game.daycore) l.push("DC");
-    if (game.hidden) l.push("HD");
-    if (game.hardrock) l.push("HR");
-    if (game.nightcore) l.push("NC");
-    if (game.autoplay) l.push("AT");
-    if (l.length == 0) return "";
+    if (game.easy) l.push('EZ');
+    if (game.daycore) l.push('DC');
+    if (game.hidden) l.push('HD');
+    if (game.hardrock) l.push('HR');
+    if (game.nightcore) l.push('NC');
+    if (game.autoplay) l.push('AT');
+    if (l.length == 0) return '';
     let s = l[0];
     for (let i = 1; i < l.length; ++i) s = s + '+' + l[i];
     return s;
 }
 function newdiv(parent, classname, text) {
-    let div = document.createElement("div");
+    let div = document.createElement('div');
     if (parent) parent.appendChild(div);
     if (classname) div.className = classname;
     if (text) div.innerText = text;
@@ -65,7 +65,7 @@ function setSpriteArrayText(arr, str) {
     arr.width = 0;
     for (let i = 0; i < str.length; ++i) {
         let digit = arr[i], ch = str[i];
-        digit.texture = window.skin["score-" + (ch === '%' ? "percent" : ch) + ".png"];
+        digit.texture = window.skin['score-' + (ch === '%' ? 'percent' : ch) + '.png'];
         digit.knownwidth = digit.scale.x * (digit.texture.width + charSpacing);
         digit.visible = true;
         arr.width += digit.knownwidth;
@@ -113,9 +113,9 @@ export default class ScoreOverlay extends PIXI.Container {
         this.accuracyDigits = this.newSpriteArray(7, .2, 0xddffff);
 
         this.HPbar = this.newSpriteArray(3, .5);
-        this.HPbar[0].texture = window.skin["hpbarleft.png"];
-        this.HPbar[1].texture = window.skin["hpbarright.png"];
-        this.HPbar[2].texture = window.skin["hpbarmid.png"];
+        this.HPbar[0].texture = window.skin['hpbarleft.png'];
+        this.HPbar[1].texture = window.skin['hpbarright.png'];
+        this.HPbar[2].texture = window.skin['hpbarmid.png'];
         this.HPbar[0].anchor.x = 1;
         this.HPbar[0].scale.x = this.field.width / 500;
         this.HPbar[1].scale.x = this.field.width / 500;
@@ -195,8 +195,8 @@ export default class ScoreOverlay extends PIXI.Container {
         this.HPbar[2].x = HPpos;
 
         setSpriteArrayText(this.scoreDigits, this.score4display.valueAt(time).toFixed(0).padStart(6, '0'));
-        setSpriteArrayText(this.comboDigits, this.combo4display.valueAt(time).toFixed(0) + "x");
-        setSpriteArrayText(this.accuracyDigits, this.accuracy4display.valueAt(time).toFixed(2) + "%");
+        setSpriteArrayText(this.comboDigits, this.combo4display.valueAt(time).toFixed(0) + 'x');
+        setSpriteArrayText(this.accuracyDigits, this.accuracy4display.valueAt(time).toFixed(2) + '%');
 
         let basex = this.field.width * .5, basey = this.field.height * .017;
         let unit = Math.min(this.field.width / 640, this.field.height / 480);
@@ -205,33 +205,33 @@ export default class ScoreOverlay extends PIXI.Container {
         setSpriteArrayPos(this.comboDigits, basex + this.scoreDigits.width / 2 + 16 * unit, basey + 3 * unit);
     }
     showSummary(metadata, a, retryCallback, quitCallback) {
-        let acc = this.judgeTotal / this.maxJudgeTotal, rank = grade(acc), grading = newdiv(null, "grading");
-        grading.classList.add("transparent");
+        let acc = this.judgeTotal / this.maxJudgeTotal, rank = grade(acc), grading = newdiv(null, 'grading');
+        grading.classList.add('transparent');
         document.body.appendChild(grading);
 
-        let top = newdiv(grading, "top"), info = newdiv(top, "beatmap-info");
-        newdiv(info, "title", metadata.Title);
-        newdiv(info, "artist", metadata.Artist);
-        newdiv(info, "version", metadata.Version);
-        newdiv(info, "mapper", "mapped by " + metadata.Creator);
-        newdiv(info, "version", modstext());
-        newdiv(top, "ranking", "Ranking");
-        newdiv(top, "grade " + rank, rank);
+        let top = newdiv(grading, 'top'), info = newdiv(top, 'beatmap-info');
+        newdiv(info, 'title', metadata.Title);
+        newdiv(info, 'artist', metadata.Artist);
+        newdiv(info, 'version', metadata.Version);
+        newdiv(info, 'mapper', 'mapped by ' + metadata.Creator);
+        newdiv(info, 'version', modstext());
+        newdiv(top, 'ranking', 'Ranking');
+        newdiv(top, 'grade ' + rank, rank);
 
-        let left = newdiv(grading, "left");
-        newdiv(left, "block score", this.score.toFixed(0));
-        newdiv(left, "block acc", (acc * 100).toFixed(2) + "%");
-        newdiv(left, "block err", errortext(a));
-        newdiv(left, "block great", this.judgecnt.great.toString());
-        newdiv(left, "block good", this.judgecnt.good.toString());
-        newdiv(left, "block meh", this.judgecnt.meh.toString());
-        newdiv(left, "block miss", this.judgecnt.miss.toString());
-        newdiv(left, "block placeholder");
-        newdiv(left, "block combo", this.maxcombo.toString() + "/" + this.fullcombo.toString() + "x");
+        let left = newdiv(grading, 'left');
+        newdiv(left, 'block score', this.score.toFixed(0));
+        newdiv(left, 'block acc', (acc * 100).toFixed(2) + '%');
+        newdiv(left, 'block err', errortext(a));
+        newdiv(left, 'block great', this.judgecnt.great.toString());
+        newdiv(left, 'block good', this.judgecnt.good.toString());
+        newdiv(left, 'block meh', this.judgecnt.meh.toString());
+        newdiv(left, 'block miss', this.judgecnt.miss.toString());
+        newdiv(left, 'block placeholder');
+        newdiv(left, 'block combo', this.maxcombo.toString() + '/' + this.fullcombo.toString() + 'x');
 
-        let b1 = newdiv(grading, "btn retry"), b2 = newdiv(grading, "btn quit");
-        newdiv(b1, "inner", "Retry");
-        newdiv(b2, "inner", "Quit");
+        let b1 = newdiv(grading, 'btn retry'), b2 = newdiv(grading, 'btn quit');
+        newdiv(b1, 'inner', 'Retry');
+        newdiv(b2, 'inner', 'Quit');
 
         b1.onclick = () => {
             grading.remove();
@@ -241,7 +241,7 @@ export default class ScoreOverlay extends PIXI.Container {
             grading.remove();
             quitCallback();
         };
-        window.setTimeout(() => grading.classList.remove("transparent"), 100);
+        window.setTimeout(() => grading.classList.remove('transparent'), 100);
     }
     destroy(options) {
         PIXI.Container.prototype.destroy.call(this, options);

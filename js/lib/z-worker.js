@@ -110,17 +110,17 @@
         get() {
             return ~this.crc;
         }
-    }
-    Crc32.prototype.table = (() => {
-        let i, j, t, table = [];
-        for (i = 0; i < 256; ++i) {
-            t = i;
-            for (j = 0; j < 8; ++j) {
-                if (t & 1) t = (t >>> 1) ^ 0xedb88320;
-                else t = t >>> 1;
+        get table() {
+            let i, j, t, table = [];
+            for (i = 0; i < 256; ++i) {
+                t = i;
+                for (j = 0; j < 8; ++j) {
+                    if (t & 1) t = (t >>> 1) ^ 0xedb88320;
+                    else t = t >>> 1;
+                }
+                table[i] = t;
             }
-            table[i] = t;
+            return table;
         }
-        return table;
-    })();
+    }
 })(this);

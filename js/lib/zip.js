@@ -522,7 +522,10 @@
         }
         var worker = new Worker(scripts[0]);
         worker.codecTime = worker.crcTime = 0;
-        worker.postMessage({ type: 'importScripts', scripts: scripts.slice(1) });
+        worker.postMessage({
+            type: 'importScripts',
+            scripts: scripts.slice(1)
+        });
         worker.addEventListener('message', onmessage);
         worker.addEventListener('error', errorHandler);
     }

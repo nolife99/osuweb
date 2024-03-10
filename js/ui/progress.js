@@ -4,7 +4,7 @@ function timeformat(ms) {
         prefix = '-';
         s = -s;
     }
-    return prefix + Math.floor(s / 60) + ":" + (s % 60).toFixed(0).padStart(2, '0');
+    return prefix + Math.floor(s / 60) + ':' + (s % 60).toFixed(0).padStart(2, '0');
 }
 export default class ProgressOverlay extends PIXI.Container {
     constructor(windowfield, starttime, endtime) {
@@ -20,11 +20,11 @@ export default class ProgressOverlay extends PIXI.Container {
             }, tint: 0xddffff
         };
 
-        this.remaining = new PIXI.BitmapText("", font);
+        this.remaining = new PIXI.BitmapText('', font);
         this.remaining.anchor.set(1);
         this.addChild(this.remaining);
 
-        this.past = new PIXI.BitmapText("", font);
+        this.past = new PIXI.BitmapText('', font);
         this.past.anchor.set(0, 1);
         this.addChild(this.past);
 

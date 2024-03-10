@@ -8,9 +8,7 @@ const bernstein = (i, n, t) => binomialCoefficient(n, i) * Math.pow(t, i) * Math
     return c;
 };
 export default class BSpline {
-    constructor(points) {
-        this.curve = [];
-        this.curveDistance = [];
+    constructor(points) {;
         this.totalDistance = 0;
         this.points = points;
 
@@ -21,14 +19,17 @@ export default class BSpline {
         }
 
         this.ncurve = Math.floor(approxLength / 5) + 2;
+        this.curve = new Array(this.ncurve);
+        this.curveDistance = new Array(this.ncurve);
+
         for (let i = 0; i < this.ncurve; ++i) {
             let curve = this.pointAt(i / (this.ncurve - 1));
-            this.curve.push(curve);
+            this.curve[i] = curve;
 
-            if (i == 0) this.curveDistance.push(0);
+            if (i == 0) this.curveDistance[i] = 0;
             else {
                 let prevCurve = this.curve[i - 1];
-                this.curveDistance.push(Math.hypot(curve.x - prevCurve.x, curve.y - prevCurve.y));
+                this.curveDistance[i] = Math.hypot(curve.x - prevCurve.x, curve.y - prevCurve.y);
                 this.totalDistance += this.curveDistance[i];
             }
         }

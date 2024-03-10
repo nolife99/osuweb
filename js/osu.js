@@ -1,6 +1,6 @@
-import OsuAudio from "./osu-audio.js";
-import LinearBezier from "./curve/LinearBezier.js";
-import ArcPath from "./curve/ArcPath.js";
+import OsuAudio from './osu-audio.js';
+import LinearBezier from './curve/LinearBezier.js';
+import ArcPath from './curve/ArcPath.js';
 
 const HIT_TYPE_CIRCLE = 1, HIT_TYPE_SLIDER = 2, HIT_TYPE_NEWCOMBO = 4, HIT_TYPE_SPINNER = 8;
 function stackHitObjects(track) {
@@ -9,12 +9,12 @@ function stackHitObjects(track) {
 
     function getintv(A, B) {
         let endTime = A.time;
-        if (A.type == "slider") endTime += A.repeat * A.timing.beatMs * (A.pixelLength / track.difficulty.SliderMultiplier) / 100;
+        if (A.type == 'slider') endTime += A.repeat * A.timing.beatMs * (A.pixelLength / track.difficulty.SliderMultiplier) / 100;
         return B.time - endTime;
     }
     function getdist(A, B) {
         let x = A.x, y = A.y;
-        if (A.type == "slider" && A.repeat % 2 == 1) {
+        if (A.type == 'slider' && A.repeat % 2 == 1) {
             x = A.curve.curve[A.curve.curve.length - 1].x;
             y = A.curve.curve[A.curve.curve.length - 1].y;
         }
@@ -27,13 +27,13 @@ function stackHitObjects(track) {
     for (let i = 0; i < track.hitObjects.length; ++i) {
         if (stacked[i]) continue;
         let hitI = track.hitObjects[i];
-        if (hitI.type == "spinner") continue;
+        if (hitI.type == 'spinner') continue;
         stacked[i] = true;
         let newchain = [hitI];
 
         for (let j = i + 1; j < track.hitObjects.length; ++j) {
             let hitJ = track.hitObjects[j];
-            if (hitJ.type == "spinner") break;
+            if (hitJ.type == 'spinner') break;
             if (getintv(newchain[newchain.length - 1], hitJ) > stackThreshold) break;
             if (getdist(newchain[newchain.length - 1], hitJ) <= stackDistance) {
                 if (stacked[j]) break;
@@ -50,7 +50,7 @@ function stackHitObjects(track) {
         hit.x += ofs;
         hit.y += ofs;
 
-        if (hit.type == "slider") {
+        if (hit.type == 'slider') {
             for (let j = 0; j < hit.keyframes.length; ++j) {
                 hit.keyframes[j].x += ofs;
                 hit.keyframes[j].y += ofs;
@@ -62,13 +62,13 @@ function stackHitObjects(track) {
         }
     }
     for (let i = 0; i < chains.length; ++i) {
-        if (chains[i][0].type == "slider") for (let j = 0, dep = 0; j < chains[i].length; ++j) {
+        if (chains[i][0].type == 'slider') for (let j = 0, dep = 0; j < chains[i].length; ++j) {
             movehit(chains[i][j], dep);
-            if (chains[i][j].type != "slider" || chains[i][j].repeat % 2 == 0) ++dep;
+            if (chains[i][j].type != 'slider' || chains[i][j].repeat % 2 == 0) ++dep;
         }
         else for (let j = 0, dep = 0; j < chains[i].length; ++j) {
             let cur = chains[i].length - 1 - j;
-            if (j > 0 && (chains[i][cur].type == "slider" && chains[i][cur].repeat % 2 == 1)) --dep;
+            if (j > 0 && (chains[i][cur].type == 'slider' && chains[i][cur].repeat % 2 == 1)) --dep;
             movehit(chains[i][cur], -dep);
             ++dep;
         }
@@ -91,30 +91,30 @@ class Track {
         this.hitObjects = [];
 
         this.decode = (() => {
-            let lines = self.track.replace("\r", "").split("\n"), section = null, combo = 0, index = 0, forceNewCombo = false;
+            let lines = self.track.replace('\r', '').split('\n'), section = null, combo = 0, index = 0, forceNewCombo = false;
             for (let i = 0; i < lines.length; ++i) {
                 let line = lines[i].trim();
-                if (line === "" || line.indexOf("//") === 0) continue;
-                if (line.indexOf("[") === 0) {
+                if (line === '' || line.indexOf('//') === 0) continue;
+                if (line.indexOf('[') === 0) {
                     section = line;
                     continue;
                 }
 
                 let key, value, parts;
                 switch (section) {
-                    case "[General]":
-                        key = line.substr(0, line.indexOf(":")), value = line.substr(line.indexOf(":") + 1).trim();
+                    case '[General]':
+                        key = line.substr(0, line.indexOf(':')), value = line.substr(line.indexOf(':') + 1).trim();
                         if (isNaN(value)) self.general[key] = value;
                         else self.general[key] = +value;
                         break;
 
-                    case "[Metadata]":
-                        key = line.substr(0, line.indexOf(":")), value = line.substr(line.indexOf(":") + 1).trim();
+                    case '[Metadata]':
+                        key = line.substr(0, line.indexOf(':')), value = line.substr(line.indexOf(':') + 1).trim();
                         self.metadata[key] = value;
                         break;
 
-                    case "[Events]":
-                        parts = line.split(",");
+                    case '[Events]':
+                        parts = line.split(',');
                         if (+parts[0] == 2) self.breaks.push({
                             startTime: +parts[1],
                             endTime: +parts[2]
@@ -122,14 +122,14 @@ class Track {
                         else self.events.push(parts);
                         break;
 
-                    case "[Difficulty]":
-                        parts = line.split(":"), value = parts[1].trim();
+                    case '[Difficulty]':
+                        parts = line.split(':'), value = parts[1].trim();
                         if (isNaN(value)) self.difficulty[parts[0]] = value;
                         else self.difficulty[parts[0]] = (+value);
                         break;
 
-                    case "[TimingPoints]":
-                        parts = line.split(",");
+                    case '[TimingPoints]':
+                        parts = line.split(',');
                         let t = {
                             offset: +parts[0],
                             beatMs: +parts[1],
@@ -144,15 +144,15 @@ class Track {
                         this.timing.push(t);
                         break;
 
-                    case "[Colours]":
-                        parts = line.split(":"), key = parts[0].trim(), value = parts[1].trim();
-                        if (key == "SliderTrackOverride") self.colors.SliderTrackOverride = value.split(',');
-                        else if (key == "SliderBorder") self.colors.SliderBorder = value.split(',');
+                    case '[Colours]':
+                        parts = line.split(':'), key = parts[0].trim(), value = parts[1].trim();
+                        if (key == 'SliderTrackOverride') self.colors.SliderTrackOverride = value.split(',');
+                        else if (key == 'SliderBorder') self.colors.SliderBorder = value.split(',');
                         else self.colors.push(value.split(','));
                         break;
 
-                    case "[HitObjects]":
-                        parts = line.split(",");
+                    case '[HitObjects]':
+                        parts = line.split(',');
                         let hit = {
                             x: +parts[0],
                             y: +parts[1],
@@ -170,8 +170,8 @@ class Track {
                         hit.index = index++;
 
                         if ((hit.type & HIT_TYPE_CIRCLE) > 0) {
-                            hit.type = "circle";
-                            let hitSample = (parts.length > 5 ? parts[5] : '0:0:0:0:').split(":");
+                            hit.type = 'circle';
+                            let hitSample = (parts.length > 5 ? parts[5] : '0:0:0:0:').split(':');
                             hit.hitSample = {
                                 normalSet: +hitSample[0],
                                 additionSet: +hitSample[1],
@@ -181,12 +181,12 @@ class Track {
                             };
                         }
                         else if ((hit.type & HIT_TYPE_SLIDER) > 0) {
-                            hit.type = "slider";
-                            let sliderKeys = parts[5].split("|");
+                            hit.type = 'slider';
+                            let sliderKeys = parts[5].split('|');
                             hit.sliderType = sliderKeys[0];
                             hit.keyframes = [];
                             for (let j = 1; j < sliderKeys.length; ++j) {
-                                let p = sliderKeys[j].split(":");
+                                let p = sliderKeys[j].split(':');
                                 hit.keyframes.push({
                                     x: +p[0],
                                     y: +p[1]
@@ -195,7 +195,7 @@ class Track {
                             hit.repeat = +parts[6];
                             hit.pixelLength = +parts[7];
 
-                            if (parts.length > 8) hit.edgeHitsounds = parts[8].split("|").map(Number);
+                            if (parts.length > 8) hit.edgeHitsounds = parts[8].split('|').map(Number);
                             else {
                                 hit.edgeHitsounds = new Array(hit.repeat + 1);
                                 for (let wdnmd = 0; wdnmd < hit.repeat + 1; ++wdnmd) hit.edgeHitsounds[wdnmd] = 0;
@@ -207,15 +207,15 @@ class Track {
                                 additionSet: 0
                             };
                             if (parts.length > 9) {
-                                let additions = parts[9].split("|");
+                                let additions = parts[9].split('|');
                                 for (let wdnmd = 0; wdnmd < additions.length; ++wdnmd) {
-                                    let sets = additions[wdnmd].split(":");
+                                    let sets = additions[wdnmd].split(':');
                                     hit.edgeSets[wdnmd].normalSet = +sets[0];
                                     hit.edgeSets[wdnmd].additionSet = +sets[1];
                                 }
                             }
 
-                            let hitSample = (parts.length > 10 ? parts[10] : '0:0:0:0:').split(":");
+                            let hitSample = (parts.length > 10 ? parts[10] : '0:0:0:0:').split(':');
                             hit.hitSample = {
                                 normalSet: +hitSample[0],
                                 additionSet: +hitSample[1],
@@ -228,11 +228,11 @@ class Track {
                             if (hit.type & HIT_TYPE_NEWCOMBO) --combo;
                             hit.combo = combo - ((hit.type >> 4) & 7);
                             forceNewCombo = true;
-                            hit.type = "spinner";
+                            hit.type = 'spinner';
                             hit.endTime = +parts[5];
                             if (hit.endTime < hit.time) hit.endTime = hit.time + 1;
 
-                            let hitSample = (parts.length > 6 ? parts[6] : '0:0:0:0:').split(":");
+                            let hitSample = (parts.length > 6 ? parts[6] : '0:0:0:0:').split(':');
                             hit.hitSample = {
                                 normalSet: +hitSample[0],
                                 additionSet: +hitSample[1],
@@ -278,18 +278,18 @@ class Track {
                 while (j + 1 < this.timing.length && this.timing[j + 1].offset <= hit.time) ++j;
                 hit.timing = this.timing[j];
 
-                if (hit.type == "circle") hit.endTime = hit.time;
-                else if (hit.type == "slider") {
+                if (hit.type == 'circle') hit.endTime = hit.time;
+                else if (hit.type == 'slider') {
                     hit.sliderTime = hit.timing.beatMs * (hit.pixelLength / this.difficulty.SliderMultiplier) / 100;
                     hit.sliderTimeTotal = hit.sliderTime * hit.repeat;
                     hit.endTime = hit.time + hit.sliderTimeTotal;
 
-                    if (hit.sliderType === "P" && hit.keyframes.length == 2) {
+                    if (hit.sliderType === 'P' && hit.keyframes.length == 2) {
                         hit.curve = ArcPath(hit);
                         if (hit.curve.length == 0) hit.curve = new LinearBezier(hit, false);
                     }
                     else hit.curve = new LinearBezier(hit, hit.keyframes.length == 1);
-                    if (hit.curve.length < 2) console.error("[curve] slider curve calculation failed");
+                    if (hit.curve.length < 2) console.error('[curve] slider curve calculation failed');
                 }
             }
             this.length = (this.hitObjects[this.hitObjects.length - 1].endTime - this.hitObjects[0].time) / 1000;
@@ -313,7 +313,7 @@ export default class Osu {
             if (++count == self.raw_tracks.length && self.ondecoded !== null) self.ondecoded(this);
         };
         this.load = () => {
-            self.raw_tracks = zip.children.filter(c => c.name.indexOf(".osu") === c.name.length - 4);
+            self.raw_tracks = zip.children.filter(c => c.name.indexOf('.osu') === c.name.length - 4);
             self.raw_tracks.forEach(t => t.getText(text => {
                 let track = new Track(zip, text);
                 self.tracks.push(track);
@@ -326,13 +326,13 @@ export default class Osu {
                 let trEv = this.tracks[i].events;
                 try {
                     let file = trEv[0][2];
-                    if (trEv[0][0] === "Video") file = trEv[1][2];
+                    if (trEv[0][0] === 'Video') file = trEv[1][2];
                     file = file.substr(1, file.length - 2);
-                    zip.getChildByName(file).getBlob("image/jpeg", blob => img.src = URL.createObjectURL(blob));
+                    zip.getChildByName(file).getBlob('image/jpeg', blob => img.src = URL.createObjectURL(blob));
                     break;
                 }
                 catch (error) {
-                    img.src = "asset/skin/defaultbg.jpg";
+                    img.src = 'asset/skin/defaultbg.jpg';
                 }
             }
         };
@@ -340,7 +340,7 @@ export default class Osu {
         this.sortTracks = () => self.tracks.sort((a, b) => a.difficulty.OverallDifficulty - b.difficulty.OverallDifficulty);
 
         this.load_mp3 = () => zip.children.find(c => c.name.toLowerCase() === self.tracks[0].general.AudioFilename.toLowerCase())
-            .getBlob("audio/mpeg", blob => {
+            .getBlob('audio/mpeg', blob => {
                 let reader = new FileReader();
                 reader.onload = e => self.audio = new OsuAudio(e.target.result, () => {
                     if (self.onready) self.onready();
@@ -349,7 +349,7 @@ export default class Osu {
             });
     }
     requestStar() {
-        fetch("https://api.sayobot.cn/v2/beatmapinfo?0=" + this.tracks[0].metadata.BeatmapSetID).then(r => r.json()).then(e => {
+        fetch('https://api.sayobot.cn/v2/beatmapinfo?0=' + this.tracks[0].metadata.BeatmapSetID).then(r => r.json()).then(e => {
             if (e.status == 0) e.data.bid_data.forEach(data => this.tracks.forEach(track => {
                 if (track.metadata.BeatmapID == data.bid) {
                     track.difficulty.star = data.star;

@@ -106,11 +106,11 @@ let actx = new AudioContext();
 export let sounds = {
     toLoad: 0,
     loaded: 0,
-    audioExtensions: ["mp3", "ogg", "wav", "webm"],
+    audioExtensions: ['mp3', 'ogg', 'wav', 'webm'],
     whenLoaded: undefined,
     onProgress: undefined,
     onFailed: (source, _e) => {
-        throw new Error("Audio could not be loaded: " + source);
+        throw new Error('Audio could not be loaded: ' + source);
     },
     load: function (sources) {
         let self = this;

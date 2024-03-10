@@ -26,8 +26,8 @@ export default class LoadingMenu extends PIXI.Container {
         });
         this.artisttext = new PIXI.BitmapText(track.metadata.Artist || '-', allFont);
         this.versiontext = new PIXI.BitmapText(track.metadata.Version || '-', allFont);
-        this.sourcetext = new PIXI.BitmapText("Source: " + (track.metadata.Source || '-'), allFont);
-        this.mappertext = new PIXI.BitmapText("Mapper: " + (track.metadata.Creator || '-'), allFont);
+        this.sourcetext = new PIXI.BitmapText('Source: ' + (track.metadata.Source || '-'), allFont);
+        this.mappertext = new PIXI.BitmapText('Mapper: ' + (track.metadata.Creator || '-'), allFont);
         this.titletext.anchor.set(.5);
         this.artisttext.anchor.set(.5);
         this.versiontext.anchor.set(.5);

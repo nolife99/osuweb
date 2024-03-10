@@ -72,12 +72,12 @@ function newTexture(colors, SliderTrackOverride, SliderBorder) {
 
 const DIVIDES = 32;
 function curveGeometry(curve0, radius) {
-    let curve = new Array();
+    let curve = [];
     for (let i = 0; i < curve0.length; ++i) if (i == 0 ||
         Math.abs(curve0[i].x - curve0[i - 1].x) > .00001 ||
         Math.abs(curve0[i].y - curve0[i - 1].y) > .00001) curve.push(curve0[i]);
 
-    let vert = new Array(), index = new Array(), first = curve[0];
+    let vert = [], index = [], first = curve[0];
     vert.push(first.x, first.y, first.t, 0);
 
     for (let i = 1; i < curve.length; ++i) {
@@ -123,7 +123,7 @@ function curveGeometry(curve0, radius) {
     return new PIXI.Geometry().addAttribute('position', vert, 4).addIndex(index)
 }
 function circleGeometry(radius) {
-    let vert = new Array(), index = new Array();
+    let vert = [], index = [];
     vert.push(0, 0, 0, 0);
     for (let i = 0; i < DIVIDES; ++i) {
         let theta = twoPi / DIVIDES * i;
@@ -132,7 +132,7 @@ function circleGeometry(radius) {
     }
     return new PIXI.Geometry().addAttribute('position', vert, 4).addIndex(index);
 }
-function SliderMesh(curve, radius, tintid) {
+export default function SliderMesh(curve, radius, tintid) {
     Container.call(this);
 
     this.curve = curve;
@@ -273,5 +273,3 @@ SliderMesh.prototype.resetTransform = function (transform) {
     this.uniforms.ox = transform.ox;
     this.uniforms.oy = transform.oy;
 };
-
-export default SliderMesh;

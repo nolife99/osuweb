@@ -37,7 +37,7 @@ export default class OsuAudio {
             self.decoded = decoded;
             if (callback) callback(self);
         }, _e => {
-            console.log("Error decode audio");
+            console.log('Error decode audio');
             if (syncStream(node)) decode(node);
         });
         decode({
@@ -46,7 +46,7 @@ export default class OsuAudio {
 
         this.getPos = () => self.playing ? self.position + (self.audio.currentTime - self.started) * self.speed : self.position;
         this.play = (wait = 0) => {
-            if (self.audio.state == "suspended") window.alert("Audio can't play. Please use Chrome or Firefox.");
+            if (self.audio.state == 'suspended') window.alert("Audio can't play. Please use Chrome or Firefox.");
             self.source = new AudioBufferSourceNode(self.audio);
             self.source.playbackRate.value = self.speed;
             self.source.buffer = self.decoded;

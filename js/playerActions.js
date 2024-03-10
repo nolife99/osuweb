@@ -9,7 +9,7 @@ function triggerTap() {
         hit = playback.newHits.find(inUpcoming_grace(res));
     }
     else if (hit) {
-        if (hit.type == "circle" || hit.type == "slider") {
+        if (hit.type == 'circle' || hit.type == 'slider') {
             if (playback.autoplay) playback.hitSuccess(hit, 300, hit.time);
             else {
                 let points = 50;
@@ -35,14 +35,14 @@ export default function playerActions(playback) {
     window.game.updatePlayerActions = time => {
         let cur = playback.auto.curObj;
         if (window.game.down && cur) {
-            if (cur.type == "circle" || time > cur.endTime) {
+            if (cur.type == 'circle' || time > cur.endTime) {
                 window.game.down = false;
                 playback.auto.curObj = null;
                 playback.auto.lasttime = time;
                 playback.auto.lastx = window.game.mouseX;
                 playback.auto.lasty = window.game.mouseY;
             }
-            else if (cur.type == "slider") {
+            else if (cur.type == 'slider') {
                 window.game.mouseX = cur.ball.x || cur.x;
                 window.game.mouseY = cur.ball.y || cur.y;
             }
@@ -58,7 +58,7 @@ export default function playerActions(playback) {
             let hit = playback.hits[playback.auto.curid];
             if (hit.score < 0) {
                 let targX = hit.x, targY = hit.y;
-                if (hit.type === "spinner") {
+                if (hit.type === 'spinner') {
                     let ang = Math.atan2(window.game.mouseY - targY, window.game.mouseX - targX);
                     targX += spinRadius * Math.cos(ang);
                     targY += spinRadius * Math.sin(ang);
@@ -81,7 +81,7 @@ export default function playerActions(playback) {
         }
         if (!window.game.down) {
             let targX = cur.x, targY = cur.y;
-            if (cur.type === "spinner") {
+            if (cur.type === 'spinner') {
                 let ang = Math.atan2(window.game.mouseY - targY, window.game.mouseX - targX);
                 targX += spinRadius * Math.cos(ang);
                 targY += spinRadius * Math.sin(ang);
@@ -180,20 +180,20 @@ export default function playerActions(playback) {
             window.game.down = k1 || k2 || m1 || m2;
         }
 
-        window.addEventListener("mousemove", mousemoveCallback);
+        window.addEventListener('mousemove', mousemoveCallback);
         if (window.game.allowMouseButton) {
-            window.addEventListener("mousedown", mousedownCallback);
-            window.addEventListener("mouseup", mouseupCallback);
+            window.addEventListener('mousedown', mousedownCallback);
+            window.addEventListener('mouseup', mouseupCallback);
         }
-        window.addEventListener("keydown", keydownCallback);
-        window.addEventListener("keyup", keyupCallback);
+        window.addEventListener('keydown', keydownCallback);
+        window.addEventListener('keyup', keyupCallback);
 
         window.game.cleanupPlayerActions = () => {
-            window.removeEventListener("mousemove", mousemoveCallback);
-            window.removeEventListener("mousedown", mousedownCallback);
-            window.removeEventListener("mouseup", mouseupCallback);
-            window.removeEventListener("keydown", keydownCallback);
-            window.removeEventListener("keyup", keyupCallback);
+            window.removeEventListener('mousemove', mousemoveCallback);
+            window.removeEventListener('mousedown', mousedownCallback);
+            window.removeEventListener('mouseup', mouseupCallback);
+            window.removeEventListener('keydown', keydownCallback);
+            window.removeEventListener('keyup', keyupCallback);
         };
     }
 };

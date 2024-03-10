@@ -1,11 +1,11 @@
-import setPlayerActions from "./playerActions.js";
-import SliderMesh from "./SliderMesh.js";
-import ScoreOverlay from "./ui/score.js";
-import VolumeMenu from "./ui/volume.js";
-import LoadingMenu from "./ui/loading.js";
-import BreakOverlay from "./ui/break.js";
-import ProgressOverlay from "./ui/progress.js";
-import ErrorMeterOverlay from "./ui/hiterrormeter.js";
+﻿import setPlayerActions from './playerActions.js';
+import SliderMesh from './SliderMesh.js';
+import ScoreOverlay from './ui/score.js';
+import VolumeMenu from './ui/volume.js';
+import LoadingMenu from './ui/loading.js';
+import BreakOverlay from './ui/break.js';
+import ProgressOverlay from './ui/progress.js';
+import ErrorMeterOverlay from './ui/hiterrormeter.js';
 
 const clamp = (num, min, max) => Math.min(Math.max(num, min), max), clamp01 = num => Math.min(Math.max(num, 0), 1);
 function colorLerp(rgb1, rgb2, t) {
@@ -182,7 +182,7 @@ export default function Playback(game, osu, track) {
             hit.objectFadeOutOffset = -.6 * self.approachTime;
             hit.circleFadeOutTime = .3 * self.approachTime;
 
-            if (hit.type == "slider") {
+            if (hit.type == 'slider') {
                 hit.fadeOutOffset = -.6 * self.approachTime;
                 hit.fadeOutDuration = hit.sliderTimeTotal - hit.fadeOutOffset;
             }
@@ -193,7 +193,7 @@ export default function Playback(game, osu, track) {
             hit.circleFadeOutTime = 100;
             hit.objectFadeOutOffset = self.MehTime;
 
-            if (hit.type == "slider") {
+            if (hit.type == 'slider') {
                 hit.fadeOutOffset = hit.sliderTimeTotal;
                 hit.fadeOutDuration = 300;
             }
@@ -218,10 +218,10 @@ export default function Playback(game, osu, track) {
     setPlayerActions(self);
     game.paused = false;
 
-    let menu = document.getElementById("pause-menu"),
-        btn_continue = document.getElementById("pausebtn-continue"),
-        btn_retry = document.getElementById("pausebtn-retry"),
-        btn_quit = document.getElementById("pausebtn-quit");
+    let menu = document.getElementById('pause-menu'),
+        btn_continue = document.getElementById('pausebtn-continue'),
+        btn_retry = document.getElementById('pausebtn-retry'),
+        btn_quit = document.getElementById('pausebtn-quit');
 
     this.pause = () => {
         if (osu.audio.pause()) {
@@ -272,9 +272,9 @@ export default function Playback(game, osu, track) {
         };
         window.addEventListener('wheel', volumeCallback);
     }
-    window.addEventListener("blur", blurCallback);
-    window.addEventListener("keydown", skipCallback);
-    window.addEventListener("keyup", pauseCallback);
+    window.addEventListener('blur', blurCallback);
+    window.addEventListener('keydown', skipCallback);
+    window.addEventListener('keyup', pauseCallback);
 
     function fadeOutEasing(t) {
         if (t <= 0) return 1;
@@ -283,11 +283,11 @@ export default function Playback(game, osu, track) {
     }
     function judgementText(points) {
         switch (points) {
-            case 0: return "miss";
-            case 50: return "meh";
-            case 100: return "good";
-            case 300: return "great";
-            default: throw "no such judgement";
+            case 0: return 'miss';
+            case 50: return 'meh';
+            case 100: return 'good';
+            case 300: return 'great';
+            default: throw 'no such judgement';
         }
     }
     function judgementColor(points) {
@@ -296,7 +296,7 @@ export default function Playback(game, osu, track) {
             case 50: return 0xffcc22;
             case 100: return 0x88b300;
             case 300: return 0x66ccff;
-            default: throw "no such judgement";
+            default: throw 'no such judgement';
         }
     }
     this.createJudgement = (x, y, depth, finalTime) => {
@@ -358,7 +358,7 @@ export default function Playback(game, osu, track) {
     this.createBackground = () => {
         function loadBackground(uri) {
             let loader = new PIXI.Loader();
-            loader.add("bg", uri, {
+            loader.add('bg', uri, {
                 loadType: PIXI.LoaderResource.LOAD_TYPE.IMAGE
             }).load((_loader, resources) => {
                 let sprite = new PIXI.Sprite(resources.bg.texture);
@@ -390,20 +390,20 @@ export default function Playback(game, osu, track) {
         if (track.events.length > 0) {
             self.ready = false;
             let file = track.events[0][2];
-            if (track.events[0][0] === "Video") file = track.events[1][2];
+            if (track.events[0][0] === 'Video') file = track.events[1][2];
             file = file.substr(1, file.length - 2);
 
             let entry = osu.zip.getChildByName(file);
-            if (entry) entry.getBlob("image/jpeg", function (blob) {
+            if (entry) entry.getBlob('image/jpeg', function (blob) {
                 loadBackground(URL.createObjectURL(blob));
                 self.ready = true;
             });
             else {
-                loadBackground("asset/skin/defaultbg.jpg");
+                loadBackground('asset/skin/defaultbg.jpg');
                 self.ready = true;
             }
         }
-        else loadBackground("asset/skin/defaultbg.jpg");
+        else loadBackground('asset/skin/defaultbg.jpg');
     };
     self.createBackground();
 
@@ -439,25 +439,25 @@ export default function Playback(game, osu, track) {
         }
         let index = hit.index + 1, basedep = 4.9999 - .0001 * hit.hitIndex;
 
-        hit.base = newHitSprite("disc.png", basedep, .5);
+        hit.base = newHitSprite('disc.png', basedep, .5);
         hit.base.tint = combos[hit.combo % combos.length];
-        hit.circle = newHitSprite("hitcircleoverlay.png", basedep, .5);
-        hit.glow = newHitSprite("ring-glow.png", basedep + 2, .46);
+        hit.circle = newHitSprite('hitcircleoverlay.png', basedep, .5);
+        hit.glow = newHitSprite('ring-glow.png', basedep + 2, .46);
         hit.glow.tint = combos[hit.combo % combos.length];
         hit.glow.blendMode = PIXI.BLEND_MODES.ADD;
-        hit.burst = newHitSprite("hitburst.png", 8.00005 + .0001 * hit.hitIndex);
+        hit.burst = newHitSprite('hitburst.png', 8.00005 + .0001 * hit.hitIndex);
         hit.burst.visible = false;
-        hit.approach = newHitSprite("approachcircle.png", 8 + .0001 * hit.hitIndex);
+        hit.approach = newHitSprite('approachcircle.png', 8 + .0001 * hit.hitIndex);
         hit.approach.tint = combos[hit.combo % combos.length];
         if (!hit.enableflash) hit.approach.visible = false;
         hit.judgements.push(this.createJudgement(hit.x, hit.y, 4, hit.time + this.MehTime));
 
         if (!game.hideNumbers) {
             hit.numbers = [];
-            if (index < 10) hit.numbers.push(newHitSprite("score-" + index + ".png", basedep, .4, .5, .47));
+            if (index < 10) hit.numbers.push(newHitSprite('score-' + index + '.png', basedep, .4, .5, .47));
             else if (index < 100) {
-                hit.numbers.push(newHitSprite("score-" + index % 10 + ".png", basedep, .35, 0, .47));
-                hit.numbers.push(newHitSprite("score-" + ((index - index % 10) / 10) + ".png", basedep, .35, 1, .47));
+                hit.numbers.push(newHitSprite('score-' + index % 10 + '.png', basedep, .35, 0, .47));
+                hit.numbers.push(newHitSprite('score-' + ((index - index % 10) / 10) + '.png', basedep, .35, 1, .47));
             }
         }
     };
@@ -490,30 +490,29 @@ export default function Playback(game, osu, track) {
             if (Math.min(pos, 1 - pos) * hit.sliderTime <= 10) continue;
             let at = hit.curve.pointAt(pos);
 
-            hit.ticks.push(newSprite("sliderscorepoint.png", at.x, at.y));
-            let lastTick = hit.ticks[hit.ticks.length - 1];
+            let lastTick = hit.ticks[hit.ticks.push(newSprite('sliderscorepoint.png', at.x, at.y)) - 1];
             lastTick.appeartime = t - 2 * tickDuration;
             lastTick.time = t;
             lastTick.result = false;
         }
         if (hit.repeat > 1) {
             let p = hit.curve.curve[hit.curve.curve.length - 1], p2 = hit.curve.curve[hit.curve.curve.length - 2];
-            hit.reverse = newSprite("reversearrow.png", p.x, p.y, .36, true);
+            hit.reverse = newSprite('reversearrow.png', p.x, p.y, .36, true);
             hit.reverse.rotation = Math.atan2(p2.y - p.y, p2.x - p.x);
         }
         if (hit.repeat > 2) {
             let p = hit.curve.curve[0], p2 = hit.curve.curve[1];
-            hit.reverse_b = newSprite("reversearrow.png", p.x, p.y, .36, true);
+            hit.reverse_b = newSprite('reversearrow.png', p.x, p.y, .36, true);
             hit.reverse_b.rotation = Math.atan2(p2.y - p.y, p2.x - p.x);
             hit.reverse_b.visible = false;
         }
 
-        hit.follow = newSprite("sliderfollowcircle.png", hit.x, hit.y);
+        hit.follow = newSprite('sliderfollowcircle.png', hit.x, hit.y);
         hit.follow.visible = false;
         hit.follow.blendMode = PIXI.BLEND_MODES.ADD;
         hit.followSize = 1;
 
-        hit.ball = newSprite("sliderb.png", hit.x, hit.y, .5);
+        hit.ball = newSprite('sliderb.png', hit.x, hit.y, .5);
         hit.ball.visible = false;
         self.createHitCircle(hit);
 
@@ -544,9 +543,9 @@ export default function Playback(game, osu, track) {
             hit.objects.push(sprite);
             return sprite;
         }
-        hit.base = newsprite("spinnerbase.png");
-        hit.progress = newsprite("spinnerprogress.png");
-        hit.top = newsprite("spinnertop.png");
+        hit.base = newsprite('spinnerbase.png');
+        hit.progress = newsprite('spinnerprogress.png');
+        hit.top = newsprite('spinnertop.png');
         if (game.hidden) {
             hit.progress.visible = false;
             hit.base.visible = false;
@@ -555,7 +554,7 @@ export default function Playback(game, osu, track) {
     };
     this.createFollowPoint = (prevHit, hit) => {
         let x1 = prevHit.x, y1 = prevHit.y, t1 = prevHit.time;
-        if (prevHit.type == "slider") {
+        if (prevHit.type == 'slider') {
             t1 += prevHit.sliderTimeTotal;
             if (prevHit.repeat % 2 == 1) {
                 x1 = prevHit.curve.curve[prevHit.curve.curve.length - 1].x;
@@ -580,7 +579,7 @@ export default function Playback(game, osu, track) {
         let rotation = Math.atan2(container.dy, container.dx), distance = Math.floor(Math.hypot(container.dx, container.dy));
 
         for (let d = spacing * 1.5; d < distance - spacing; d += spacing) {
-            let frac = d / distance, p = new PIXI.Sprite(window.skin["followpoint.png"]);
+            let frac = d / distance, p = new PIXI.Sprite(window.skin['followpoint.png']);
             p.scale.set(this.hitSpriteScale * .4, this.hitSpriteScale * .3);
             p.x = x1 + container.dx * frac;
             p.y = y1 + container.dy * frac;
@@ -607,11 +606,11 @@ export default function Playback(game, osu, track) {
         hit.score = -1;
 
         switch (hit.type) {
-            case "circle": self.createHitCircle(hit); break;
-            case "slider": self.createSlider(hit); break;
-            case "spinner": self.createSpinner(hit); break;
+            case 'circle': self.createHitCircle(hit); break;
+            case 'slider': self.createSlider(hit); break;
+            case 'spinner': self.createSpinner(hit); break;
         }
-        if (!game.hideFollow && i > 0 && hit.type !== "spinner" && hit.type !== "spinner" && hit.combo === this.hits[i - 1].combo) this.createFollowPoint(this.hits[i - 1], hit);
+        if (!game.hideFollow && i > 0 && hit.type !== 'spinner' && hit.type !== 'spinner' && hit.combo === this.hits[i - 1].combo) this.createFollowPoint(this.hits[i - 1], hit);
     }
 
     this.curtimingid = 0;
@@ -664,12 +663,12 @@ export default function Playback(game, osu, track) {
     this.hitSuccess = (hit, points, time) => {
         this.scoreOverlay.hit(points, 300, time);
         if (points > 0) {
-            if (hit.type == "spinner") self.playHitsound(hit, 0, hit.endTime);
+            if (hit.type == 'spinner') self.playHitsound(hit, 0, hit.endTime);
             else {
                 self.playHitsound(hit, 0, hit.time);
                 self.errorMeter.hit(time - hit.time, time);
             }
-            if (hit.type == "slider") hit.judgements[hit.judgements.length - 1].defaultScore = 50;
+            if (hit.type == 'slider') hit.judgements[hit.judgements.length - 1].defaultScore = 50;
         }
 
         hit.score = points;
@@ -704,8 +703,8 @@ export default function Playback(game, osu, track) {
         }
         for (let i = 0; i < self.newHits.length; ++i) {
             let hit = self.newHits[i], despawn = -this.objectDespawnTime;
-            if (hit.type === "slider") despawn -= hit.sliderTimeTotal;
-            else if (hit.type === "spinner") despawn -= hit.endTime - hit.time;
+            if (hit.type === 'slider') despawn -= hit.sliderTimeTotal;
+            else if (hit.type === 'spinner') despawn -= hit.endTime - hit.time;
 
             if (hit.time - time < despawn) {
                 self.newHits.splice(i--, 1);
@@ -1012,9 +1011,9 @@ export default function Playback(game, osu, track) {
         for (let i = self.newHits.length - 1; i >= 0; --i) {
             let hit = self.newHits[i];
             switch (hit.type) {
-                case "circle": self.updateHitCircle(hit, time); break;
-                case "slider": self.updateSlider(hit, time); break;
-                case "spinner": self.updateSpinner(hit, time); break;
+                case 'circle': self.updateHitCircle(hit, time); break;
+                case 'slider': self.updateSlider(hit, time); break;
+                case 'spinner': self.updateSpinner(hit, time); break;
             }
         }
     };
@@ -1089,7 +1088,7 @@ export default function Playback(game, osu, track) {
         self.background.destroy();
 
         window.onresize = null;
-        window.removeEventListener("blur", blurCallback);
+        window.removeEventListener('blur', blurCallback);
         window.removeEventListener('wheel', volumeCallback);
         window.removeEventListener('keyup', pauseCallback);
         window.removeEventListener('keydown', skipCallback);
