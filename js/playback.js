@@ -452,8 +452,8 @@ export default function Playback(game, osu, track) {
         if (!hit.enableflash) hit.approach.visible = false;
         hit.judgements.push(this.createJudgement(hit.x, hit.y, 4, hit.time + this.MehTime));
 
+        hit.numbers = [];
         if (!game.hideNumbers) {
-            hit.numbers = [];
             if (index < 10) hit.numbers.push(newHitSprite('score-' + index + '.png', basedep, .4, .5, .47));
             else if (index < 100) {
                 hit.numbers.push(newHitSprite('score-' + index % 10 + '.png', basedep, .35, 0, .47));

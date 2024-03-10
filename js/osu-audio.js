@@ -1,3 +1,5 @@
+import { actx } from './lib/sound.js';
+
 function syncStream(node) {
     let buf8 = new Uint8Array(node.buf);
     buf8.indexOf = Array.prototype.indexOf;
@@ -27,13 +29,12 @@ export default class OsuAudio {
         self.started = 0;
         self.position = 0;
         self.playing = false;
-        self.audio = new AudioContext();
 
-        self.gain = self.audio.createGain();
-        self.gain.connect(self.audio.destination);
+        self.gain = actx.createGain();
+        self.gain.connect(actx.destination);
         self.speed = 1;
 
-        const decode = node => self.audio.decodeAudioData(node.buf, decoded => {
+        const decode = node => actx.decodeAudioData(node.buf, decoded => {
             self.decoded = decoded;
             if (callback) callback(self);
         }, _e => {
@@ -44,14 +45,14 @@ export default class OsuAudio {
             buf: buffer, sync: 0, retry: 0
         });
 
-        this.getPos = () => self.playing ? self.position + (self.audio.currentTime - self.started) * self.speed : self.position;
+        this.getPos = () => self.playing ? self.position + (actx.currentTime - self.started) * self.speed : self.position;
         this.play = (wait = 0) => {
-            if (self.audio.state == 'suspended') window.alert("Audio can't play. Please use Chrome or Firefox.");
-            self.source = new AudioBufferSourceNode(self.audio);
+            if (actx.state == 'suspended') window.alert("Audio can't play. Please use Chrome or Firefox.");
+            self.source = new AudioBufferSourceNode(actx);
             self.source.playbackRate.value = self.speed;
             self.source.buffer = self.decoded;
             self.source.connect(self.gain);
-            self.started = self.audio.currentTime;
+            self.started = actx.currentTime;
 
             if (wait > 0) {
                 self.position = -wait / 1000;
@@ -62,21 +63,22 @@ export default class OsuAudio {
         };
         this.pause = () => {
             if (!self.playing || self.getPos() <= 0) return false;
-            self.position += (self.audio.currentTime - self.started) * self.speed;
+            self.position += (actx.currentTime - self.started) * self.speed;
             self.source.stop();
             self.playing = false;
             return true;
         };
         this.seek = time => {
-            if (self.playing && self.getPos() > 0 && time > self.audio.currentTime - self.started) {
+            if (self.playing && self.getPos() > 0 && time > actx.currentTime - self.started) {
                 self.position = time;
                 self.source.stop();
-                self.source = new AudioBufferSourceNode(self.audio);
+                self.source.disconnect(self.gain);
+                self.source = new AudioBufferSourceNode(actx);
                 self.source.playbackRate.value = self.speed;
                 self.source.buffer = self.decoded;
                 self.source.connect(self.gain);
                 self.source.start(0, self.position);
-                self.started = self.audio.currentTime;
+                self.started = actx.currentTime;
                 return true;
             }
             else return false;

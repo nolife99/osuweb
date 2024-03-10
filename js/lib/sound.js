@@ -102,7 +102,6 @@ if (window.hasOwnProperty('webkitAudioContext') &&
 }
 if (window.hasOwnProperty('webkitOfflineAudioContext') && !window.hasOwnProperty('OfflineAudioContext')) window.OfflineAudioContext = webkitOfflineAudioContext;
 
-let actx = new AudioContext();
 export let sounds = {
     toLoad: 0,
     loaded: 0,
@@ -138,6 +137,8 @@ export let sounds = {
         }
     }
 };
+
+export let actx = new AudioContext();
 function makeSound(source, loadHandler, shouldLoadSound, failHandler) {
     let o = {};
     o.volumeNode = actx.createGain();
