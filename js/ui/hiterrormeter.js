@@ -1,5 +1,5 @@
 const barheight = 220, color300 = 0x66ccff, color100 = 0x88b300, color50 = 0xffcc22;
-export default class ErrorMeter extends PIXI.Container {
+class ErrorMeter extends PIXI.Container {
     constructor(r300, r100, r50) {
         super();
         PIXI.Container.call(this);
@@ -67,7 +67,7 @@ export default class ErrorMeter extends PIXI.Container {
         PIXI.Container.prototype.destroy.call(this, options);
     }
 }
-class ErrorMeterOverlay extends PIXI.Container {
+export default class ErrorMeterOverlay extends PIXI.Container {
     constructor(windowfield, r300, r100, r50) {
         super();
         PIXI.Container.call(this);
