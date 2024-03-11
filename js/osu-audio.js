@@ -47,7 +47,7 @@ export default class OsuAudio {
 
         this.getPos = () => self.playing ? self.position + (actx.currentTime - self.started) * self.speed : self.position;
         this.play = (wait = 0) => {
-            if (actx.state === 'suspended') window.alert("Audio can't play. Please use Chrome or Firefox.");
+            if (actx.state == 'suspended') window.alert("Audio can't play. Please use Chrome or Firefox.");
             self.source = new AudioBufferSourceNode(actx);
             self.source.playbackRate.value = self.speed;
             self.source.buffer = self.decoded;
