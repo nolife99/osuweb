@@ -12,10 +12,7 @@ function syncStream(node) {
         ++i;
     }
     if (i !== -1) {
-        let tmp = node.buf.slice(i);
-        delete node.buf;
-        node.buf = null;
-        node.buf = tmp;
+        node.buf.splice(i);
         node.sync = i;
         return true;
     }

@@ -17,22 +17,22 @@ export default class LinearBezier {
                 y: hit.y
             };
             if (line) {
-                if (lastPoi !== null) {
+                if (lastPoi) {
                     points.push(tpoi);
                     beziers.push(new BSpline(points));
-                    points.splice(0);
+                    points = [];
                 }
             }
-            else if (lastPoi !== null && tpoi.x === lastPoi.x && tpoi.y === lastPoi.y) {
+            else if (lastPoi && tpoi.x === lastPoi.x && tpoi.y === lastPoi.y) {
                 if (points.length >= 2) beziers.push(new BSpline(points));
-                points.splice(0);
+                points = [];
             }
             points.push(tpoi);
             lastPoi = tpoi;
         }
         if (!line && points.length > 1) {
             beziers.push(new BSpline(points));
-            points.splice(0);
+            points = [];
         }
         let distanceAt = 0, curPoint = 0, curCurveIndex = 0, curCurve = beziers[0], lastCurve = curCurve.curve[0], lastDistanceAt = 0;
 
