@@ -292,10 +292,10 @@ localforage.getItem('beatmapfilelist', (err, names) => {
                     loadingCounter.innerText = ++loadingn;
                 }, _e => pDragboxHint.innerText = pDragboxHint.nonValidHint);
             }
-            else console.error('error while loading beatmap:', names[i], err);
+            else console.warn('error while loading beatmap:', names[i], err);
         });
     }
-    else if (names) console.error('error while loading beatmap list:', err, names);
+    else if (names) console.warn('error while loading beatmap list:', err, names);
 });
 function addbeatmap(osz, f) {
     let map = new BeatmapController();
@@ -316,11 +316,11 @@ function addbeatmap(osz, f) {
         if (!beatmapFileList.includes(map.filename)) {
             beatmapFileList.push(map.filename);
             localforage.setItem('beatmapfilelist', beatmapFileList, (err, _val) => {
-                if (err) console.error('Error while saving beatmap list');
+                if (err) console.warn('Error while saving beatmap list', err);
             });
         }
     };
-    map.osu.onerror = _e => console.error('osu load error');
+    map.osu.onerror = _e => console.warn('osu load error', _e);
     map.osu.load();
 }
 function handleDragDrop(e) {
@@ -338,7 +338,7 @@ function handleDragDrop(e) {
             let fs = new zip.fs.FS();
             fs.filename = raw_file.name;
             localforage.setItem(raw_file.name, raw_file, (err, _val) => {
-                if (err) console.error('Error while saving beatmap', fs.filename);
+                if (err) console.warn('Error while saving beatmap', fs.filename, err);
             })
             fs.root.importBlob(raw_file, () => addbeatmap(fs, box => {
                 pBeatmapList.insertBefore(box, pDragbox);

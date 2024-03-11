@@ -288,7 +288,7 @@ class Track {
                         if (hit.curve.length === 0) hit.curve = new LinearBezier(hit, false);
                     }
                     else hit.curve = new LinearBezier(hit, hit.keyframes.length === 1);
-                    if (hit.curve.length < 2) console.error('[curve] slider curve calculation failed');
+                    if (hit.curve.length < 2) console.warn('[curve] slider curve calculation failed');
                 }
             }
             this.length = (this.hitObjects[this.hitObjects.length - 1].endTime - this.hitObjects[0].time) / 1000;

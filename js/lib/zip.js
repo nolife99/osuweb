@@ -529,7 +529,7 @@
         worker.addEventListener('message', onmessage);
         worker.addEventListener('error', errorHandler);
     }
-    const onerror_default = error => console.error(error);
+    const onerror_default = error => console.warn(error);
 
     obj.zip = {
         Reader: Reader,
