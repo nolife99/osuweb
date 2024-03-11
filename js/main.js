@@ -147,7 +147,7 @@ class BeatmapController {
                 game.cursor.destroy();
                 game.cursor = null;
             }
-            window.app.destroy(true, {
+            app.destroy(true, {
                 children: true, texture: false
             });
 

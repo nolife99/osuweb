@@ -9,12 +9,12 @@ function stackHitObjects(track) {
 
     function getintv(A, B) {
         let endTime = A.time;
-        if (A.type == 'slider') endTime += A.repeat * A.timing.beatMs * (A.pixelLength / track.difficulty.SliderMultiplier) / 100;
+        if (A.type === 'slider') endTime += A.repeat * A.timing.beatMs * (A.pixelLength / track.difficulty.SliderMultiplier) / 100;
         return B.time - endTime;
     }
     function getdist(A, B) {
         let x = A.x, y = A.y;
-        if (A.type == 'slider' && A.repeat % 2 == 1) {
+        if (A.type === 'slider' && A.repeat % 2 === 1) {
             x = A.curve.curve[A.curve.curve.length - 1].x;
             y = A.curve.curve[A.curve.curve.length - 1].y;
         }
@@ -27,14 +27,13 @@ function stackHitObjects(track) {
     for (let i = 0; i < track.hitObjects.length; ++i) {
         if (stacked[i]) continue;
         let hitI = track.hitObjects[i];
-        if (hitI.type == 'spinner') continue;
+        if (hitI.type === 'spinner') continue;
         stacked[i] = true;
         let newchain = [hitI];
 
         for (let j = i + 1; j < track.hitObjects.length; ++j) {
             let hitJ = track.hitObjects[j];
-            if (hitJ.type == 'spinner') break;
-            if (getintv(newchain[newchain.length - 1], hitJ) > stackThreshold) break;
+            if (hitJ.type === 'spinner' || getintv(newchain[newchain.length - 1], hitJ) > stackThreshold) break;
             if (getdist(newchain[newchain.length - 1], hitJ) <= stackDistance) {
                 if (stacked[j]) break;
                 stacked[j] = true;
@@ -50,7 +49,7 @@ function stackHitObjects(track) {
         hit.x += ofs;
         hit.y += ofs;
 
-        if (hit.type == 'slider') {
+        if (hit.type === 'slider') {
             for (let j = 0; j < hit.keyframes.length; ++j) {
                 hit.keyframes[j].x += ofs;
                 hit.keyframes[j].y += ofs;
@@ -62,13 +61,13 @@ function stackHitObjects(track) {
         }
     }
     for (let i = 0; i < chains.length; ++i) {
-        if (chains[i][0].type == 'slider') for (let j = 0, dep = 0; j < chains[i].length; ++j) {
+        if (chains[i][0].type === 'slider') for (let j = 0, dep = 0; j < chains[i].length; ++j) {
             movehit(chains[i][j], dep);
-            if (chains[i][j].type != 'slider' || chains[i][j].repeat % 2 == 0) ++dep;
+            if (chains[i][j].type !== 'slider' || chains[i][j].repeat % 2 === 0) ++dep;
         }
         else for (let j = 0, dep = 0; j < chains[i].length; ++j) {
             let cur = chains[i].length - 1 - j;
-            if (j > 0 && (chains[i][cur].type == 'slider' && chains[i][cur].repeat % 2 == 1)) --dep;
+            if (j > 0 && (chains[i][cur].type === 'slider' && chains[i][cur].repeat % 2 === 1)) --dep;
             movehit(chains[i][cur], -dep);
             ++dep;
         }
@@ -115,7 +114,7 @@ class Track {
 
                     case '[Events]':
                         parts = line.split(',');
-                        if (+parts[0] == 2) self.breaks.push({
+                        if (+parts[0] === 2) self.breaks.push({
                             startTime: +parts[1],
                             endTime: +parts[2]
                         });
@@ -146,8 +145,8 @@ class Track {
 
                     case '[Colours]':
                         parts = line.split(':'), key = parts[0].trim(), value = parts[1].trim();
-                        if (key == 'SliderTrackOverride') self.colors.SliderTrackOverride = value.split(',');
-                        else if (key == 'SliderBorder') self.colors.SliderBorder = value.split(',');
+                        if (key === 'SliderTrackOverride') self.colors.SliderTrackOverride = value.split(',');
+                        else if (key === 'SliderBorder') self.colors.SliderBorder = value.split(',');
                         else self.colors.push(value.split(','));
                         break;
 
@@ -278,17 +277,17 @@ class Track {
                 while (j + 1 < this.timing.length && this.timing[j + 1].offset <= hit.time) ++j;
                 hit.timing = this.timing[j];
 
-                if (hit.type == 'circle') hit.endTime = hit.time;
-                else if (hit.type == 'slider') {
+                if (hit.type === 'circle') hit.endTime = hit.time;
+                else if (hit.type === 'slider') {
                     hit.sliderTime = hit.timing.beatMs * (hit.pixelLength / this.difficulty.SliderMultiplier) / 100;
                     hit.sliderTimeTotal = hit.sliderTime * hit.repeat;
                     hit.endTime = hit.time + hit.sliderTimeTotal;
 
-                    if (hit.sliderType === 'P' && hit.keyframes.length == 2) {
+                    if (hit.sliderType === 'P' && hit.keyframes.length === 2) {
                         hit.curve = ArcPath(hit);
-                        if (hit.curve.length == 0) hit.curve = new LinearBezier(hit, false);
+                        if (hit.curve.length === 0) hit.curve = new LinearBezier(hit, false);
                     }
-                    else hit.curve = new LinearBezier(hit, hit.keyframes.length == 1);
+                    else hit.curve = new LinearBezier(hit, hit.keyframes.length === 1);
                     if (hit.curve.length < 2) console.error('[curve] slider curve calculation failed');
                 }
             }
@@ -310,7 +309,7 @@ export default class Osu {
         let count = 0;
 
         this.track_decoded = () => {
-            if (++count == self.raw_tracks.length && self.ondecoded !== null) self.ondecoded(this);
+            if (++count === self.raw_tracks.length && self.ondecoded !== null) self.ondecoded(this);
         };
         this.load = () => {
             self.raw_tracks = zip.children.filter(c => c.name.indexOf('.osu') === c.name.length - 4);
@@ -350,8 +349,8 @@ export default class Osu {
     }
     requestStar() {
         fetch('https://api.sayobot.cn/v2/beatmapinfo?0=' + this.tracks[0].metadata.BeatmapSetID).then(r => r.json()).then(e => {
-            if (e.status == 0) e.data.bid_data.forEach(data => this.tracks.forEach(track => {
-                if (track.metadata.BeatmapID == data.bid) {
+            if (e.status === 0) e.data.bid_data.forEach(data => this.tracks.forEach(track => {
+                if (track.metadata.BeatmapID === data.bid) {
                     track.difficulty.star = data.star;
                     track.length = data.length;
                 }

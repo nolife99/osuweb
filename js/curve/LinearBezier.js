@@ -23,7 +23,7 @@ export default class LinearBezier {
                     points.splice(0);
                 }
             }
-            else if (lastPoi !== null && tpoi.x == lastPoi.x && tpoi.y == lastPoi.y) {
+            else if (lastPoi !== null && tpoi.x === lastPoi.x && tpoi.y === lastPoi.y) {
                 if (points.length >= 2) beziers.push(new BSpline(points));
                 points.splice(0);
             }
@@ -59,7 +59,7 @@ export default class LinearBezier {
             }
 
             let thisCurve = curCurve.curve[curPoint];
-            if (lastCurve == thisCurve) this.curve[i] = thisCurve;
+            if (lastCurve === thisCurve) this.curve[i] = thisCurve;
             else {
                 let t = (prefDistance - lastDistanceAt) / (distanceAt - lastDistanceAt);
                 this.curve[i] = {

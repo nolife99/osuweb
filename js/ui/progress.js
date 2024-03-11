@@ -9,7 +9,6 @@ function timeformat(ms) {
 export default class ProgressOverlay extends PIXI.Container {
     constructor(windowfield, starttime, endtime) {
         super();
-        PIXI.Container.call(this);
 
         this.starttime = starttime;
         this.endtime = endtime;
@@ -40,8 +39,5 @@ export default class ProgressOverlay extends PIXI.Container {
         if (time >= this.endtime) return;
         this.remaining.text = timeformat(this.endtime - time);
         this.past.text = timeformat(time - this.starttime);
-    }
-    destroy(options) {
-        PIXI.Container.prototype.destroy.call(this, options);
     }
 }

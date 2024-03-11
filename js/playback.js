@@ -181,7 +181,7 @@ export default function Playback(game, osu, track) {
             hit.objectFadeOutOffset = -.6 * self.approachTime;
             hit.circleFadeOutTime = .3 * self.approachTime;
 
-            if (hit.type == 'slider') {
+            if (hit.type === 'slider') {
                 hit.fadeOutOffset = -.6 * self.approachTime;
                 hit.fadeOutDuration = hit.sliderTimeTotal - hit.fadeOutOffset;
             }
@@ -192,7 +192,7 @@ export default function Playback(game, osu, track) {
             hit.circleFadeOutTime = 100;
             hit.objectFadeOutOffset = self.MehTime;
 
-            if (hit.type == 'slider') {
+            if (hit.type === 'slider') {
                 hit.fadeOutOffset = hit.sliderTimeTotal;
                 hit.fadeOutDuration = 300;
             }
@@ -319,7 +319,7 @@ export default function Playback(game, osu, track) {
         judge.visible = true;
         judge.points = points;
         judge.t0 = time;
-        if (!game.hideGreat || points != 300) judge.text = judgementText(points);
+        if (!game.hideGreat || points !== 300) judge.text = judgementText(points);
         judge.tint = judgementColor(points);
         this.updateJudgement(judge, time);
     };
@@ -334,7 +334,7 @@ export default function Playback(game, osu, track) {
         if (!judge.visible) return;
 
         let t = time - judge.t0;
-        if (judge.points == 0) {
+        if (judge.points === 0) {
             if (t > 800) {
                 judge.visible = false;
                 return;
@@ -517,7 +517,7 @@ export default function Playback(game, osu, track) {
 
         let endPoint = hit.curve.curve[hit.curve.curve.length - 1];
         for (let i = 1; i <= hit.repeat; ++i) {
-            let v = i % 2 == 1 ? endPoint : hit;
+            let v = i % 2 === 1 ? endPoint : hit;
             hit.judgements.push(this.createJudgement(v.x, v.y, 4, hit.time + i * hit.sliderTime));
         }
     };
@@ -553,9 +553,9 @@ export default function Playback(game, osu, track) {
     };
     this.createFollowPoint = (prevHit, hit) => {
         let x1 = prevHit.x, y1 = prevHit.y, t1 = prevHit.time;
-        if (prevHit.type == 'slider') {
+        if (prevHit.type === 'slider') {
             t1 += prevHit.sliderTimeTotal;
-            if (prevHit.repeat % 2 == 1) {
+            if (prevHit.repeat % 2 === 1) {
                 x1 = prevHit.curve.curve[prevHit.curve.curve.length - 1].x;
                 y1 = prevHit.curve.curve[prevHit.curve.curve.length - 1].y;
             }
@@ -650,11 +650,11 @@ export default function Playback(game, osu, track) {
                 clap.play();
             }
         }
-        if (hit.type == 'circle' || hit.type == 'spinner') {
+        if (hit.type === 'circle' || hit.type === 'spinner') {
             let normalSet = hit.hitSample.normalSet || defaultSet, additionSet = hit.hitSample.additionSet || normalSet;
             playHit(hit.hitSound, normalSet, additionSet);
         }
-        else if (hit.type == 'slider') {
+        else if (hit.type === 'slider') {
             let edgeSet = hit.edgeSets[id], normalSet = edgeSet.normalSet || defaultSet, additionSet = edgeSet.additionSet || normalSet;
             playHit(hit.edgeHitsounds[id], normalSet, additionSet);
         }
@@ -662,12 +662,12 @@ export default function Playback(game, osu, track) {
     this.hitSuccess = (hit, points, time) => {
         this.scoreOverlay.hit(points, 300, time);
         if (points > 0) {
-            if (hit.type == 'spinner') self.playHitsound(hit, 0, hit.endTime);
+            if (hit.type === 'spinner') self.playHitsound(hit, 0, hit.endTime);
             else {
                 self.playHitsound(hit, 0, hit.time);
                 self.errorMeter.hit(time - hit.time, time);
             }
-            if (hit.type == 'slider') hit.judgements[hit.judgements.length - 1].defaultScore = 50;
+            if (hit.type === 'slider') hit.judgements[hit.judgements.length - 1].defaultScore = 50;
         }
 
         hit.score = points;
@@ -915,8 +915,8 @@ export default function Playback(game, osu, track) {
                 hit.reverse.visible = hit.currentRepeat < hit.repeat - hit.repeat % 2;
                 if (hit.reverse_b) hit.reverse_b.visible = hit.currentRepeat < hit.repeat - 1 + hit.repeat % 2;
             }
-            if (game.snakeout && hit.currentRepeat == hit.repeat) {
-                if (hit.repeat % 2 == 1) {
+            if (game.snakeout && hit.currentRepeat === hit.repeat) {
+                if (hit.repeat % 2 === 1) {
                     hit.body.startt = t;
                     hit.body.endt = 1;
                 }
@@ -1085,6 +1085,7 @@ export default function Playback(game, osu, track) {
         self.progressOverlay.destroy(opt);
         self.gamefield.destroy(opt);
         self.background.destroy();
+        SliderMesh.prototype.deallocate();
 
         window.onresize = null;
         window.removeEventListener('blur', blurCallback);

@@ -9,7 +9,7 @@ function triggerTap() {
         hit = playback.newHits.find(inUpcoming_grace(res));
     }
     else if (hit) {
-        if (hit.type == 'circle' || hit.type == 'slider') {
+        if (hit.type === 'circle' || hit.type === 'slider') {
             if (playback.autoplay) playback.hitSuccess(hit, 300, hit.time);
             else {
                 let points = 50;
@@ -35,14 +35,14 @@ export default function playerActions(playback) {
     window.game.updatePlayerActions = time => {
         let cur = auto.curObj;
         if (window.game.down && cur) {
-            if (cur.type == 'circle' || time > cur.endTime) {
+            if (cur.type === 'circle' || time > cur.endTime) {
                 window.game.down = false;
                 auto.curObj = null;
                 auto.lasttime = time;
                 auto.lastx = window.game.mouseX;
                 auto.lasty = window.game.mouseY;
             }
-            else if (cur.type == 'slider') {
+            else if (cur.type === 'slider') {
                 window.game.mouseX = cur.ball.x || cur.x;
                 window.game.mouseY = cur.ball.y || cur.y;
             }
@@ -108,7 +108,7 @@ export default function playerActions(playback) {
             let m = movehistory, i = 0;
             while (i < m.length - 1 && m[0].t - m[i].t < 40 && t - m[i].t < 100) ++i;
 
-            let velocity = i == 0 ? {
+            let velocity = i === 0 ? {
                 x: 0, y: 0
             } : {
                 x: (m[0].x - m[i].x) / (m[0].t - m[i].t), y: (m[0].y - m[i].y) / (m[0].t - m[i].t)
@@ -129,11 +129,11 @@ export default function playerActions(playback) {
         }
         function mousedownCallback(e) {
             mousemoveCallback(e);
-            if (e.button == 0) {
+            if (e.button === 0) {
                 if (m1) return;
                 m1 = true;
             }
-            else if (e.button == 2) {
+            else if (e.button === 2) {
                 if (m2) return;
                 m2 = true;
             }
@@ -146,8 +146,8 @@ export default function playerActions(playback) {
         }
         function mouseupCallback(e) {
             mousemoveCallback(e);
-            if (e.button == 0) m1 = false;
-            else if (e.button == 2) m2 = false;
+            if (e.button === 0) m1 = false;
+            else if (e.button === 2) m2 = false;
             else return;
 
             e.preventDefault();
@@ -155,11 +155,11 @@ export default function playerActions(playback) {
             window.game.down = k1 || k2 || m1 || m2;
         }
         function keydownCallback(e) {
-            if (e.keyCode == window.game.K1keycode) {
+            if (e.keyCode === window.game.K1keycode) {
                 if (k1) return;
                 k1 = true;
             }
-            else if (e.keyCode == window.game.K2keycode) {
+            else if (e.keyCode === window.game.K2keycode) {
                 if (k2) return;
                 k2 = true;
             }
@@ -171,8 +171,8 @@ export default function playerActions(playback) {
             triggerTap();
         }
         function keyupCallback(e) {
-            if (e.keyCode == window.game.K1keycode) k1 = false;
-            else if (e.keyCode == window.game.K2keycode) k2 = false;
+            if (e.keyCode === window.game.K1keycode) k1 = false;
+            else if (e.keyCode === window.game.K2keycode) k2 = false;
             else return;
 
             e.preventDefault();

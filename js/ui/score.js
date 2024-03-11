@@ -35,7 +35,7 @@ function errortext(a) {
         sumsqerr += base * base;
     }
     let letiance = sumsqerr / a.length, stdev = Math.sqrt(letiance), sgnavg = avg.toFixed(0);
-    if (sgnavg[0] != '-') sgnavg = '+' + sgnavg;
+    if (sgnavg[0] !== '-') sgnavg = '+' + sgnavg;
     return sgnavg + '±' + stdev.toFixed(0) + 'ms';
 }
 function modstext() {
@@ -46,7 +46,7 @@ function modstext() {
     if (game.hardrock) l.push('HR');
     if (game.nightcore) l.push('NC');
     if (game.autoplay) l.push('AT');
-    if (l.length == 0) return '';
+    if (l.length === 0) return '';
     let s = l[0];
     for (let i = 1; i < l.length; ++i) s = s + '+' + l[i];
     return s;
@@ -85,7 +85,6 @@ function setSpriteArrayPos(arr, x, y) {
 export default class ScoreOverlay extends PIXI.Container {
     constructor(windowfield, HPdrain, scoreMultiplier) {
         super();
-        PIXI.Container.call(this);
 
         this.field = windowfield;
         this.HPdrain = HPdrain;
@@ -161,16 +160,16 @@ export default class ScoreOverlay extends PIXI.Container {
         }
     }
     hit(result, maxresult, time) {
-        if (maxresult == 300) {
-            if (result == 300) ++this.judgecnt.great;
-            else if (result == 100) ++this.judgecnt.good;
-            else if (result == 50) ++this.judgecnt.meh;
-            else if (result == 0) ++this.judgecnt.miss;
+        if (maxresult === 300) {
+            if (result === 300) ++this.judgecnt.great;
+            else if (result === 100) ++this.judgecnt.good;
+            else if (result === 50) ++this.judgecnt.meh;
+            else if (result === 0) ++this.judgecnt.miss;
         }
 
         this.judgeTotal += result;
         this.maxJudgeTotal += maxresult;
-        this.score += result * (maxresult == 300 ? 1 + this.combo * this.scoreMultiplier / 25 : 1);
+        this.score += result * (maxresult === 300 ? 1 + this.combo * this.scoreMultiplier / 25 : 1);
         this.HP = Math.min(1, Math.max(0, this.HP + this.HPincreasefor(result)));
 
         let oldCombo = this.combo;
@@ -178,7 +177,7 @@ export default class ScoreOverlay extends PIXI.Container {
         this.maxcombo = Math.max(this.maxcombo, this.combo);
         ++this.fullcombo;
 
-        if (result == 0 && oldCombo > 20) {
+        if (result === 0 && oldCombo > 20) {
             window.game.sampleComboBreak.volume = window.game.masterVolume * window.game.effectVolume;
             window.game.sampleComboBreak.play();
         }
@@ -242,8 +241,5 @@ export default class ScoreOverlay extends PIXI.Container {
             quitCallback();
         };
         window.setTimeout(() => grading.classList.remove('transparent'), 100);
-    }
-    destroy(options) {
-        PIXI.Container.prototype.destroy.call(this, options);
     }
 }

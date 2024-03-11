@@ -107,7 +107,7 @@
                 --i;
             } while (i !== 0);
 
-            if (c[0] == n) {
+            if (c[0] === n) {
                 t[0] = -1;
                 m[0] = 0;
                 return Z_OK;
@@ -205,14 +205,14 @@
                     i ^= j;
 
                     mask = (1 << w) - 1;
-                    while ((i & mask) != x[h]) {
+                    while ((i & mask) !== x[h]) {
                         --h;
                         w -= l;
                         mask = (1 << w) - 1;
                     }
                 }
             }
-            return y !== 0 && g != 1 ? Z_BUF_ERROR : Z_OK;
+            return y !== 0 && g !== 1 ? Z_BUF_ERROR : Z_OK;
         }
         function initWorkArea(vsize) {
             var i;
@@ -239,8 +239,8 @@
             hn[0] = 0;
             result = huft_build(c, 0, 19, 19, null, null, tb, bb, hp, hn, v);
 
-            if (result == Z_DATA_ERROR) z.msg = "oversubscribed dynamic bit lengths tree";
-            else if (result == Z_BUF_ERROR || bb[0] === 0) {
+            if (result === Z_DATA_ERROR) z.msg = "oversubscribed dynamic bit lengths tree";
+            else if (result === Z_BUF_ERROR || bb[0] === 0) {
                 z.msg = "incomplete dynamic bit lengths tree";
                 result = Z_DATA_ERROR;
             }
@@ -252,9 +252,9 @@
             hn[0] = 0;
 
             result = huft_build(c, 0, nl, 257, cplens, cplext, tl, bl, hp, hn, v);
-            if (result != Z_OK || bl[0] === 0) {
-                if (result == Z_DATA_ERROR) z.msg = "oversubscribed literal/length tree";
-                else if (result != Z_MEM_ERROR) {
+            if (result !== Z_OK || bl[0] === 0) {
+                if (result === Z_DATA_ERROR) z.msg = "oversubscribed literal/length tree";
+                else if (result !== Z_MEM_ERROR) {
                     z.msg = "incomplete literal/length tree";
                     result = Z_DATA_ERROR;
                 }
@@ -263,13 +263,13 @@
             initWorkArea(288);
             result = huft_build(c, nl, nd, 0, cpdist, cpdext, td, bd, hp, hn, v);
 
-            if (result != Z_OK || (bd[0] === 0 && nl > 257)) {
-                if (result == Z_DATA_ERROR) z.msg = "oversubscribed distance tree";
-                else if (result == Z_BUF_ERROR) {
+            if (result !== Z_OK || (bd[0] === 0 && nl > 257)) {
+                if (result === Z_DATA_ERROR) z.msg = "oversubscribed distance tree";
+                else if (result === Z_BUF_ERROR) {
                     z.msg = "incomplete distance tree";
                     result = Z_DATA_ERROR;
                 }
-                else if (result != Z_MEM_ERROR) {
+                else if (result !== Z_MEM_ERROR) {
                     z.msg = "empty distance tree with lengths";
                     result = Z_DATA_ERROR;
                 }
@@ -576,8 +576,8 @@
                         q = s.write;
                         m = q < s.read ? s.read - q - 1 : s.end - q;
 
-                        if (r != Z_OK) {
-                            mode = r == Z_STREAM_END ? WASH : BADCODE;
+                        if (r !== Z_OK) {
+                            mode = r === Z_STREAM_END ? WASH : BADCODE;
                             break;
                         }
                     }
@@ -735,7 +735,7 @@
                     while (f < 0) f += s.end;
                     while (len !== 0) {
                         if (m === 0) {
-                            if (q == s.end && s.read !== 0) {
+                            if (q === s.end && s.read !== 0) {
                                 q = 0;
                                 m = q < s.read ? s.read - q - 1 : s.end - q;
                             }
@@ -745,7 +745,7 @@
                                 q = s.write;
                                 m = q < s.read ? s.read - q - 1 : s.end - q;
 
-                                if (q == s.end && s.read !== 0) {
+                                if (q === s.end && s.read !== 0) {
                                     q = 0;
                                     m = q < s.read ? s.read - q - 1 : s.end - q;
                                 }
@@ -762,7 +762,7 @@
                         }
                         s.window[q++] = s.window[f++];
                         --m;
-                        if (f == s.end) f = 0;
+                        if (f === s.end) f = 0;
                         --len;
                     }
                     mode = START;
@@ -770,7 +770,7 @@
 
                 case LIT:
                     if (m === 0) {
-                        if (q == s.end && s.read !== 0) {
+                        if (q === s.end && s.read !== 0) {
                             q = 0;
                             m = q < s.read ? s.read - q - 1 : s.end - q;
                         }
@@ -780,7 +780,7 @@
                             q = s.write;
                             m = q < s.read ? s.read - q - 1 : s.end - q;
 
-                            if (q == s.end && s.read !== 0) {
+                            if (q === s.end && s.read !== 0) {
                                 q = 0;
                                 m = q < s.read ? s.read - q - 1 : s.end - q;
                             }
@@ -812,7 +812,7 @@
                     q = s.write;
                     m = q < s.read ? s.read - q - 1 : s.end - q;
 
-                    if (s.read != s.write) {
+                    if (s.read !== s.write) {
                         s.bitb = b;
                         s.bitk = k;
                         z.avail_in = n;
@@ -893,7 +893,7 @@
 
         that.reset = function(z, c) {
             if (c) c[0] = check;
-            if (mode == CODES) codes.free(z);
+            if (mode === CODES) codes.free(z);
             mode = TYPE;
             that.bitk = 0;
             that.bitb = 0;
@@ -908,7 +908,7 @@
 
             n = (q <= that.write ? that.write : that.end) - q;
             if (n > z.avail_out) n = z.avail_out;
-            if (n !== 0 && r == Z_BUF_ERROR) r = Z_OK;
+            if (n !== 0 && r === Z_BUF_ERROR) r = Z_OK;
 
             z.avail_out -= n;
             z.total_out += n;
@@ -917,12 +917,12 @@
             p += n;
             q += n;
 
-            if (q == that.end) {
+            if (q === that.end) {
                 q = 0;
-                if (that.write == that.end) that.write = 0;
+                if (that.write === that.end) that.write = 0;
                 n = that.write - q;
                 if (n > z.avail_out) n = z.avail_out;
-                if (n !== 0 && r == Z_BUF_ERROR) r = Z_OK;
+                if (n !== 0 && r === Z_BUF_ERROR) r = Z_OK;
 
                 z.avail_out -= n;
                 z.total_out += n;
@@ -1025,7 +1025,7 @@
                         b |= (z.read_byte(p++) & 0xff) << k;
                         k += 8;
                     }
-                    if ((((~b) >>> 16) & 0xffff) != (b & 0xffff)) {
+                    if ((((~b) >>> 16) & 0xffff) !== (b & 0xffff)) {
                         mode = BADBLOCKS;
                         z.msg = "invalid stored block lengths";
                         r = Z_DATA_ERROR;
@@ -1053,7 +1053,7 @@
                         return that.inflate_flush(z, r);
                     }
                     if (m === 0) {
-                        if (q == that.end && that.read !== 0) {
+                        if (q === that.end && that.read !== 0) {
                             q = 0;
                             m = q < that.read ? that.read - q - 1 : that.end - q;
                         }
@@ -1062,7 +1062,7 @@
                             r = that.inflate_flush(z, r);
                             q = that.write;
                             m = q < that.read ? that.read - q - 1 : that.end - q;
-                            if (q == that.end && that.read !== 0) {
+                            if (q === that.end && that.read !== 0) {
                                 q = 0;
                                 m = q < that.read ? that.read - q - 1 : that.end - q;
                             }
@@ -1154,9 +1154,9 @@
 
                     bb[0] = 7;
                     t = inftree.inflate_trees_bits(blens, bb, tb, hufts, z);
-                    if (t != Z_OK) {
+                    if (t !== Z_OK) {
                         r = t;
-                        if (r == Z_DATA_ERROR) {
+                        if (r === Z_DATA_ERROR) {
                             blens = null;
                             mode = BADBLOCKS;
                         }
@@ -1202,8 +1202,8 @@
                             blens[index++] = c;
                         }
                         else {
-                            i = c == 18 ? 7 : c - 14;
-                            j = c == 18 ? 11 : 3;
+                            i = c === 18 ? 7 : c - 14;
+                            j = c === 18 ? 11 : 3;
 
                             while (k < t + i) {
                                 if (n !== 0) r = Z_OK;
@@ -1227,7 +1227,7 @@
                             k -= i;
                             i = index;
                             t = table;
-                            if (i + j > 258 + (t & 0x1f) + ((t >> 5) & 0x1f) || (c == 16 && i < 1)) {
+                            if (i + j > 258 + (t & 0x1f) + ((t >> 5) & 0x1f) || (c === 16 && i < 1)) {
                                 blens = null;
                                 mode = BADBLOCKS;
                                 z.msg = "invalid bit length repeat";
@@ -1240,7 +1240,7 @@
                                 that.write = q;
                                 return that.inflate_flush(z, r);
                             }
-                            c = c == 16 ? blens[i - 1] : 0;
+                            c = c === 16 ? blens[i - 1] : 0;
                             do blens[i++] = c; while (--j !== 0);
                             index = i;
                         }
@@ -1255,8 +1255,8 @@
                     t = table;
                     t = inftree.inflate_trees_dynamic(257 + (t & 0x1f), 1 + ((t >> 5) & 0x1f), blens, bl_, bd_, tl_, td_, hufts, z);
 
-                    if (t != Z_OK) {
-                        if (t == Z_DATA_ERROR) {
+                    if (t !== Z_OK) {
+                        if (t === Z_DATA_ERROR) {
                             blens = null;
                             mode = BADBLOCKS;
                         }
@@ -1280,7 +1280,7 @@
                     z.next_in_index = p;
                     that.write = q;
 
-                    if ((r = codes.proc(that, z, r)) != Z_STREAM_END) return that.inflate_flush(z, r);
+                    if ((r = codes.proc(that, z, r)) !== Z_STREAM_END) return that.inflate_flush(z, r);
                     r = Z_OK;
                     codes.free(z);
 
@@ -1302,7 +1302,7 @@
                     r = that.inflate_flush(z, r);
                     q = that.write;
                     m = q < that.read ? that.read - q - 1 : that.end - q;
-                    if (that.read != that.write) {
+                    if (that.read !== that.write) {
                         that.bitb = b;
                         that.bitk = k;
                         z.avail_in = n;
@@ -1354,7 +1354,7 @@
             that.read = that.write = n;
         };
         that.sync_point = function() {
-            return mode == LENS ? 1 : 0;
+            return mode === LENS ? 1 : 0;
         };
     }
 
@@ -1411,7 +1411,7 @@
         that.inflate = function(z, f) {
             var r, b;
             if (!z || !z.istate || !z.next_in) return Z_STREAM_ERROR;
-            f = f == Z_FINISH ? Z_BUF_ERROR : Z_OK;
+            f = f === Z_FINISH ? Z_BUF_ERROR : Z_OK;
             r = Z_BUF_ERROR;
 
             while (true) {
@@ -1422,7 +1422,7 @@
                         --z.avail_in;
                         ++z.total_in;
 
-                        if (((z.istate.method = z.read_byte(z.next_in_index++)) & 0xf) != Z_DEFLATED) {
+                        if (((z.istate.method = z.read_byte(z.next_in_index++)) & 0xf) !== Z_DEFLATED) {
                             z.istate.mode = BAD;
                             z.msg = "unknown compression method";
                             z.istate.marker = 5;
@@ -1496,13 +1496,13 @@
 
                     case BLOCKS:
                         r = z.istate.blocks.proc(z, r);
-                        if (r == Z_DATA_ERROR) {
+                        if (r === Z_DATA_ERROR) {
                             z.istate.mode = BAD;
                             z.istate.marker = 0;
                             break;
                         }
-                        if (r == Z_OK) r = f;
-                        if (r != Z_STREAM_END) return r;
+                        if (r === Z_OK) r = f;
+                        if (r !== Z_STREAM_END) return r;
 
                         r = f;
                         z.istate.blocks.reset(z, z.istate.was);
@@ -1517,7 +1517,7 @@
         that.inflateSetDictionary = function(z, dictionary, dictLength) {
             var index = 0;
             var length = dictLength;
-            if (!z || !z.istate || z.istate.mode != DICT0) return Z_STREAM_ERROR;
+            if (!z || !z.istate || z.istate.mode !== DICT0) return Z_STREAM_ERROR;
 
             if (length >= (1 << z.istate.wbits)) {
                 length = (1 << z.istate.wbits) - 1;
@@ -1531,7 +1531,7 @@
         that.inflateSync = function(z) {
             var n, p, m, r, w;
             if (!z || !z.istate) return Z_STREAM_ERROR;
-            if (z.istate.mode != BAD) {
+            if (z.istate.mode !== BAD) {
                 z.istate.mode = BAD;
                 z.istate.marker = 0;
             }
@@ -1540,7 +1540,7 @@
             m = z.istate.marker;
 
             while (n !== 0 && m < 4) {
-                if (z.read_byte(p) == mark[m]) ++m;
+                if (z.read_byte(p) === mark[m]) ++m;
                 else if (z.read_byte(p) !== 0) m = 0;
                 else m = 4 - m;
                 ++p;
@@ -1551,7 +1551,7 @@
             z.avail_in = n;
             z.istate.marker = m;
 
-            if (m != 4) return Z_DATA_ERROR;
+            if (m !== 4) return Z_DATA_ERROR;
             r = z.total_in;
             w = z.total_out;
             inflateReset(z);
@@ -1643,7 +1643,7 @@
                     else buffers.push(new Uint8Array(buf.subarray(0, z.next_out_index)));
                 }
                 bufferSize += z.next_out_index;
-                if (onprogress && z.next_in_index > 0 && z.next_in_index != lastIndex) {
+                if (onprogress && z.next_in_index > 0 && z.next_in_index !== lastIndex) {
                     onprogress(z.next_in_index);
                     lastIndex = z.next_in_index;
                 }

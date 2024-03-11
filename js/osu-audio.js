@@ -8,10 +8,10 @@ function syncStream(node) {
     while (1) {
         ++node.retry;
         i = b.indexOf(0xFF, i);
-        if (i == -1 || (b[i + 1] & 0xE0 == 0xE0)) break;
+        if (i === -1 || (b[i + 1] & 0xE0 === 0xE0)) break;
         ++i;
     }
-    if (i != -1) {
+    if (i !== -1) {
         let tmp = node.buf.slice(i);
         delete node.buf;
         node.buf = null;
@@ -47,7 +47,7 @@ export default class OsuAudio {
 
         this.getPos = () => self.playing ? self.position + (actx.currentTime - self.started) * self.speed : self.position;
         this.play = (wait = 0) => {
-            if (actx.state == 'suspended') window.alert("Audio can't play. Please use Chrome or Firefox.");
+            if (actx.state === 'suspended') window.alert("Audio can't play. Please use Chrome or Firefox.");
             self.source = new AudioBufferSourceNode(actx);
             self.source.playbackRate.value = self.speed;
             self.source.buffer = self.decoded;

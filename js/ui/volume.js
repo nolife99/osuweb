@@ -1,7 +1,6 @@
 export default class VolumeMenu extends PIXI.Container {
     constructor(windowfield) {
         super();
-        PIXI.Container.call(this);
 
         this.fadetime = 1000;
         this.visible = false;
@@ -48,8 +47,5 @@ export default class VolumeMenu extends PIXI.Container {
         let dt = timestamp - this.t0;
         if (dt > this.fadetime) this.visible = false;
         else this.alpha = 1 - Math.pow(dt / this.fadetime, 5);
-    }
-    destroy(options) {
-        PIXI.Container.prototype.destroy.call(this, options);
     }
 }

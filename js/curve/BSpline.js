@@ -1,6 +1,6 @@
 const bernstein = (i, n, t) => binomialCoefficient(n, i) * Math.pow(t, i) * Math.pow(1 - t, n - i), binomialCoefficient = (n, k) => {
     if (k < 0 || k > n) return 0;
-    if (k == 0 || k == n) return 1;
+    if (k === 0 || k === n) return 1;
     k = Math.min(k, n - k);
 
     let c = 1;
@@ -26,7 +26,7 @@ export default class BSpline {
             let curve = this.pointAt(i / (this.ncurve - 1));
             this.curve[i] = curve;
 
-            if (i == 0) this.curveDistance[i] = 0;
+            if (i === 0) this.curveDistance[i] = 0;
             else {
                 let prevCurve = this.curve[i - 1];
                 this.curveDistance[i] = Math.hypot(curve.x - prevCurve.x, curve.y - prevCurve.y);

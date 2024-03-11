@@ -1,4 +1,4 @@
-const Container = PIXI.Container, twoPi = 2 * Math.PI, vertexSrc = `
+const twoPi = 2 * Math.PI, vertexSrc = `
     precision lowp float;
     attribute vec4 position;
     varying float dist;
@@ -73,7 +73,7 @@ function newTexture(colors, SliderTrackOverride, SliderBorder) {
 const DIVIDES = 32;
 function curveGeometry(curve0, radius) {
     let curve = [];
-    for (let i = 0; i < curve0.length; ++i) if (i == 0 ||
+    for (let i = 0; i < curve0.length; ++i) if (i === 0 ||
         Math.abs(curve0[i].x - curve0[i - 1].x) > .00001 ||
         Math.abs(curve0[i].y - curve0[i - 1].y) > .00001) curve.push(curve0[i]);
 
@@ -132,22 +132,25 @@ function circleGeometry(radius) {
     }
     return new PIXI.Geometry().addAttribute('position', vert, 4).addIndex(index);
 }
-export default function SliderMesh(curve, radius, tintid) {
-    Container.call(this);
+export default class SliderMesh extends PIXI.Container {
+    constructor(curve, radius, tintid) {
+        super();
 
-    this.curve = curve;
-    this.geometry = curveGeometry(curve.curve, radius);
-    this.alpha = 1;
-    this.tintid = tintid;
-    this.startt = 0;
-    this.endt = 1;
-    this.state = PIXI.State.for2d();
-    this.drawMode = PIXI.DRAW_MODES.TRIANGLES;
-    this.blendMode = PIXI.BLEND_MODES.NORMAL;
-    this._roundPixels = PIXI.settings.ROUND_PIXELS;
-
-    this._render = renderer => this._renderDefault(renderer);
-    this._renderDefault = renderer => {
+        this.curve = curve;
+        this.geometry = curveGeometry(curve.curve, radius);
+        this.alpha = 1;
+        this.tintid = tintid;
+        this.startt = 0;
+        this.endt = 1;
+        this.state = PIXI.State.for2d();
+        this.drawMode = PIXI.DRAW_MODES.TRIANGLES;
+        this.blendMode = PIXI.BLEND_MODES.NORMAL;
+        this._roundPixels = PIXI.settings.ROUND_PIXELS;
+    }
+    _render(renderer) {
+        this._renderDefault(renderer);
+    }
+    _renderDefault(renderer) {
         let shader = this.shader;
         shader.alpha = this.worldAlpha;
         if (shader.update) shader.update();
@@ -172,14 +175,14 @@ export default function SliderMesh(curve, radius, tintid) {
             glType = byteSize === 2 ? gl.UNSIGNED_SHORT : gl.UNSIGNED_INT;
             indexLength = geometry.indexBuffer.data.length;
         }
-        if (this.startt == 0 && this.endt == 1) {
+        if (this.startt === 0 && this.endt === 1) {
             this.uniforms.dt = 0;
             this.uniforms.ot = 1;
             bind(this.geometry);
             gl.drawElements(this.drawMode, indexLength, glType, 0);
         }
-        else if (this.endt == 1) {
-            if (this.startt != 1) {
+        else if (this.endt === 1) {
+            if (this.startt !== 1) {
                 this.uniforms.dt = -1;
                 this.uniforms.ot = -this.startt;
                 bind(this.geometry);
@@ -194,8 +197,8 @@ export default function SliderMesh(curve, radius, tintid) {
             bind(this.circle);
             gl.drawElements(this.drawMode, indexLength, glType, 0);
         }
-        else if (this.startt == 0) {
-            if (this.endt != 0) {
+        else if (this.startt === 0) {
+            if (this.endt !== 0) {
                 this.uniforms.dt = 1;
                 this.uniforms.ot = this.endt;
                 bind(this.geometry);
@@ -214,9 +217,9 @@ export default function SliderMesh(curve, radius, tintid) {
         gl.depthFunc(gl.EQUAL);
         gl.colorMask(true, true, true, true);
 
-        if (this.startt == 0 && this.endt == 1) gl.drawElements(this.drawMode, indexLength, glType, 0);
-        else if (this.endt == 1) {
-            if (this.startt != 1) {
+        if (this.startt === 0 && this.endt === 1) gl.drawElements(this.drawMode, indexLength, glType, 0);
+        else if (this.endt === 1) {
+            if (this.startt !== 1) {
                 gl.drawElements(this.drawMode, indexLength, glType, 0);
                 this.uniforms.ox = ox0;
                 this.uniforms.oy = oy0;
@@ -226,8 +229,8 @@ export default function SliderMesh(curve, radius, tintid) {
             }
             gl.drawElements(this.drawMode, indexLength, glType, 0);
         }
-        else if (this.startt == 0) {
-            if (this.endt != 0) {
+        else if (this.startt === 0) {
+            if (this.endt !== 0) {
                 gl.drawElements(this.drawMode, indexLength, glType, 0);
                 this.uniforms.ox = ox0;
                 this.uniforms.oy = oy0;
@@ -242,34 +245,31 @@ export default function SliderMesh(curve, radius, tintid) {
 
         this.uniforms.ox = ox0;
         this.uniforms.oy = oy0;
-    };
-    this.destroy = options => {
-        Container.prototype.destroy.call(this, options);
-        this.geometry.dispose();
-        this.geometry = null;
-        this.shader = null;
-        this.state = null;
-    };
+    }
+    initialize(colors, radius, transform, SliderTrackOverride, SliderBorder) {
+        this.ncolors = colors.length;
+        this.uSampler2 = newTexture(colors, SliderTrackOverride, SliderBorder);
+        this.circle = circleGeometry(radius);
+        this.uniforms = {
+            uSampler2: this.uSampler2, alpha: 1,
+            dx: transform.dx, dy: transform.dy, ox: transform.ox, oy: transform.oy,
+            texturepos: 0
+        };
+        this.shader = PIXI.Shader.from(vertexSrc, fragmentSrc, this.uniforms);
+    }
+    resetTransform(transform) {
+        this.uniforms.dx = transform.dx;
+        this.uniforms.dy = transform.dy;
+        this.uniforms.ox = transform.ox;
+        this.uniforms.oy = transform.oy;
+    }
+    destroy(options) {
+        super.destroy(options);
+        this.geometry.destroy();
+    }
+    deallocate() {
+        this.uSampler2.destroy();
+        this.circle.destroy();
+        this.shader.destroy();
+    }
 }
-
-if (Container) SliderMesh.__proto__ = Container;
-SliderMesh.prototype = Object.create(Container && Container.prototype);
-SliderMesh.prototype.constructor = SliderMesh;
-
-SliderMesh.prototype.initialize = function (colors, radius, transform, SliderTrackOverride, SliderBorder) {
-    this.ncolors = colors.length;
-    this.uSampler2 = newTexture(colors, SliderTrackOverride, SliderBorder);
-    this.circle = circleGeometry(radius);
-    this.uniforms = {
-        uSampler2: this.uSampler2, alpha: 1,
-        dx: transform.dx, dy: transform.dy, ox: transform.ox, oy: transform.oy,
-        texturepos: 0
-    };
-    this.shader = PIXI.Shader.from(vertexSrc, fragmentSrc, this.uniforms);
-};
-SliderMesh.prototype.resetTransform = function (transform) {
-    this.uniforms.dx = transform.dx;
-    this.uniforms.dy = transform.dy;
-    this.uniforms.ox = transform.ox;
-    this.uniforms.oy = transform.oy;
-};

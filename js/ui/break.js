@@ -1,7 +1,6 @@
 export default class BreakOverlay extends PIXI.Container {
     constructor(windowfield) {
         super();
-        PIXI.Container.call(this);
 
         this.fadetime = 200;
         this.appearthreshold = 3000;
@@ -43,7 +42,6 @@ export default class BreakOverlay extends PIXI.Container {
         this.number.y = -40;
         this.addChild(this.number);
         this.resize(windowfield)
-        this.destroy = options => PIXI.Container.prototype.destroy.call(this, options);
     }
     resize(windowfield) {
         this.x = windowfield.width / 2;
@@ -67,8 +65,5 @@ export default class BreakOverlay extends PIXI.Container {
         this.barright.x = radius;
         this.number.text = Math.ceil(t / 1000).toString();
         this.alpha = Math.max(0, Math.min(1, Math.min(t, time - this.starttime - 500) / this.fadetime));
-    }
-    destroy(options) {
-        PIXI.Container.prototype.destroy.call(this, options);
     }
 }

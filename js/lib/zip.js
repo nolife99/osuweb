@@ -84,7 +84,7 @@
         var that = this, dataStart;
         function init(callback) {
             var dataEnd = dataURI.length;
-            while (dataURI.charAt(dataEnd - 1) == "=") --dataEnd;
+            while (dataURI.charAt(dataEnd - 1) === "=") --dataEnd;
             dataStart = dataURI.indexOf(",") + 1;
             that.size = Math.floor((dataEnd - dataStart) * .75);
             callback();
@@ -364,7 +364,7 @@
             onerror(ERR_ENCRYPTED);
             return;
         }
-        if (centralDirectory || (entry.bitFlag & 0x0008) != 0x0008) {
+        if (centralDirectory || (entry.bitFlag & 0x0008) !== 0x0008) {
             entry.crc32 = data.view.getUint32(index + 10, true);
             entry.compressedSize = data.view.getUint32(index + 14, true);
             entry.uncompressedSize = data.view.getUint32(index + 18, true);
@@ -385,7 +385,7 @@
                 function testCrc32(crc32) {
                     var dataCrc32 = getDataHelper(4);
                     dataCrc32.view.setUint32(0, crc32);
-                    return this.crc32 == dataCrc32.view.getUint32(0);
+                    return this.crc32 === dataCrc32.view.getUint32(0);
                 };
                 function getWriterData(_e, crc32) {
                     if (checkCrc32 && !testCrc32(crc32)) onerror(ERR_CRC);
@@ -396,7 +396,7 @@
 
                 reader.readUint8Array(this.offset, 30, bytes => {
                     var data = getDataHelper(bytes.length, bytes), dataOffset;
-                    if (data.view.getUint32(0) != 0x504b0304) {
+                    if (data.view.getUint32(0) !== 0x504b0304) {
                         onerror(ERR_BAD_FORMAT);
                         return;
                     }
@@ -438,17 +438,17 @@
                         for (i = 0; i < fileslength; ++i) {
                             entry = new Entry();
                             entry._worker = worker;
-                            if (data.view.getUint32(index) != 0x504b0102) {
+                            if (data.view.getUint32(index) !== 0x504b0102) {
                                 onerror(ERR_BAD_FORMAT);
                                 return;
                             }
                             readCommonHeader(entry, data, index + 6, true, onerror);
                             entry.commentLength = data.view.getUint16(index + 32, true);
-                            entry.directory = ((data.view.getUint8(index + 38) & 0x10) == 0x10);
+                            entry.directory = ((data.view.getUint8(index + 38) & 0x10) === 0x10);
                             entry.offset = data.view.getUint32(index + 42, true);
                             filename = getString(data.array.subarray(index + 46, index + 46 + entry.filenameLength));
                             entry.filename = ((entry.bitFlag & 0x0800) === 0x0800) ? decodeUTF8(filename) : decodeASCII(filename);
-                            if (!entry.directory && entry.filename.charAt(entry.filename.length - 1) == "/") entry.directory = true;
+                            if (!entry.directory && entry.filename.charAt(entry.filename.length - 1) === "/") entry.directory = true;
                             comment = getString(data.array.subarray(index + 46 + entry.filenameLength + entry.extraFieldLength, index + 46 + entry.filenameLength + entry.extraFieldLength + entry.commentLength));
                             entry.comment = ((entry.bitFlag & 0x0800) === 0x0800) ? decodeUTF8(comment) : decodeASCII(comment);
                             entries.push(entry);
@@ -689,7 +689,7 @@
         }
         isDescendantOf(ancestor) {
             var entry = this.parent;
-            while (entry && entry.id != ancestor.id) entry = entry.parent;
+            while (entry && entry.id !== ancestor.id) entry = entry.parent;
             return !!entry;
         }
     }
@@ -707,7 +707,7 @@
     ZipFileEntryProto.constructor = ZipFileEntry;
     ZipFileEntryProto.getData = function (writer, onend, onprogress, onerror) {
         var that = this;
-        if (!writer || (writer.constructor == that.Writer && that.data)) onend(that.data);
+        if (!writer || (writer.constructor === that.Writer && that.data)) onend(that.data);
         else {
             if (!that.reader) that.reader = new that.Reader(that.data, onerror);
             that.reader.init(() => writer.init(() => bufferedCopy(that.reader, writer, onend, onprogress, onerror), onerror));
@@ -757,7 +757,7 @@
         var i, child;
         for (i = 0; i < this.children.length; ++i) {
             child = this.children[i];
-            if (child.name == name) return child;
+            if (child.name === name) return child;
         }
     };
 

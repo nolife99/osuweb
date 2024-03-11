@@ -1,7 +1,6 @@
 export default class LoadingMenu extends PIXI.Container {
     constructor(windowfield, track) {
         super();
-        PIXI.Container.call(this);
 
         this.fadetime = 200;
         this.alpha = 1;
@@ -80,8 +79,5 @@ export default class LoadingMenu extends PIXI.Container {
         let dt = timestamp - this.t0;
         if (dt > this.fadetime) this.visible = false;
         else this.alpha = 1 - dt / this.fadetime;
-    }
-    destroy(options) {
-        PIXI.Container.prototype.destroy.call(this, options);
     }
 }

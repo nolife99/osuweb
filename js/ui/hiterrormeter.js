@@ -2,7 +2,6 @@ const barheight = 220, color300 = 0x66ccff, color100 = 0x88b300, color50 = 0xffc
 class ErrorMeter extends PIXI.Container {
     constructor(r300, r100, r50) {
         super();
-        PIXI.Container.call(this);
 
         this.lscale = barheight / 2 / r50;
         function newbarpiece(height, tint) {
@@ -63,14 +62,10 @@ class ErrorMeter extends PIXI.Container {
         this.avgerror = this.avgerror * .9 + hiterror * .1;
         this.avgmarker.y = this.avgerror * this.lscale;
     }
-    destroy(options) {
-        PIXI.Container.prototype.destroy.call(this, options);
-    }
 }
 export default class ErrorMeterOverlay extends PIXI.Container {
     constructor(windowfield, r300, r100, r50) {
         super();
-        PIXI.Container.call(this);
 
         this.barl = new ErrorMeter(r300, r100, r50);
         this.barr = new ErrorMeter(r300, r100, r50);
@@ -95,8 +90,5 @@ export default class ErrorMeterOverlay extends PIXI.Container {
     update(time) {
         this.barl.update(time);
         this.barr.update(time);
-    }
-    destroy(options) {
-        PIXI.Container.prototype.destroy.call(this, options);
     }
 }
