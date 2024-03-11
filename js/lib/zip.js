@@ -50,7 +50,7 @@
         else if (blob.msSlice) return blob.msSlice(index, index + length);
     }
     function getDataHelper(byteLength, bytes) {
-        var dataBuffer, dataArray;
+        let dataBuffer, dataArray;
         dataBuffer = new ArrayBuffer(byteLength);
         dataArray = new Uint8Array(dataBuffer);
         if (bytes) dataArray.set(bytes, 0);
@@ -61,100 +61,101 @@
         };
     }
 
-    function Reader() { }
-    function TextReader(text) {
-        var blobReader;
-        this.size = 0;
-        this.init = function (callback, onerror) {
-            var blob = new Blob([text], {
-                type: TEXT_PLAIN
-            });
-            blobReader = new BlobReader(blob);
-            blobReader.init(() => {
-                this.size = blobReader.size;
-                callback();
-            }, onerror);
-        };
-        this.readUint8Array = (index, length, callback, onerror) => blobReader.readUint8Array(index, length, callback, onerror);
-    }
-    TextReader.prototype = new Reader();
-    TextReader.prototype.constructor = TextReader;
+    class Reader { }
+    class TextReader extends Reader {
+        size = 0;
+        constructor(text) {
+            super();
+            let blobReader;
 
-    function Data64URIReader(dataURI) {
-        var that = this, dataStart;
-        function init(callback) {
-            var dataEnd = dataURI.length;
-            while (dataURI.charAt(dataEnd - 1) === "=") --dataEnd;
-            dataStart = dataURI.indexOf(",") + 1;
-            that.size = Math.floor((dataEnd - dataStart) * .75);
-            callback();
+            this.init = (callback, onerror) => {
+                let blob = new Blob([text], {
+                    type: TEXT_PLAIN
+                });
+                blobReader = new BlobReader(blob);
+                blobReader.init(() => {
+                    this.size = blobReader.size;
+                    callback();
+                }, onerror);
+            };
+            this.readUint8Array = (index, length, callback, onerror) => blobReader.readUint8Array(index, length, callback, onerror);
         }
-
-        that.size = 0;
-        that.init = init;
-        that.readUint8Array = function (index, length, callback) {
-            var i, data = getDataHelper(length);
-            var start = Math.floor(index / 3) * 4;
-            var end = Math.ceil((index + length) / 3) * 4;
-            var bytes = obj.atob(dataURI.substring(start + dataStart, end + dataStart));
-            var delta = index - Math.floor(start / 4) * 3;
-            for (i = delta; i < delta + length; ++i) data.array[i - delta] = bytes.charCodeAt(i);
-            callback(data.array);
-        };
     }
-    Data64URIReader.prototype = new Reader();
-    Data64URIReader.prototype.constructor = Data64URIReader;
+    class Data64URIReader extends Reader {
+        size = 0;
+        constructor(dataURI) {
+            super();
+            let that = this, dataStart;
 
-    function BlobReader(blob) {
-        this.size = 0;
-        this.init = function (callback) {
-            this.size = blob.size;
-            callback();
-        };
-        this.readUint8Array = (index, length, callback, onerror) => {
-            var reader = new FileReader();
-            reader.onload = e => callback(new Uint8Array(e.target.result));
-            reader.onerror = onerror;
-            try {
-                reader.readAsArrayBuffer(blobSlice(blob, index, length));
-            }
-            catch (e) {
-                onerror(e);
-            }
-        };
+            that.init = callback => {
+                let dataEnd = dataURI.length;
+                while (dataURI.charAt(dataEnd - 1) === "=") --dataEnd;
+                dataStart = dataURI.indexOf(",") + 1;
+                that.size = Math.floor((dataEnd - dataStart) * .75);
+                callback();
+            };
+            that.readUint8Array = (index, length, callback) => {
+                let i, data = getDataHelper(length);
+                let start = Math.floor(index / 3) * 4;
+                let end = Math.ceil((index + length) / 3) * 4;
+                let bytes = obj.atob(dataURI.substring(start + dataStart, end + dataStart));
+                let delta = index - Math.floor(start / 4) * 3;
+                for (i = delta; i < delta + length; ++i) data.array[i - delta] = bytes.charCodeAt(i);
+                callback(data.array);
+            };
+        }
     }
-    BlobReader.prototype = new Reader();
-    BlobReader.prototype.constructor = BlobReader;
-
-    function Writer() { }
-    Writer.prototype.getData = function (callback) {
-        callback(this.data);
-    };
-
-    function TextWriter(encoding) {
-        var blob;
-        this.init = callback => {
-            blob = new Blob([], {
-                type: TEXT_PLAIN
-            });
-            callback();
-        };
-        this.writeUint8Array = (array, callback) => {
-            blob = new Blob([blob, appendABViewSupported ? array : array.buffer], {
-                type: TEXT_PLAIN
-            });
-            callback();
-        };
-        this.getData = (callback, onerror) => {
-            var reader = new FileReader();
-            reader.onload = e => callback(e.target.result);
-            reader.onerror = onerror;
-            reader.readAsText(blob, encoding);
-        };
+    class BlobReader extends Reader {
+        size = 0;
+        constructor(blob) {
+            super();
+            this.init = callback => {
+                this.size = blob.size;
+                callback();
+            };
+            this.readUint8Array = (index, length, callback, onerror) => {
+                let reader = new FileReader();
+                reader.onload = e => callback(new Uint8Array(e.target.result));
+                reader.onerror = onerror;
+                try {
+                    reader.readAsArrayBuffer(blobSlice(blob, index, length));
+                }
+                catch (e) {
+                    onerror(e);
+                }
+            };
+        }
     }
-    TextWriter.prototype = new Writer();
-    TextWriter.prototype.constructor = TextWriter;
-
+    class Writer {
+        getData(callback) {
+            callback(this.data);
+        }
+    }
+    class TextWriter extends Writer {
+        constructor(encoding) {
+            super();
+            let blob;
+            
+            this.init = callback => {
+                blob = new Blob([], {
+                    type: TEXT_PLAIN
+                });
+                callback();
+            };
+            this.writeUint8Array = (array, callback) => {
+                blob = new Blob([blob, appendABViewSupported ? array : array.buffer], {
+                    type: TEXT_PLAIN
+                });
+                callback();
+            };
+            this.getData = (callback, onerror) => {
+                let reader = new FileReader();
+                reader.onload = e => callback(e.target.result);
+                reader.onerror = onerror;
+                reader.readAsText(blob, encoding);
+            };
+        }
+    }
     function Data64URIWriter(contentType) {
         var data = "", pending = "";
         this.init = callback => {

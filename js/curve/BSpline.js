@@ -18,7 +18,7 @@ export default class BSpline {
             approxLength += Math.hypot(pt.x - nextPt.x, pt.y - nextPt.y);
         }
 
-        this.ncurve = Math.floor(approxLength / 5) + 2;
+        this.ncurve = Math.ceil(approxLength / 7);
         this.curve = new Array(this.ncurve);
         this.curveDistance = new Array(this.ncurve);
 

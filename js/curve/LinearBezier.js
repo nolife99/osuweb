@@ -3,11 +3,6 @@ import BSpline from './BSpline.js';
 const lerp = (a, b, t) => a * (1 - t) + b * t;
 export default class LinearBezier {
     constructor(hit, line) {
-        this.hitObject = hit;
-        this.ncurve = 0;
-        this.startAngle = 0;
-        this.endAngle = 0;
-
         let beziers = [], points = [], lastPoi = null;
         for (let i = -1; i < hit.keyframes.length; ++i) {
             let tpoi;
@@ -30,38 +25,35 @@ export default class LinearBezier {
             points.push(tpoi);
             lastPoi = tpoi;
         }
-        if (!line && points.length > 1) {
-            beziers.push(new BSpline(points));
-            points = [];
-        }
-        let distanceAt = 0, curPoint = 0, curCurveIndex = 0, curCurve = beziers[0], lastCurve = curCurve.curve[0], lastDistanceAt = 0;
+        if (!line && points.length > 1) beziers.push(new BSpline(points));
 
-        this.ncurve = Math.floor(hit.pixelLength / 4);
+        let distAt = 0, curPoint = 0, curveIndex = 0, curCurve = beziers[0], lastCurve = curCurve.curve[0], lastDist = 0;
+        this.ncurve = Math.floor(hit.pixelLength / 7);
         this.curve = new Array(this.ncurve + 1);
 
         for (let i = 0; i < this.curve.length; ++i) {
             let prefDistance = i * hit.pixelLength / this.ncurve;
-            while (distanceAt < prefDistance) {
-                lastDistanceAt = distanceAt;
+            while (distAt < prefDistance) {
+                lastDist = distAt;
                 lastCurve = curCurve.curve[curPoint++];
 
                 if (curPoint >= curCurve.ncurve) {
-                    if (curCurveIndex < beziers.length - 1) {
-                        curCurve = beziers[++curCurveIndex];
+                    if (curveIndex < beziers.length - 1) {
+                        curCurve = beziers[++curveIndex];
                         curPoint = 0;
                     }
                     else {
                         curPoint = curCurve.ncurve - 1;
-                        if (lastDistanceAt === distanceAt) break;
+                        if (lastDist === distAt) break;
                     }
                 }
-                distanceAt += curCurve.curveDistance[curPoint];
+                distAt += curCurve.curveDistance[curPoint];
             }
 
             let thisCurve = curCurve.curve[curPoint];
             if (lastCurve === thisCurve) this.curve[i] = thisCurve;
             else {
-                let t = (prefDistance - lastDistanceAt) / (distanceAt - lastDistanceAt);
+                let t = (prefDistance - lastDist) / (distAt - lastDist);
                 this.curve[i] = {
                     x: lerp(lastCurve.x, thisCurve.x, t),
                     y: lerp(lastCurve.y, thisCurve.y, t),

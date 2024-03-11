@@ -1,4 +1,4 @@
-const twoPi = 2 * Math.PI, circTolerance = .15, dotlen = a => a.x * a.x + a.y * a.y, vecsub = (a, b) => {
+const twoPi = 2 * Math.PI, circTolerance = .175, dotlen = a => a.x * a.x + a.y * a.y, vecsub = (a, b) => {
     return {
         x: a.x - b.x, y: a.y - b.y
     };
@@ -29,6 +29,9 @@ export default function ArcPath(hit) {
         direct = -1;
         arcRange = twoPi - arcRange;
     }
+    let expectAng = hit.pixelLength / radius;
+    if (arcRange > expectAng * .97) arcRange = expectAng;
+    
     function pointAt(t) {
         let ang = thetaStart + direct * t * arcRange;
         return {
@@ -36,10 +39,7 @@ export default function ArcPath(hit) {
         };
     }
 
-    let expectAng = hit.pixelLength / radius;
-    if (arcRange > expectAng * .97) arcRange = expectAng;
-
-    let verts = 2 * radius <= circTolerance ? 2 : Math.max(2, Math.floor(arcRange / (2 * Math.acos(1 - circTolerance / radius))));
+    let verts = Math.max(Math.floor(hit.pixelLength / 10), Math.floor(arcRange / (2 * Math.acos(1 - circTolerance / radius))));
     if (!verts) return [];
     let output = new Array(verts);
 
