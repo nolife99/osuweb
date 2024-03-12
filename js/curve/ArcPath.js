@@ -31,7 +31,7 @@ export default function ArcPath(hit) {
     }
     let expectAng = hit.pixelLength / radius;
     if (arcRange > expectAng * .97) arcRange = expectAng;
-    
+
     function pointAt(t) {
         let ang = thetaStart + direct * t * arcRange;
         return {
@@ -43,11 +43,8 @@ export default function ArcPath(hit) {
     if (!verts) return [];
     let output = new Array(verts);
 
-    for (var i = 0, l = 0; i < verts; ++i) {
-        output[i] = pointAt(i / (verts - 1));
-        if (i > 0) l += Math.hypot(output[i].x - output[i - 1].x, output[i].y - output[i - 1].y);
-    }
+    for (let i = 0; i < verts; ++i) output[i] = pointAt(i / (verts - 1));
     return {
-        curve: output, pointAt: pointAt, totalDistance: l
+        curve: output, pointAt: pointAt
     };
 };

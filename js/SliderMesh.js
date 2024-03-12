@@ -71,12 +71,7 @@ function newTexture(colors, SliderTrackOverride, SliderBorder) {
 }
 
 const DIVIDES = 32;
-function curveGeometry(curve0, radius) {
-    let curve = [];
-    for (let i = 0; i < curve0.length; ++i) if (i === 0 ||
-        Math.abs(curve0[i].x - curve0[i - 1].x) > .00001 ||
-        Math.abs(curve0[i].y - curve0[i - 1].y) > .00001) curve.push(curve0[i]);
-
+function curveGeometry(curve, radius) {
     let vert = [], index = [], first = curve[0];
     vert.push(first.x, first.y, first.t, 0);
 

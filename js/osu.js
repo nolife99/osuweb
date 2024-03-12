@@ -15,8 +15,9 @@ function stackHitObjects(track) {
     function getdist(A, B) {
         let x = A.x, y = A.y;
         if (A.type === 'slider' && A.repeat % 2 === 1) {
-            x = A.curve.curve[A.curve.curve.length - 1].x;
-            y = A.curve.curve[A.curve.curve.length - 1].y;
+            let pt = A.curve.pointAt(1);
+            x = pt.x;
+            y = pt.y;
         }
         return Math.hypot(x - B.x, y - B.y);
     }

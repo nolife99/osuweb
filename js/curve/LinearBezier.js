@@ -19,7 +19,7 @@ export default class LinearBezier {
                 }
             }
             else if (lastPoi && tpoi.x === lastPoi.x && tpoi.y === lastPoi.y) {
-                if (points.length >= 2) beziers.push(new BSpline(points));
+                if (points.length > 1) beziers.push(new BSpline(points));
                 points = [];
             }
             points.push(tpoi);
