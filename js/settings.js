@@ -172,4 +172,8 @@ window.addEventListener('DOMContentLoaded', () => {
         gamesettings.loadToGame();
         saveToLocal();
     }
+    document.getElementById('deletemaps-btn').onclick = () => {
+        localforage.removeItem('beatmapfilelist');
+        location.reload();
+    }
 });

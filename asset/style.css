@@ -417,6 +417,7 @@ input[type=button].warnbtn {
     font-size: 16px;
     text-align: center;
     padding: 12px 20px 14px;
+    margin-bottom: 20px;
     height: auto;
 }
 
