@@ -1030,7 +1030,7 @@ export default function Playback(game, osu, track) {
         window.lastPlaybackRenderTime = this.realtime;
 
         if (this.audioReady) {
-            var time = osu.audio.getPos() * 1000 + self.offset;
+            var time = osu.audio.pos * 1000 + self.offset;
             for (let i = this.breakIndex; i < track.breaks.length; ++i) {
                 let b = track.breaks[i];
                 if (time >= b.startTime && time <= b.endTime) {

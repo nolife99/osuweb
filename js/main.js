@@ -90,6 +90,10 @@ sounds.whenLoaded = () => {
 sounds.load(sample);
 
 class BeatmapController {
+    constructor(osz) {
+        this.osu = new Osu(osz.root);
+        this.filename = osz.filename;
+    }
     startGame(trackid) {
         if (window.app) return;
         let app = window.app = new PIXI.Application({
@@ -262,7 +266,7 @@ pDragboxHint.noTransferHint = 'Not receiving any file. Please retry.';
 pDragboxHint.nonOszHint = 'Not an osz file. Drop another file.';
 pDragboxHint.loadingHint = 'loading...';
 
-let beatmapFileList;
+let beatmapFileList = [];
 localforage.getItem('beatmapfilelist', (err, names) => {
     if (!err && names && names.length) {
         console.log('local beatmap list:', names);
@@ -298,14 +302,11 @@ localforage.getItem('beatmapfilelist', (err, names) => {
     else if (names) console.warn('error while loading beatmap list:', err, names);
 });
 function addbeatmap(osz, f) {
-    let map = new BeatmapController();
-    map.osu = new Osu(osz.root);
-    map.filename = osz.filename;
-
+    let map = new BeatmapController(osz);
     map.osu.ondecoded = () => {
+        map.osu.requestStar();
         map.osu.filterTracks();
         map.osu.sortTracks();
-        map.osu.requestStar();
 
         if (!map.osu.tracks.some(t => t.general.Mode !== 3)) {
             pDragboxHint.innerText = pDragboxHint.modeErrHint;

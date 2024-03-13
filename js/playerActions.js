@@ -1,7 +1,7 @@
 function triggerTap() {
     let click = {
         x: game.mouseX, y: game.mouseY,
-        time: playback.osu.audio.getPos() * 1000
+        time: playback.osu.audio.pos * 1000
     }, hit = playback.newHits.find(inUpcoming(click));
     if (!hit && game.mouse) {
         let res = game.mouse(new Date().getTime());

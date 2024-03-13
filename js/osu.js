@@ -351,7 +351,7 @@ export default class Osu {
     requestStar() {
         fetch('https://api.sayobot.cn/v2/beatmapinfo?0=' + this.tracks[0].metadata.BeatmapSetID).then(r => r.json()).then(e => {
             if (e.status === 0) e.data.bid_data.forEach(data => this.tracks.forEach(track => {
-                if (track.metadata.BeatmapID === data.bid) {
+                if (track.metadata.BeatmapID == data.bid) {
                     track.difficulty.star = data.star;
                     track.length = data.length;
                 }
