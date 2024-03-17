@@ -71,13 +71,14 @@ function newTexture(colors, SliderTrackOverride, SliderBorder) {
 }
 
 const DIVIDES = 32;
-function curveGeometry(curve, radius) {
-    let vert = [], index = [], first = curve[0];
+function curveGeometry(curve, length, radius) {
+    let vert = [], index = [], first = curve.pointAt(0), res = Math.ceil(length / 4);
     vert.push(first.x, first.y, first.t, 0);
 
-    for (let i = 1; i < curve.length; ++i) {
-        let x = curve[i].x, y = curve[i].y, t = curve[i].t,
-            lx = curve[i - 1].x, ly = curve[i - 1].y, lt = curve[i - 1].t,
+    for (let i = 1; i < res; ++i) {
+        let curCurve = curve.pointAt((i + 1) / res), lastCurve = curve.pointAt(i / res);
+        let x = curCurve.x, y = curCurve.y, t = curCurve.t,
+            lx = lastCurve.x, ly = lastCurve.y, lt = lastCurve.t,
             dx = x - lx, dy = y - ly, length = Math.hypot(dx, dy),
             ox = radius * -dy / length, oy = radius * dx / length;
 
@@ -108,14 +109,15 @@ function curveGeometry(curve, radius) {
         index.push(c, last, p2);
     }
     addArc(0, 1, 2, first.t);
-    addArc(5 * curve.length - 5, 5 * curve.length - 6, 5 * curve.length - 7, curve[curve.length - 1].t);
+    addArc(5 * res - 5, 5 * res - 6, 5 * res - 7, curve.pointAt(1).t);
 
-    for (let i = 1; i < curve.length - 1; ++i) {
-        let c = curve[i], b = curve[i - 1], n = curve[i + 1], t = (c.x - b.x) * (n.y - c.y) - (n.x - c.x) * (c.y - b.y);
+    for (let i = 1; i < res - 1; ++i) {
+        let c = curve.pointAt((i + 1) / res), b = curve.pointAt(i / res), n = curve.pointAt((i + 2) / res), 
+            t = (c.x - b.x) * (n.y - c.y) - (n.x - c.x) * (c.y - b.y);
         if (t > 0) addArc(5 * i, 5 * i - 1, 5 * i + 2);
         else addArc(5 * i, 5 * i + 1, 5 * i - 2);
     }
-    return new PIXI.Geometry().addAttribute('position', vert, 4).addIndex(index)
+    return new PIXI.Geometry().addAttribute('position', vert, 4).addIndex(index);
 }
 function circleGeometry(radius) {
     let vert = [], index = [];
@@ -128,11 +130,11 @@ function circleGeometry(radius) {
     return new PIXI.Geometry().addAttribute('position', vert, 4).addIndex(index);
 }
 export default class SliderMesh extends PIXI.Container {
-    constructor(curve, radius, tintid) {
+    constructor(hit, radius, tintid) {
         super();
 
-        this.curve = curve;
-        this.geometry = curveGeometry(curve.curve, radius);
+        this.curve = hit.curve;
+        this.geometry = curveGeometry(hit.curve, hit.pixelLength, radius);
         this.alpha = 1;
         this.tintid = tintid;
         this.startt = 0;

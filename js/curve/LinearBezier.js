@@ -14,62 +14,62 @@ export default class LinearBezier {
             if (line) {
                 if (lastPoi) {
                     points.push(tpoi);
-                    beziers.push(new BSpline(points));
-                    points = [];
+                    beziers.push(new BSpline(points.splice(0)));
                 }
             }
             else if (lastPoi && tpoi.x === lastPoi.x && tpoi.y === lastPoi.y) {
-                if (points.length > 1) beziers.push(new BSpline(points));
-                points = [];
+                let pts = points.splice(0);
+                if (pts.length > 1) beziers.push(new BSpline(pts));
             }
             points.push(tpoi);
             lastPoi = tpoi;
         }
-        if (!line && points.length > 1) beziers.push(new BSpline(points));
+        if (!line && points.length > 1) beziers.push(new BSpline(points.splice(0)));
 
         let distAt = 0, curPoint = 0, curveIndex = 0, curCurve = beziers[0], lastCurve = curCurve.curve[0], lastDist = 0;
-        this.ncurve = Math.floor(hit.pixelLength / 7);
-        this.curve = new Array(this.ncurve + 1);
+        this.ncurve = Math.ceil(hit.pixelLength / 5);
+        this.path = new Array(this.ncurve + 1);
 
-        for (let i = 0; i < this.curve.length; ++i) {
+        for (let i = 0; i < this.path.length; ++i) {
             let prefDistance = i * hit.pixelLength / this.ncurve;
             while (distAt < prefDistance) {
                 lastDist = distAt;
                 lastCurve = curCurve.curve[curPoint++];
 
-                if (curPoint >= curCurve.ncurve) {
+                if (curPoint >= curCurve.curve.length) {
                     if (curveIndex < beziers.length - 1) {
                         curCurve = beziers[++curveIndex];
                         curPoint = 0;
                     }
                     else {
-                        curPoint = curCurve.ncurve - 1;
+                        curPoint = curCurve.curve.length - 1;
                         if (lastDist === distAt) break;
                     }
                 }
-                distAt += curCurve.curveDistance[curPoint];
+                if (curPoint > 0) distAt += curCurve.curveDistance(curPoint);
             }
 
             let thisCurve = curCurve.curve[curPoint];
-            if (lastCurve === thisCurve) this.curve[i] = thisCurve;
+            if (lastCurve === thisCurve) this.path[i] = thisCurve;
             else {
                 let t = (prefDistance - lastDist) / (distAt - lastDist);
-                this.curve[i] = {
+                this.path[i] = {
                     x: lerp(lastCurve.x, thisCurve.x, t),
-                    y: lerp(lastCurve.y, thisCurve.y, t),
+                    y: lerp(lastCurve.y, thisCurve.y, t)
                 };
             }
-            this.curve[i].t = i / this.ncurve;
+            this.path[i].t = i / this.ncurve;
         }
     }
     pointAt(t) {
         let indexF = t * this.ncurve, index = Math.floor(indexF);
-        if (index >= this.ncurve) return this.curve[this.ncurve];
+        if (index >= this.ncurve) return this.path[this.ncurve];
         else {
-            let poi = this.curve[index], poi2 = this.curve[index + 1], t = indexF - index;
+            let poi = this.path[index], poi2 = this.path[index + 1], t = indexF - index;
             return {
                 x: lerp(poi.x, poi2.x, t),
-                y: lerp(poi.y, poi2.y, t)
+                y: lerp(poi.y, poi2.y, t),
+                t: lerp(poi.t, poi2.t, t)
             };
         }
     }

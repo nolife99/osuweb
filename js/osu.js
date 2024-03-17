@@ -1,6 +1,6 @@
 import OsuAudio from './osu-audio.js';
-import LinearBezier from './curve/LinearBezier.js';
 import ArcPath from './curve/ArcPath.js';
+import LinearBezier from './curve/LinearBezier.js';
 
 const HIT_TYPE_CIRCLE = 1, HIT_TYPE_SLIDER = 2, HIT_TYPE_NEWCOMBO = 4, HIT_TYPE_SPINNER = 8;
 function stackHitObjects(track) {
@@ -14,11 +14,6 @@ function stackHitObjects(track) {
     }
     function getdist(A, B) {
         let x = A.x, y = A.y;
-        if (A.type === 'slider' && A.repeat % 2 === 1) {
-            let pt = A.curve.pointAt(1);
-            x = pt.x;
-            y = pt.y;
-        }
         return Math.hypot(x - B.x, y - B.y);
     }
 
@@ -49,17 +44,6 @@ function stackHitObjects(track) {
         let ofs = dep * stackScale;
         hit.x += ofs;
         hit.y += ofs;
-
-        if (hit.type === 'slider') {
-            for (let j = 0; j < hit.keyframes.length; ++j) {
-                hit.keyframes[j].x += ofs;
-                hit.keyframes[j].y += ofs;
-            }
-            for (let j = 0; j < hit.curve.curve.length; ++j) {
-                hit.curve.curve[j].x += ofs;
-                hit.curve.curve[j].y += ofs;
-            }
-        }
     }
     for (let i = 0; i < chains.length; ++i) {
         if (chains[i][0].type === 'slider') for (let j = 0, dep = 0; j < chains[i].length; ++j) {
@@ -284,12 +268,8 @@ class Track {
                     hit.sliderTimeTotal = hit.sliderTime * hit.repeat;
                     hit.endTime = hit.time + hit.sliderTimeTotal;
 
-                    if (hit.sliderType === 'P' && hit.keyframes.length === 2) {
-                        hit.curve = ArcPath(hit);
-                        if (hit.curve.length === 0) hit.curve = new LinearBezier(hit, false);
-                    }
+                    if (hit.sliderType === 'P' && hit.keyframes.length === 2) hit.curve = ArcPath(hit);
                     else hit.curve = new LinearBezier(hit, hit.keyframes.length === 1);
-                    if (hit.curve.length < 2) console.warn('[curve] slider curve calculation failed');
                 }
             }
             this.length = (this.hitObjects[this.hitObjects.length - 1].endTime - this.hitObjects[0].time) / 1000;

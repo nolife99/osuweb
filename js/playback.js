@@ -462,8 +462,8 @@ export default function Playback(game, osu, track) {
     };
     this.createSlider = hit => {
         hit.lastrep = 0;
-        hit.nexttick = 0;
-        hit.body = new SliderMesh(hit.curve, this.circleRadius, hit.combo % combos.length);
+        hit.nexttick = 0; 
+        hit.body = new SliderMesh(hit, this.circleRadius, hit.combo % combos.length);
         hit.body.alpha = 0;
         hit.body.depth = 4.9999 - .0001 * hit.hitIndex;
         hit.objects.push(hit.body);
@@ -495,14 +495,14 @@ export default function Playback(game, osu, track) {
             lastTick.result = false;
         }
         if (hit.repeat > 1) {
-            let p = hit.curve.curve[hit.curve.curve.length - 1], p2 = hit.curve.curve[hit.curve.curve.length - 2];
+            let p = hit.curve.pointAt(1), p2 = hit.curve.pointAt(.99);
             hit.reverse = newSprite('reversearrow.png', p.x, p.y, .36, true);
             hit.reverse.rotation = Math.atan2(p2.y - p.y, p2.x - p.x);
         }
         if (hit.repeat > 2) {
-            let p = hit.curve.curve[0], p2 = hit.curve.curve[1];
-            hit.reverse_b = newSprite('reversearrow.png', p.x, p.y, .36, true);
-            hit.reverse_b.rotation = Math.atan2(p2.y - p.y, p2.x - p.x);
+            let p2 = hit.curve.pointAt(.01);
+            hit.reverse_b = newSprite('reversearrow.png', hit.x, hit.y, .36, true);
+            hit.reverse_b.rotation = Math.atan2(p2.y - hit.y, p2.x - hit.x);
             hit.reverse_b.visible = false;
         }
 
@@ -515,7 +515,7 @@ export default function Playback(game, osu, track) {
         hit.ball.visible = false;
         self.createHitCircle(hit);
 
-        let endPoint = hit.curve.curve[hit.curve.curve.length - 1];
+        let endPoint = hit.curve.pointAt(1);
         for (let i = 1; i <= hit.repeat; ++i) {
             let v = i % 2 === 1 ? endPoint : hit;
             hit.judgements.push(this.createJudgement(v.x, v.y, 4, hit.time + i * hit.sliderTime));
@@ -556,8 +556,9 @@ export default function Playback(game, osu, track) {
         if (prevHit.type === 'slider') {
             t1 += prevHit.sliderTimeTotal;
             if (prevHit.repeat % 2 === 1) {
-                x1 = prevHit.curve.curve[prevHit.curve.curve.length - 1].x;
-                y1 = prevHit.curve.curve[prevHit.curve.curve.length - 1].y;
+                let pt = prevHit.curve.pointAt(1);
+                x1 = pt.x;
+                y1 = pt.y;
             }
         }
 
