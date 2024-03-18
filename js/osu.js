@@ -122,7 +122,7 @@ class Track {
                             sampleIndex: +parts[4],
                             volume: +parts[5],
                             uninherit: +parts[6],
-                            kaiMode: +parts[7]
+                            kiaiMode: +parts[7]
                         };
                         if (t.beatMs < 0) t.uninherit = 0;
                         this.timing.push(t);
@@ -251,6 +251,7 @@ class Track {
                     point.uninherit = 1;
                     point.beatMs *= -.01 * last.beatMs;
                     point.truebeatMs = last.truebeatMs;
+                    point.inherited = last;
                 }
                 else {
                     last = point;
@@ -264,7 +265,8 @@ class Track {
 
                 if (hit.type === 'circle') hit.endTime = hit.time;
                 else if (hit.type === 'slider') {
-                    hit.sliderTime = hit.timing.beatMs * (hit.pixelLength / this.difficulty.SliderMultiplier) / 100;
+                    let fixBeatMs = hit.timing.beatMs ? hit.timing.beatMs : hit.timing.inherited.beatMs;
+                    hit.sliderTime = fixBeatMs * (hit.pixelLength / this.difficulty.SliderMultiplier) / 100;
                     hit.sliderTimeTotal = hit.sliderTime * hit.repeat;
                     hit.endTime = hit.time + hit.sliderTimeTotal;
 

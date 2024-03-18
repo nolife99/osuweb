@@ -39,17 +39,15 @@ function errortext(a) {
     return sgnavg + '±' + stdev.toFixed(0) + 'ms';
 }
 function modstext() {
-    let l = [], game = window.game;
-    if (game.easy) l.push('EZ');
-    if (game.daycore) l.push('DC');
-    if (game.hidden) l.push('HD');
-    if (game.hardrock) l.push('HR');
-    if (game.nightcore) l.push('NC');
-    if (game.autoplay) l.push('AT');
-    if (l.length === 0) return '';
-    let s = l[0];
-    for (let i = 1; i < l.length; ++i) s = s + '+' + l[i];
-    return s;
+    let l = '+', game = window.game;
+    if (game.easy) l += 'EZ';
+    if (game.daycore) l += 'DC';
+    if (game.hidden) l += 'HD';
+    if (game.hardrock) l += 'HR';
+    if (game.nightcore) l += 'NC';
+    if (game.autoplay) l += 'AT';
+    if (l === '+') return '';
+    return l;
 }
 function newdiv(parent, classname, text) {
     let div = document.createElement('div');

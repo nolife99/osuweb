@@ -46,7 +46,7 @@ if (window.gamesettings) window.gamesettings.loadToGame();
 game.stage = new PIXI.Container();
 game.cursor = null;
 
-PIXI.Loader.shared.add('asset/fonts/venera.fnt').add('asset/skin/sprites.json').load(() => {
+PIXI.Loader.shared.add('asset/skin/sprites.json').load(() => {
     document.getElementById('skin-progress').classList.add('finished');
     window.skin = PIXI.Loader.shared.resources['asset/skin/sprites.json'].textures;
 });
@@ -351,8 +351,8 @@ function handleDragDrop(e) {
 }
 pDragbox.ondrop = handleDragDrop;
 
-window.addEventListener('dragover', e => (e || event).preventDefault(), false);
-window.addEventListener('drop', e => (e || event).preventDefault(), false);
+window.addEventListener('dragover', e => e.preventDefault(), false);
+window.addEventListener('drop', e => e.preventDefault(), false);
 
 pDragboxHint.innerText = pDragboxHint.defaultHint;
 pDragboxInner.hidden = false;

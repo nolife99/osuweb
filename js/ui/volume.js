@@ -7,17 +7,13 @@ export default class VolumeMenu extends PIXI.Container {
         this.alpha = 1;
         this.t0 = 0;
 
-        this.mastertext = new PIXI.BitmapText('MASTER', {
-            font: {
-                name: 'Venera', size: 20
-            }
+        this.mastertext = new PIXI.Text('MASTER', {
+            fontFamily: 'Venera', fontSize: 20, fill: 0xffffff
         });
         this.mastertext.anchor.set(.5);
 
-        this.volumetext = new PIXI.BitmapText('', {
-            font: {
-                name: 'Venera', size: 40
-            }
+        this.volumetext = new PIXI.Text('', {
+            fontFamily: 'Venera', fontSize: 40, fill: 0xffffff
         });
         this.volumetext.anchor.set(.5);
 

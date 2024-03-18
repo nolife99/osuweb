@@ -14,19 +14,15 @@ export default class LoadingMenu extends PIXI.Container {
         this.addChild(this.bg);
 
         let allFont = {
-            font: {
-                name: 'Venera', size: 14
-            }
+            fontFamily: 'Venera', fontSize: 14, fill: 0xffffff
         };
-        this.titletext = new PIXI.BitmapText(track.metadata.Title || '-', {
-            font: {
-                name: 'Venera', size: 24
-            }
+        this.titletext = new PIXI.Text(track.metadata.Title || '-', {
+            fontFamily: 'Venera', fontSize: 24, fill: 0xffffff
         });
-        this.artisttext = new PIXI.BitmapText(track.metadata.Artist || '-', allFont);
-        this.versiontext = new PIXI.BitmapText(track.metadata.Version || '-', allFont);
-        this.sourcetext = new PIXI.BitmapText('Source: ' + (track.metadata.Source || '-'), allFont);
-        this.mappertext = new PIXI.BitmapText('Mapper: ' + (track.metadata.Creator || '-'), allFont);
+        this.artisttext = new PIXI.Text(track.metadata.Artist || '-', allFont);
+        this.versiontext = new PIXI.Text(track.metadata.Version || '-', allFont);
+        this.sourcetext = new PIXI.Text('Source: ' + (track.metadata.Source || '-'), allFont);
+        this.mappertext = new PIXI.Text('Mapper: ' + (track.metadata.Creator || '-'), allFont);
         this.titletext.anchor.set(.5);
         this.artisttext.anchor.set(.5);
         this.versiontext.anchor.set(.5);

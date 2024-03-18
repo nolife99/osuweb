@@ -32,16 +32,14 @@ export default class BreakOverlay extends PIXI.Container {
         this.addChild(this.barleft);
         this.addChild(this.barright);
 
-        this.number = new PIXI.BitmapText('', {
-            font: {
-                name: 'Venera', size: 40
-            }
+        this.number = new PIXI.Text('', {
+            fontFamily: 'Venera', fontSize: 40, fill: 0xffffff
         });
         this.number.anchor.set(.5);
         this.number.x = 0;
         this.number.y = -40;
         this.addChild(this.number);
-        this.resize(windowfield)
+        this.resize(windowfield);
     }
     resize(windowfield) {
         this.x = windowfield.width / 2;

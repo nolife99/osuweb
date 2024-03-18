@@ -299,13 +299,11 @@ export default function Playback(game, osu, track) {
         }
     }
     this.createJudgement = (x, y, depth, finalTime) => {
-        let judge = new PIXI.BitmapText('', {
-            font: {
-                name: 'Venera', size: 20
-            }
+        let judge = new PIXI.Text('', {
+            fontFamily: 'Venera', fontSize: 20, fill: 0xffffff
         });
         judge.anchor.set(.5);
-        judge.scale.set(.85 * this.hitSpriteScale, 1 * this.hitSpriteScale);
+        judge.scale.set(this.hitSpriteScale);
         judge.visible = false;
         judge.basex = judge.x = x;
         judge.basey = judge.y = y;
@@ -340,7 +338,8 @@ export default function Playback(game, osu, track) {
                 return;
             }
             judge.alpha = t < 100 ? t / 100 : t < 600 ? 1 : 1 - (t - 600) / 200;
-            let tQ = t / 800, t5 = tQ * tQ * tQ * tQ * tQ;
+            judge.width = 80 * this.hitSpriteScale;
+            let t5 = Math.pow(t / 800, 5);
             judge.y = judge.basey + 100 * t5 * this.hitSpriteScale;
             judge.rotation = .7 * t5;
         }
@@ -351,7 +350,7 @@ export default function Playback(game, osu, track) {
             }
             judge.alpha = t < 100 ? t / 100 : 1 - (t - 100) / 400;
             let tQ = t / 1800 - 1;
-            judge.letterSpacing = 70 * (tQ * tQ * tQ * tQ * tQ + 1);
+            judge.width = (80 + 35 * (tQ * tQ * tQ * tQ * tQ + 1)) * this.hitSpriteScale;
         }
     };
     this.createBackground = () => {
@@ -462,7 +461,7 @@ export default function Playback(game, osu, track) {
     };
     this.createSlider = hit => {
         hit.lastrep = 0;
-        hit.nexttick = 0; 
+        hit.nexttick = 0;
         hit.body = new SliderMesh(hit, this.circleRadius, hit.combo % combos.length);
         hit.body.alpha = 0;
         hit.body.depth = 4.9999 - .0001 * hit.hitIndex;
@@ -484,7 +483,7 @@ export default function Playback(game, osu, track) {
         let tickDuration = hit.timing.truebeatMs / track.difficulty.SliderTickRate,
             nticks = Math.floor(hit.sliderTimeTotal / tickDuration) + 1;
 
-        for (let i = 0; i < nticks; ++i) {
+        if (hit.timing.beatMs) for (let i = 0; i < nticks; ++i) {
             let t = hit.time + i * tickDuration, pos = repeatclamp(i * tickDuration / hit.sliderTime);
             if (Math.min(pos, 1 - pos) * hit.sliderTime <= 10) continue;
             let at = hit.curve.pointAt(pos);

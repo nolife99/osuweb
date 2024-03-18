@@ -102,16 +102,16 @@ window.addEventListener('DOMContentLoaded', () => {
             indicator.hidden = true;
         };
         range.oninput = function() {
-            let min = parseFloat(range.min);
-            let max = parseFloat(range.max);
-            let val = parseFloat(range.value);
+            let min = parseFloat(range.min), max = parseFloat(range.max),val = parseFloat(range.value);
             let pos = (val - min) / (max - min);
             let length = range.clientWidth - 20;
             indicator.style.left = (pos * length + 13) + 'px';
             indicator.innerText = feedback(val);
         }
         range.value = gamesettings[item];
-        gamesettings.restoreCallbacks.push(function() { range.value = gamesettings[item]; });
+        gamesettings.restoreCallbacks.push(function() { 
+            range.value = gamesettings[item]; 
+        });
         range.oninput();
         range.onchange = function() {
             gamesettings[item] = range.value;
@@ -122,13 +122,12 @@ window.addEventListener('DOMContentLoaded', () => {
     function bindkeyselector(id, keynameitem, keycodeitem) {
         let btn = document.getElementById(id);
         function activate() {
-            let deactivate = () => {
+            function deactivate() {
                 btn.onclick = activate;
                 btn.classList.remove('using');
                 document.removeEventListener('keydown', listenkey);
             }
-            let listenkey = e => {
-                e = e || window.event;
+            function listenkey(e) {
                 gamesettings[keycodeitem] = e.keyCode;
                 gamesettings[keynameitem] = e.key.toUpperCase();
                 btn.value = gamesettings[keynameitem];
@@ -168,7 +167,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('restoredefault-btn').onclick = () => {
         Object.assign(gamesettings, defaultsettings);
-        for (let i = 0; i < gamesettings.restoreCallbacks.length; ++i) gamesettings.restoreCallbacks[i]();
+        for (const c of gamesettings.restoreCallbacks) c();
         gamesettings.loadToGame();
         saveToLocal();
     }
