@@ -255,38 +255,37 @@ const defaultHint = 'Drag and drop a beatmap (.osz) file here',
     loadingHint = 'Loading...';
 
 let beatmapFileList = [];
-localforage.getItem('beatmapfilelist', (err, names) => {
-    if (!err && names && names.length) {
-        console.log('local beatmap list:', names);
-        let counter = progresses[3].childNodes;
-        counter[3].innerText = names.length;
+localforage.getItem('beatmapfilelist').then(names => {
+    console.log('Local beatmaps:', names);
+    let counter = progresses[3].childNodes;
+    counter[3].innerText = names.length;
 
-        let tempbox = new Array(names.length);
-        for (let i = 0; i < names.length; ++i) {
-            let box = document.createElement('div');
-            box.className = 'beatmapbox';
-            pBeatmapList.insertBefore(box, pDragbox);
-            tempbox[i] = box;
-        }
-        let loadingCounter = counter[1], loadingn = 0;
-
-        beatmapFileList = names;
-        for (let i = 0; i < names.length; ++i) localforage.getItem(names[i], async (err, blob) => {
-            if (!err && blob) {
-                let fs = new zip.fs.FS();
-                fs.filename = names[i];
-                await fs.importBlob(blob);
-                addbeatmap(fs, box => {
-                    pBeatmapList.replaceChild(box, tempbox[i]);
-                    pDragboxHint.innerText = defaultHint;
-                });
-                loadingCounter.innerText = ++loadingn;
-            }
-            else console.warn('error while loading beatmap:', names[i], err);
-        });
+    const tempbox = new Array(names.length);
+    for (let i = 0; i < names.length; ++i) {
+        let box = document.createElement('div');
+        box.className = 'beatmapbox';
+        pBeatmapList.insertBefore(box, pDragbox);
+        tempbox[i] = box;
     }
-    else if (names) console.warn('error while loading beatmap list:', err, names);
-});
+    let loadingCounter = counter[1], loadingn = 0;
+
+    beatmapFileList = names;
+    for (let i = 0; i < names.length; ++i) localforage.getItem(names[i]).then(blob => {
+        let fs = new zip.fs.FS();
+        fs.filename = names[i];
+        fs.importBlob(blob).then(() => {
+            addbeatmap(fs, box => {
+                pBeatmapList.replaceChild(box, tempbox[i]);
+                pDragboxHint.innerText = defaultHint;
+            });
+            loadingCounter.innerText = ++loadingn;
+        }).catch(e => {
+            console.warn('Error importing beatmap:', names[i], e);
+            pDragboxHint.innerText = nonValidHint;
+        });
+    }).catch(err => console.warn('Error getting beatmap:', names[i], err));
+}).catch(err => console.warn('Error searching beatmaps:', err));
+
 function addbeatmap(osz, f) {
     let map = new BeatmapController(osz);
     map.osu.ondecoded = () => {
@@ -302,12 +301,10 @@ function addbeatmap(osz, f) {
 
         if (!beatmapFileList.includes(map.filename)) {
             beatmapFileList.push(map.filename);
-            localforage.setItem('beatmapfilelist', beatmapFileList, err => {
-                if (err) console.warn('Error while saving beatmap list', err);
-            });
+            localforage.setItem('beatmapfilelist', beatmapFileList).catch(e => console.warn('Error saving beatmaps:', e));
         }
     };
-    map.osu.onerror = _e => console.warn('osu load error', _e);
+    map.osu.onerror = e => console.warn('Error loading .osu:', e);
     map.osu.load();
 }
 function handleDragDrop(e) {
@@ -324,13 +321,15 @@ function handleDragDrop(e) {
         if (raw_file.name.indexOf('.osz') === raw_file.name.length - 4) {
             let fs = new zip.fs.FS();
             fs.filename = raw_file.name;
-            localforage.setItem(raw_file.name, raw_file, err => {
-                if (err) console.warn('Error while saving beatmap', fs.filename, err);
-            })
-            fs.root.importBlob(raw_file, () => addbeatmap(fs, box => {
+            localforage.setItem(raw_file.name, raw_file).catch(err => console.warn('Error saving beatmap:', fs.filename, err));
+
+            fs.importBlob(raw_file).then(() => addbeatmap(fs, box => {
                 pBeatmapList.insertBefore(box, pDragbox);
                 pDragboxHint.innerText = defaultHint;
-            }), _e => pDragboxHint.innerText = nonValidHint);
+            })).catch(ex => {
+                console.warn('Error during file transfer:', fs.filename, ex);
+                pDragboxHint.innerText = nonValidHint;
+            });
         }
         else pDragboxHint.innerText = nonOszHint;
     }

@@ -164,7 +164,5 @@ window.addEventListener('DOMContentLoaded', () => {
         for (const c of gamesettings.restoreCallbacks) c();
         saveToLocal();
     }
-    document.getElementById('deletemaps-btn').onclick = async () => {
-        localforage.removeItem('beatmapfilelist').then(() => location.reload());
-    }
+    document.getElementById('deletemaps-btn').onclick = () => localforage.removeItem('beatmapfilelist').then(() => location.reload());
 });

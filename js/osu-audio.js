@@ -12,13 +12,13 @@ export default class OsuAudio {
         const decode = node => actx.decodeAudioData(node.buf, decoded => {
             this.decoded = decoded;
             if (callback) callback(this);
-        }, _e => {
-            console.warn('Error decode audio', _e);
-            let buf8 = new Uint8Array(node.buf);
+        }, e => {
+            console.warn('Error decoding audio:', e);
+            let buf8 = new Uint8Array(node.buf), i = node.sync;
             buf8.indexOf = Array.prototype.indexOf;
+            const b = buf8;
 
-            let i = node.sync, b = buf8;
-            while (1) {
+            while (true) {
                 ++node.retry;
                 i = b.indexOf(0xFF, i);
                 if (i === -1 || (b[i + 1] & 0xE0 === 0xE0)) break;
