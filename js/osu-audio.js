@@ -5,7 +5,7 @@ export default class OsuAudio {
         this.started = 0;
         this.position = 0;
 
-        this.gain = actx.createGain();
+        this.gain = new GainNode(actx);
         this.gain.connect(actx.destination);
         this.speed = 1;
 

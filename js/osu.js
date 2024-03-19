@@ -74,9 +74,9 @@ class Track {
         this.hitObjects = [];
 
         this.decode = (() => {
-            let lines = self.track.replace('\r', '').split('\n'), section, combo = 0, index = 0, forceNewCombo = false;
-            for (let i = 0; i < lines.length; ++i) {
-                let line = lines[i].trim();
+            let section, combo = 0, index = 0, forceNewCombo = false;
+            for (const l of self.track.replace('\r', '').split('\n')) {
+                let line = l.trim();
                 if (line === '' || line.indexOf('//') === 0) continue;
                 if (line.indexOf('[') === 0) {
                     section = line;
@@ -86,13 +86,13 @@ class Track {
                 let key, value, parts;
                 switch (section) {
                     case '[General]':
-                        key = line.substr(0, line.indexOf(':')), value = line.substr(line.indexOf(':') + 1).trim();
+                        key = line.slice(0, line.indexOf(':')), value = line.slice(line.indexOf(':') + 1).trim();
                         if (isNaN(value)) self.general[key] = value;
                         else self.general[key] = +value;
                         break;
 
                     case '[Metadata]':
-                        key = line.substr(0, line.indexOf(':')), value = line.substr(line.indexOf(':') + 1).trim();
+                        key = line.slice(0, line.indexOf(':')), value = line.slice(line.indexOf(':') + 1).trim();
                         self.metadata[key] = value;
                         break;
 
@@ -244,8 +244,7 @@ class Track {
             }
 
             let last = this.timing[0];
-            for (let i = 0; i < this.timing.length; ++i) {
-                let point = this.timing[i];
+            for (const point of this.timing) {
                 if (point.uninherit === 0) {
                     point.uninherit = 1;
                     point.beatMs *= -.01 * last.beatMs;
@@ -292,12 +291,12 @@ export default class Osu {
         };
         this.load = () => {
             self.raw_tracks = zip.children.filter(c => c.name.indexOf('.osu') === c.name.length - 4);
-            self.raw_tracks.forEach(t => t.getText().then(text => {
+            for (const t of self.raw_tracks) t.getText().then(text => {
                 let track = new Track(zip, text);
                 self.tracks.push(track);
                 track.ondecoded = self.track_decoded;
                 track.decode();
-            }));
+            });
         };
         this.getCoverSrc = img => {
             for (let i = 0; i < this.tracks.length; ++i) {
@@ -305,8 +304,8 @@ export default class Osu {
                 try {
                     let file = trEv[0][2];
                     if (trEv[0][0] === 'Video') file = trEv[1][2];
-                    file = file.substr(1, file.length - 2);
-                    zip.getChildByName(file).getBlob('image/jpeg').then(blob => img.src = URL.createObjectURL(blob));
+                    zip.getChildByName(file.slice(1, file.length - 1)).getBlob('image/jpeg')
+                        .then(blob => img.src = URL.createObjectURL(blob));
                     break;
                 }
                 catch (error) {
@@ -328,12 +327,10 @@ export default class Osu {
     }
     requestStar() {
         fetch('https://api.sayobot.cn/v2/beatmapinfo?0=' + this.tracks[0].metadata.BeatmapSetID).then(r => r.json()).then(e => {
-            if (e.status === 0) e.data.bid_data.forEach(data => this.tracks.forEach(track => {
-                if (track.metadata.BeatmapID == data.bid) {
-                    track.difficulty.star = data.star;
-                    track.length = data.length;
-                }
-            }));
+            if (e.status === 0) for (const data of e.data.bid_data) for (const track of this.tracks) if (track.metadata.BeatmapID == data.bid) {
+                track.difficulty.star = data.star;
+                track.length = data.length;
+            }
         });
     }
 };

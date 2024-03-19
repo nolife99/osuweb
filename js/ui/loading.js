@@ -18,7 +18,7 @@ export default class LoadingMenu extends PIXI.Container {
         this.addChild(this.bg);
         this.addChild(this.loading);
 
-        let allFont = {
+        const allFont = {
             fontFamily: 'Venera', fontSize: 14, fill: 0xffffff
         };
         this.titletext = new PIXI.Text(track.metadata.Title || '-', {
@@ -74,7 +74,7 @@ export default class LoadingMenu extends PIXI.Container {
             this.changed = false;
         }
 
-        let dt = timestamp - this.t0;
+        const dt = timestamp - this.t0;
         if (dt > this.fadetime) this.visible = false;
         else this.alpha = 1 - dt / this.fadetime;
     }

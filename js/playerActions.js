@@ -94,7 +94,7 @@ export default function playerActions(playback) {
             window.game.mouseX = t * targX + (1 - t) * auto.lastx;
             window.game.mouseY = t * targY + (1 - t) * auto.lasty;
 
-            if (Math.ceil(time) >= cur.time) {
+            if (time + 10 >= cur.time) {
                 window.game.down = true;
                 triggerTap();
             }

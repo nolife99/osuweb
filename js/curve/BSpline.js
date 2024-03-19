@@ -13,15 +13,16 @@ export default class BSpline {
         this.curve = BSplineToPiecewiseLinear(points, Math.max(1, points.length - 1));
     }
     curveDistance(i) {
-        let curve = this.curve[i], prevCurve = this.curve[i - 1];
+        const curve = this.curve[i], prevCurve = this.curve[i - 1];
         return Math.hypot(curve.x - prevCurve.x, curve.y - prevCurve.y);
     }
     pointAt(t) {
         let c = {
             x: 0, y: 0
-        }, n = this.points.length - 1;
+        };
+        const n = this.points.length - 1;
         for (let i = 0; i <= n; ++i) {
-            let pt = this.points[i], b = bernstein(i, n, t);
+            const pt = this.points[i], b = bernstein(i, n, t);
             c.x += pt.x * b;
             c.y += pt.y * b;
         }
@@ -32,22 +33,17 @@ function BSplineToPiecewiseLinear(points, degree) {
     if (points.length < 2) return points.length == 0 ? [] : [points[0]];
     degree = Math.min(degree, points.length - 1);
 
-    let output = [], pointCount = points.length - 1;
-
-    let toFlatten = bSplineToBezierInternal(points, degree);
-    let freeBuffers = [];
-
-    let subdivisionBuffer1 = new Array(degree + 1), subdivisionBuffer2 = new Array(degree * 2 + 1);
-    let leftChild = subdivisionBuffer2;
-
+    const output = [], pointCount = points.length - 1, toFlatten = bSplineToBezierInternal(points, degree), freeBuffers = [],
+        subdivisionBuffer1 = new Array(degree + 1), subdivisionBuffer2 = new Array(degree * 2 + 1), leftChild = subdivisionBuffer2;
+    
     while (toFlatten.length > 0) {
-        let parent = toFlatten.pop();
+        const parent = toFlatten.pop();
         if (bezierIsFlatEnough(parent)) {
             bezierApproximate(parent, output, subdivisionBuffer1, subdivisionBuffer2, degree + 1);
             freeBuffers.push(parent);
             continue;
         }
-        let rightChild = freeBuffers.length > 0 ? freeBuffers.pop() : new Array(degree + 1);
+        const rightChild = freeBuffers.length > 0 ? freeBuffers.pop() : new Array(degree + 1);
         bezierSubdivide(parent, leftChild, rightChild, subdivisionBuffer1, degree + 1);
 
         for (let i = 0; i < degree + 1; ++i) parent[i] = leftChild[i];
@@ -58,19 +54,17 @@ function BSplineToPiecewiseLinear(points, degree) {
     return output;
 }
 function bSplineToBezierInternal(controlPoints, degree) {
-    let result = [];
-    let pointCount = controlPoints.length - 1, points = controlPoints.map(h => Object.assign({}, h));
-
+    const result = [], pointCount = controlPoints.length - 1, points = controlPoints.map(h => Object.assign({}, h));
     if (degree === pointCount) result.push(points);
     else {
         for (let i = 0; i < pointCount - degree; ++i) {
-            let subBezier = new Array(degree + 1);
+            const subBezier = new Array(degree + 1);
             subBezier[0] = points[i];
 
             for (let j = 0; j < degree - 1; ++j) {
                 subBezier[j + 1] = points[i + 1];
                 for (let k = 1; k < degree - j; ++k) {
-                    let l = Math.min(k, pointCount - degree - i);
+                    const l = Math.min(k, pointCount - degree - i);
                     points[i + k] = {
                         x: (l * points[i + k].x + points[i + k + 1].x) / (l + 1),
                         y: (l * points[i + k].y + points[i + k + 1].y) / (l + 1)
@@ -88,7 +82,7 @@ function bSplineToBezierInternal(controlPoints, degree) {
 }
 function bezierIsFlatEnough(controlPoints) {
     for (let i = 1; i < controlPoints.length - 1; ++i) {
-        let v1 = controlPoints[i - 1].x - 2 * controlPoints[i].x + controlPoints[i + 1].x,
+        const v1 = controlPoints[i - 1].x - 2 * controlPoints[i].x + controlPoints[i + 1].x,
             v2 = controlPoints[i - 1].y - 2 * controlPoints[i].y + controlPoints[i + 1].y;
 
         if (v1 * v1 + v2 * v2 > .25) return false;
@@ -96,7 +90,7 @@ function bezierIsFlatEnough(controlPoints) {
     return true;
 }
 function bezierSubdivide(controlPoints, l, r, subdivisionBuffer, count) {
-    let midpoints = subdivisionBuffer;
+    const midpoints = subdivisionBuffer;
     for (let i = 0; i < count; ++i) midpoints[i] = controlPoints[i];
     for (let i = 0; i < count; ++i) {
         l[i] = midpoints[0];
@@ -108,14 +102,14 @@ function bezierSubdivide(controlPoints, l, r, subdivisionBuffer, count) {
     }
 }
 function bezierApproximate(controlPoints, output, subdivisionBuffer1, subdivisionBuffer2, count) {
-    let l = subdivisionBuffer2, r = subdivisionBuffer1;
+    const l = subdivisionBuffer2, r = subdivisionBuffer1;
     bezierSubdivide(controlPoints, l, r, subdivisionBuffer1, count);
 
     for (let i = 0; i < count - 1; ++i) l[count + i] = r[i + 1];
     output.push(controlPoints[0]);
 
     for (let i = 1; i < count - 1; ++i) {
-        let index = 2 * i;
+        const index = 2 * i;
         output.push({
             x: .25 * (l[index - 1].x + 2 * l[index].x + l[index + 1].x),
             y: .25 * (l[index - 1].y + 2 * l[index].y + l[index + 1].y)

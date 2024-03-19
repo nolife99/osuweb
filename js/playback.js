@@ -385,11 +385,9 @@ export default function Playback(game, osu, track) {
         }
         if (track.events.length > 0) {
             self.ready = false;
-            let file = track.events[0][2];
-            if (track.events[0][0] === 'Video') file = track.events[1][2];
-            file = file.substr(1, file.length - 2);
-
-            let entry = osu.zip.getChildByName(file);
+            let file = track.events[0][0] === 'Video' ? track.events[1][2] : track.events[0][2],
+                entry = osu.zip.getChildByName(file.slice(1, file.length - 1));
+                
             if (entry) entry.getBlob('image/jpeg').then(function (blob) {
                 loadBackground(URL.createObjectURL(blob));
                 self.ready = true;
@@ -1064,13 +1062,11 @@ export default function Playback(game, osu, track) {
         }
     };
     this.destroy = () => {
-        self.hits.forEach(hit => {
-            if (!hit.destroyed) {
-                hit.objects.forEach(destroyHit);
-                hit.judgements.forEach(destroyHit);
-                hit.destroyed = true;
-            }
-        });
+        for (const hit of self.hits) if (!hit.destroyed) {
+            hit.objects.forEach(destroyHit);
+            hit.judgements.forEach(destroyHit);
+            hit.destroyed = true;
+        }
 
         let opt = {
             children: true, texture: false

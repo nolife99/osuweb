@@ -3,7 +3,9 @@ import BSpline from './BSpline.js';
 const lerp = (a, b, t) => a * (1 - t) + b * t;
 export default class LinearBezier {
     constructor(hit, line) {
-        let beziers = [], points = [], lastPoi = null;
+        const beziers = [], points = [];
+        let lastPoi;
+
         for (let i = -1; i < hit.keyframes.length; ++i) {
             let tpoi;
             if (i !== -1) tpoi = hit.keyframes[i];
@@ -18,7 +20,7 @@ export default class LinearBezier {
                 }
             }
             else if (lastPoi && tpoi.x === lastPoi.x && tpoi.y === lastPoi.y) {
-                let pts = points.splice(0);
+                const pts = points.splice(0);
                 if (pts.length > 1) beziers.push(new BSpline(pts));
             }
             points.push(tpoi);
@@ -31,7 +33,7 @@ export default class LinearBezier {
         this.path = new Array(this.ncurve + 1);
 
         for (let i = 0; i < this.path.length; ++i) {
-            let prefDistance = i * hit.pixelLength / this.ncurve;
+            const prefDistance = i * hit.pixelLength / this.ncurve;
             while (distAt < prefDistance) {
                 lastDist = distAt;
                 lastCurve = curCurve.curve[curPoint++];
@@ -49,10 +51,10 @@ export default class LinearBezier {
                 if (curPoint > 0) distAt += curCurve.curveDistance(curPoint);
             }
 
-            let thisCurve = curCurve.curve[curPoint];
+            const thisCurve = curCurve.curve[curPoint];
             if (lastCurve === thisCurve) this.path[i] = thisCurve;
             else {
-                let t = (prefDistance - lastDist) / (distAt - lastDist);
+                const t = (prefDistance - lastDist) / (distAt - lastDist);
                 this.path[i] = {
                     x: lerp(lastCurve.x, thisCurve.x, t),
                     y: lerp(lastCurve.y, thisCurve.y, t)
@@ -62,10 +64,10 @@ export default class LinearBezier {
         }
     }
     pointAt(t) {
-        let indexF = t * this.ncurve, index = Math.floor(indexF);
+        const indexF = t * this.ncurve, index = Math.floor(indexF);
         if (index >= this.ncurve) return this.path[this.ncurve];
         else {
-            let poi = this.path[index], poi2 = this.path[index + 1], t = indexF - index;
+            const poi = this.path[index], poi2 = this.path[index + 1], t = indexF - index;
             return {
                 x: lerp(poi.x, poi2.x, t),
                 y: lerp(poi.y, poi2.y, t),

@@ -44,7 +44,7 @@ PIXI.Loader.shared.add('asset/skin/sprites.json').load(() => {
     window.skin = PIXI.Loader.shared.resources['asset/skin/sprites.json'].textures;
 });
 
-let sample = [
+const sample = [
     'asset/hitsound/normal-hitnormal.ogg',
     'asset/hitsound/normal-hitwhistle.ogg',
     'asset/hitsound/normal-hitfinish.ogg',
@@ -99,8 +99,7 @@ class BeatmapController {
         app.renderer.autoDensity = true;
         app.renderer.backgroundColor = 0x111111;
 
-        let scrollTop = document.body.scrollTop, defaultAlert = window.alert;
-
+        const scrollTop = document.body.scrollTop, defaultAlert = window.alert;
         document.addEventListener('contextmenu', e => {
             e.preventDefault();
             return false;
@@ -114,7 +113,7 @@ class BeatmapController {
             game.cursor.scale.x = game.cursor.scale.y = .3 * game.cursorSize;
         }
 
-        let pGameArea = document.getElementsByClassName('game-area')[0], pMainPage = document.getElementsByClassName('main-page')[0];
+        const pGameArea = document.getElementsByClassName('game-area')[0], pMainPage = document.getElementsByClassName('main-page')[0];
         pGameArea.appendChild(app.view);
 
         if (game.autoplay) {
@@ -152,7 +151,7 @@ class BeatmapController {
             window.cancelAnimationFrame(window.frameID);
         };
 
-        let playback = new Playback(game, this.osu, this.osu.tracks[trackid]);
+        const playback = new Playback(game, this.osu, this.osu.tracks[trackid]);
         playback.load();
 
         window.requestAnimationFrame(function gameLoop(t) {
@@ -184,16 +183,16 @@ class BeatmapController {
         map.osu.getCoverSrc(pBeatmapCover);
 
         if (map.osu.tracks[0].length) {
-            let pBeatmapLength = document.createElement('div');
+            const pBeatmapLength = document.createElement('div');
             pBeatmapLength.className = 'beatmaplength';
             pBeatmapBox.appendChild(pBeatmapLength);
-            let length = map.osu.tracks[0].length;
+            const length = map.osu.tracks[0].length;
             pBeatmapLength.innerText = Math.floor(length / 60) + ':' + (length % 60 < 10 ? '0' : '') + Math.round(length % 60);
         }
         pBeatmapBox.onclick = function (e) {
             if (!window.showingDifficultyBox) {
                 e.stopPropagation();
-                let difficultyBox = document.createElement('div');
+                const difficultyBox = document.createElement('div');
                 function closeDifficultyMenu() {
                     pBeatmapBox.removeChild(difficultyBox);
                     window.showingDifficultyBox = false;
@@ -201,18 +200,18 @@ class BeatmapController {
                 }
                 difficultyBox.className = 'difficulty-box';
 
-                let rect = this.getBoundingClientRect(), x = e.clientX - rect.left, y = e.clientY - rect.top;
-                difficultyBox.style.left = x + 'px';
-                difficultyBox.style.top = y + 'px';
+                const rect = this.getBoundingClientRect();
+                difficultyBox.style.left = e.clientX - rect.left + 'px';
+                difficultyBox.style.top = e.clientY - rect.top + 'px';
 
                 for (let i = 0; i < map.osu.tracks.length; ++i) {
-                    let difficultyItem = document.createElement('div'),
+                    const difficultyItem = document.createElement('div'),
                         difficultyRing = document.createElement('div'),
                         difficultyText = document.createElement('span');
                     difficultyItem.className = 'difficulty-item';
                     difficultyRing.className = 'difficulty-ring';
 
-                    let star = map.osu.tracks[i].difficulty.star;
+                    const star = map.osu.tracks[i].difficulty.star;
                     if (star) {
                         if (star < 2) difficultyRing.classList.add('easy');
                         else if (star < 2.7) difficultyRing.classList.add('normal');
@@ -257,7 +256,7 @@ const defaultHint = 'Drag and drop a beatmap (.osz) file here',
 let beatmapFileList = [];
 localforage.getItem('beatmapfilelist').then(names => {
     console.log('Local beatmaps:', names);
-    let counter = progresses[3].childNodes;
+    const counter = progresses[3].childNodes;
     counter[3].innerText = names.length;
 
     const tempbox = new Array(names.length);
@@ -267,18 +266,19 @@ localforage.getItem('beatmapfilelist').then(names => {
         pBeatmapList.insertBefore(box, pDragbox);
         tempbox[i] = box;
     }
-    let loadingCounter = counter[1], loadingn = 0;
+    const loadingCounter = counter[1];
 
     beatmapFileList = names;
-    for (let i = 0; i < names.length; ++i) localforage.getItem(names[i]).then(blob => {
-        let fs = new zip.fs.FS();
+    let loadedCount = 0;
+    for (let i = 0, j = 0; i < names.length; ++i) localforage.getItem(names[i]).then(blob => {
+        const fs = new zip.fs.FS();
         fs.filename = names[i];
         fs.importBlob(blob).then(() => {
             addbeatmap(fs, box => {
                 pBeatmapList.replaceChild(box, tempbox[i]);
                 pDragboxHint.innerText = defaultHint;
             });
-            loadingCounter.innerText = ++loadingn;
+            loadingCounter.innerText = ++loadedCount;
         }).catch(e => {
             console.warn('Error importing beatmap:', names[i], e);
             pDragboxHint.innerText = nonValidHint;
@@ -287,7 +287,7 @@ localforage.getItem('beatmapfilelist').then(names => {
 }).catch(err => console.warn('Error searching beatmaps:', err));
 
 function addbeatmap(osz, f) {
-    let map = new BeatmapController(osz);
+    const map = new BeatmapController(osz);
     map.osu.ondecoded = () => {
         map.osu.requestStar();
         map.osu.filterTracks();
@@ -312,14 +312,13 @@ function handleDragDrop(e) {
     e.preventDefault();
 
     pDragboxHint.innerText = loadingHint;
-    for (let i = 0; i < e.dataTransfer.files.length; ++i) {
-        let raw_file = e.dataTransfer.files[i];
+    for (const raw_file of e.dataTransfer.files) {
         if (!raw_file) {
             pDragboxHint.innerText = noTransferHint;
             return;
         }
         if (raw_file.name.indexOf('.osz') === raw_file.name.length - 4) {
-            let fs = new zip.fs.FS();
+            const fs = new zip.fs.FS();
             fs.filename = raw_file.name;
             localforage.setItem(raw_file.name, raw_file).catch(err => console.warn('Error saving beatmap:', fs.filename, err));
 
