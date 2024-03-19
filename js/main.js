@@ -2,7 +2,7 @@ import Osu from './osu.js';
 import { sounds } from './lib/sound.js';
 import Playback from './playback.js';
 
-let game = {
+const game = {
     window: window,
     backgroundDimRate: .7,
     backgroundBlurRate: 0,
@@ -13,6 +13,7 @@ let game = {
     masterVolume: .7,
     effectVolume: 1,
     musicVolume: 1,
+    globalOffset: 0,
     allowMouseButton: false,
     allowMouseScroll: true,
     K1keycode: 90,
@@ -90,7 +91,7 @@ class BeatmapController {
     }
     startGame(trackid) {
         if (window.app) return;
-        let app = window.app = new PIXI.Application({
+        const app = window.app = new PIXI.Application({
             width: window.innerWidth,
             height: window.innerHeight,
             resolution: window.devicePixelRatio || 1,
@@ -166,7 +167,7 @@ class BeatmapController {
         });
     }
     createBeatmapBox() {
-        let map = this,
+        const map = this,
             pBeatmapBox = document.createElement('div'), pBeatmapCover = document.createElement('img'),
             pBeatmapTitle = document.createElement('div'), pBeatmapAuthor = document.createElement('div');
 
@@ -241,7 +242,7 @@ class BeatmapController {
     }
 }
 
-let pDragbox = document.getElementsByClassName('dragbox')[0],
+const pDragbox = document.getElementsByClassName('dragbox')[0],
     pDragboxInner = document.getElementsByClassName('dragbox-inner')[0],
     pDragboxHint = document.getElementsByClassName('dragbox-hint')[0],
     pBeatmapList = document.getElementsByClassName('beatmap-list')[0];
@@ -261,7 +262,7 @@ localforage.getItem('beatmapfilelist').then(names => {
 
     const tempbox = new Array(names.length);
     for (let i = 0; i < names.length; ++i) {
-        let box = document.createElement('div');
+        const box = document.createElement('div');
         box.className = 'beatmapbox';
         pBeatmapList.insertBefore(box, pDragbox);
         tempbox[i] = box;

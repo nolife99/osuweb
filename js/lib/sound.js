@@ -8,28 +8,25 @@ export const sounds = {
         throw new Error('Audio could not be loaded: ' + source);
     },
     load: function (sources) {
-        let self = this;
-        self.toLoad = sources.length;
+        sounds.toLoad = sources.length;
         for (const source of sources) {
             let extension = source.split('.').pop();
-            if (self.audioExtensions.indexOf(extension) !== -1) {
-                let soundSprite = makeSound(source, self.loadHandler.bind(self), true, self.onFailed);
+            if (sounds.audioExtensions.indexOf(extension) !== -1) {
+                let soundSprite = makeSound(source, sounds.loadHandler.bind(sounds), true, sounds.onFailed);
                 soundSprite.name = source;
-                self[soundSprite.name] = soundSprite;
+                sounds[soundSprite.name] = soundSprite;
             }
         }
     },
     loadHandler: function (source) {
-        let self = this;
-        ++self.loaded;
-
-        if (self.onProgress) self.onProgress(100 * self.loaded / self.toLoad, {
+        ++sounds.loaded;
+        if (sounds.onProgress) sounds.onProgress(100 * sounds.loaded / sounds.toLoad, {
             url: source
         });
-        if (self.toLoad === self.loaded) {
-            self.toLoad = 0;
-            self.loaded = 0;
-            if (self.whenLoaded) self.whenLoaded();
+        if (sounds.toLoad === sounds.loaded) {
+            sounds.toLoad = 0;
+            sounds.loaded = 0;
+            if (sounds.whenLoaded) sounds.whenLoaded();
         }
     }
 };
@@ -42,7 +39,6 @@ function makeSound(source, loadHandler, shouldLoadSound, failHandler) {
         loop: false,
         playing: false,
         volumeValue: 1,
-        delayValue: .3,
         startTime: 0,
         startOffset: 0,
         speed: 1,

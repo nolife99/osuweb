@@ -4,7 +4,7 @@ import LinearBezier from './curve/LinearBezier.js';
 
 const HIT_TYPE_CIRCLE = 1, HIT_TYPE_SLIDER = 2, HIT_TYPE_NEWCOMBO = 4, HIT_TYPE_SPINNER = 8;
 function stackHitObjects(track) {
-    let AR = track.difficulty.ApproachRate, approachTime = AR < 5 ? 1800 - 120 * AR : 1950 - 150 * AR,
+    const AR = track.difficulty.ApproachRate, approachTime = AR < 5 ? 1800 - 120 * AR : 1950 - 150 * AR,
         stackDistance = 3, stackThreshold = approachTime * track.general.StackLeniency;
 
     function getintv(A, B) {
@@ -13,7 +13,7 @@ function stackHitObjects(track) {
         return B.time - endTime;
     }
     function getdist(A, B) {
-        let x = A.x, y = A.y;
+        const x = A.x, y = A.y;
         return Math.hypot(x - B.x, y - B.y);
     }
 
@@ -22,10 +22,10 @@ function stackHitObjects(track) {
 
     for (let i = 0; i < track.hitObjects.length; ++i) {
         if (stacked[i]) continue;
-        let hitI = track.hitObjects[i];
+        const hitI = track.hitObjects[i];
         if (hitI.type === 'spinner') continue;
         stacked[i] = true;
-        let newchain = [hitI];
+        const newchain = [hitI];
 
         for (let j = i + 1; j < track.hitObjects.length; ++j) {
             let hitJ = track.hitObjects[j];
@@ -39,9 +39,9 @@ function stackHitObjects(track) {
         if (newchain.length > 1) chains.push(newchain);
     }
 
-    let stackScale = (1 - .7 * (track.difficulty.CircleSize - 5) / 5) * 3.2;
+    const stackScale = (1 - .7 * (track.difficulty.CircleSize - 5) / 5) * 3.2;
     function movehit(hit, dep) {
-        let ofs = dep * stackScale;
+        const ofs = dep * stackScale;
         hit.x += ofs;
         hit.y += ofs;
     }
@@ -51,7 +51,7 @@ function stackHitObjects(track) {
             if (chains[i][j].type !== 'slider' || chains[i][j].repeat % 2 === 0) ++dep;
         }
         else for (let j = 0, dep = 0; j < chains[i].length; ++j) {
-            let cur = chains[i].length - 1 - j;
+            const cur = chains[i].length - 1 - j;
             if (j > 0 && (chains[i][cur].type === 'slider' && chains[i][cur].repeat % 2 === 1)) --dep;
             movehit(chains[i][cur], -dep);
             ++dep;
@@ -76,7 +76,7 @@ class Track {
         this.decode = (() => {
             let section, combo = 0, index = 0, forceNewCombo = false;
             for (const l of self.track.replace('\r', '').split('\n')) {
-                let line = l.trim();
+                const line = l.trim();
                 if (line === '' || line.indexOf('//') === 0) continue;
                 if (line.indexOf('[') === 0) {
                     section = line;
@@ -136,7 +136,7 @@ class Track {
 
                     case '[HitObjects]':
                         parts = line.split(',');
-                        let hit = {
+                        const hit = {
                             x: +parts[0],
                             y: +parts[1],
                             time: +parts[2],
@@ -154,7 +154,7 @@ class Track {
 
                         if ((hit.type & HIT_TYPE_CIRCLE) > 0) {
                             hit.type = 'circle';
-                            let hitSample = (parts.length > 5 ? parts[5] : '0:0:0:0:').split(':');
+                            const hitSample = (parts.length > 5 ? parts[5] : '0:0:0:0:').split(':');
                             hit.hitSample = {
                                 normalSet: +hitSample[0],
                                 additionSet: +hitSample[1],
@@ -165,11 +165,11 @@ class Track {
                         }
                         else if ((hit.type & HIT_TYPE_SLIDER) > 0) {
                             hit.type = 'slider';
-                            let sliderKeys = parts[5].split('|');
+                            const sliderKeys = parts[5].split('|');
                             hit.sliderType = sliderKeys[0];
                             hit.keyframes = [];
                             for (let j = 1; j < sliderKeys.length; ++j) {
-                                let p = sliderKeys[j].split(':');
+                                const p = sliderKeys[j].split(':');
                                 hit.keyframes.push({
                                     x: +p[0],
                                     y: +p[1]
@@ -190,7 +190,7 @@ class Track {
                                 additionSet: 0
                             };
                             if (parts.length > 9) {
-                                let additions = parts[9].split('|');
+                                const additions = parts[9].split('|');
                                 for (let wdnmd = 0; wdnmd < additions.length; ++wdnmd) {
                                     let sets = additions[wdnmd].split(':');
                                     hit.edgeSets[wdnmd].normalSet = +sets[0];
@@ -198,7 +198,7 @@ class Track {
                                 }
                             }
 
-                            let hitSample = (parts.length > 10 ? parts[10] : '0:0:0:0:').split(':');
+                            const hitSample = (parts.length > 10 ? parts[10] : '0:0:0:0:').split(':');
                             hit.hitSample = {
                                 normalSet: +hitSample[0],
                                 additionSet: +hitSample[1],
@@ -215,7 +215,7 @@ class Track {
                             hit.endTime = +parts[5];
                             if (hit.endTime < hit.time) hit.endTime = hit.time + 1;
 
-                            let hitSample = (parts.length > 6 ? parts[6] : '0:0:0:0:').split(':');
+                            const hitSample = (parts.length > 6 ? parts[6] : '0:0:0:0:').split(':');
                             hit.hitSample = {
                                 normalSet: +hitSample[0],
                                 additionSet: +hitSample[1],
@@ -257,14 +257,13 @@ class Track {
                 }
             }
             for (let i = 0, j = 0; i < this.hitObjects.length; ++i) {
-                let hit = this.hitObjects[i];
+                const hit = this.hitObjects[i];
                 while (j + 1 < this.timing.length && this.timing[j + 1].offset <= hit.time) ++j;
                 hit.timing = this.timing[j];
 
                 if (hit.type === 'circle') hit.endTime = hit.time;
                 else if (hit.type === 'slider') {
-                    let fixBeatMs = hit.timing.beatMs ? hit.timing.beatMs : hit.timing.inherited.beatMs;
-                    hit.sliderTime = fixBeatMs * (hit.pixelLength / this.difficulty.SliderMultiplier) / 100;
+                    hit.sliderTime = (hit.timing.beatMs ? hit.timing.beatMs : hit.timing.inherited.beatMs) * (hit.pixelLength / this.difficulty.SliderMultiplier) / 100;
                     hit.sliderTimeTotal = hit.sliderTime * hit.repeat;
                     hit.endTime = hit.time + hit.sliderTimeTotal;
 
@@ -281,7 +280,7 @@ class Track {
 }
 export default class Osu {
     constructor(zip) {
-        let self = this;
+        const self = this;
         this.zip = zip;
         this.tracks = [];
         let count = 0;
@@ -300,12 +299,11 @@ export default class Osu {
         };
         this.getCoverSrc = img => {
             for (let i = 0; i < this.tracks.length; ++i) {
-                let trEv = this.tracks[i].events;
+                const trEv = this.tracks[i].events;
                 try {
-                    let file = trEv[0][2];
+                    const file = trEv[0][2];
                     if (trEv[0][0] === 'Video') file = trEv[1][2];
-                    zip.getChildByName(file.slice(1, file.length - 1)).getBlob('image/jpeg')
-                        .then(blob => img.src = URL.createObjectURL(blob));
+                    zip.getChildByName(file.slice(1, file.length - 1)).getBlob('image/jpeg').then(blob => img.src = URL.createObjectURL(blob));
                     break;
                 }
                 catch (error) {
@@ -318,7 +316,7 @@ export default class Osu {
 
         this.load_mp3 = () => zip.children.find(c => c.name.toLowerCase() === self.tracks[0].general.AudioFilename.toLowerCase())
             .getBlob('audio/mpeg').then(blob => {
-                let reader = new FileReader();
+                const reader = new FileReader();
                 reader.onload = e => self.audio = new OsuAudio(e.target.result, () => {
                     if (self.onready) self.onready();
                 });

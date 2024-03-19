@@ -1,10 +1,11 @@
 function triggerTap() {
-    let click = {
+    const click = {
         x: game.mouseX, y: game.mouseY,
-        time: playback.osu.audio.pos * 1000
-    }, hit = playback.newHits.find(inUpcoming(click));
+        time: playback.osu.audio.pos * 1000 + game.globalOffset
+    }; 
+    let hit = playback.newHits.find(inUpcoming(click));
     if (!hit && game.mouse) {
-        let res = game.mouse(new Date().getTime());
+        const res = game.mouse(new Date().getTime());
         res.time = click.time;
         hit = playback.newHits.find(inUpcoming_grace(res));
     }
@@ -13,7 +14,7 @@ function triggerTap() {
             if (playback.autoplay) playback.hitSuccess(hit, 300, hit.time);
             else {
                 let points = 50;
-                let diff = click.time - hit.time;
+                const diff = click.time - hit.time;
                 if (Math.abs(diff) <= playback.GoodTime) points = 100;
                 if (Math.abs(diff) <= playback.GreatTime) points = 300;
                 playback.hitSuccess(hit, points, click.time);
@@ -22,10 +23,10 @@ function triggerTap() {
     }
 };
 const inUpcoming = click => hit => {
-    let dx = click.x - hit.x, dy = click.y - hit.y;
+    const dx = click.x - hit.x, dy = click.y - hit.y;
     return hit.score < 0 && dx * dx + dy * dy < playback.circleRadius * playback.circleRadius && Math.abs(click.time - hit.time) < playback.MehTime;
 }, inUpcoming_grace = predict => hit => {
-    let dx = predict.x - hit.x, dy = predict.y - hit.y, r = predict.r + playback.circleRadius;
+    const dx = predict.x - hit.x, dy = predict.y - hit.y, r = predict.r + playback.circleRadius;
     return hit.score < 0 && dx * dx + dy * dy < r * r && Math.abs(predict.time - hit.time) < playback.MehTime;
 }, spinRadius = 60;
 export default function playerActions(playback) {
@@ -55,7 +56,7 @@ export default function playerActions(playback) {
 
         cur = auto.curObj;
         while (auto.curid < playback.hits.length && playback.hits[auto.curid].time < time) {
-            let hit = playback.hits[auto.curid];
+            const hit = playback.hits[auto.curid];
             if (hit.score < 0) {
                 let targX = hit.x, targY = hit.y;
                 if (hit.type === 'spinner') {
@@ -82,14 +83,11 @@ export default function playerActions(playback) {
         if (!window.game.down) {
             let targX = cur.x, targY = cur.y;
             if (cur.type === 'spinner') {
-                let ang = Math.atan2(window.game.mouseY - targY, window.game.mouseX - targX);
+                const ang = Math.atan2(window.game.mouseY - targY, window.game.mouseX - targX);
                 targX += spinRadius * Math.cos(ang);
                 targY += spinRadius * Math.sin(ang);
             }
-            let t = (time - auto.lasttime) / (cur.time - auto.lasttime);
-
-            t = Math.max(0, Math.min(1, t));
-            t = .5 - Math.sin((Math.pow(1 - t, 1.5) - .5) * Math.PI) / 2;
+            let t = .5 - Math.sin((Math.pow(1 - Math.max(0, Math.min(1, (time - auto.lasttime) / (cur.time - auto.lasttime))), 1.5) - .5) * Math.PI) / 2;
 
             window.game.mouseX = t * targX + (1 - t) * auto.lastx;
             window.game.mouseY = t * targY + (1 - t) * auto.lasty;
@@ -101,31 +99,33 @@ export default function playerActions(playback) {
         }
     };
     if (!playback.autoplay) {
-        let movehistory = [{
+        const cursorData = [{
             x: 256, y: 192, t: new Date().getTime()
-        }], k1, k2, m1, m2;
+        }];
+        let k1, k2, m1, m2;
+        
         window.game.mouse = t => {
-            let m = movehistory, i = 0;
-            while (i < m.length - 1 && m[0].t - m[i].t < 40 && t - m[i].t < 100) ++i;
+            let i = 0;
+            while (i < cursorData.length - 1 && cursorData[0].t - cursorData[i].t < 40 && t - cursorData[i].t < 100) ++i;
 
-            let velocity = i === 0 ? {
+            const velocity = i === 0 ? {
                 x: 0, y: 0
             } : {
-                x: (m[0].x - m[i].x) / (m[0].t - m[i].t), y: (m[0].y - m[i].y) / (m[0].t - m[i].t)
-            };
-            let dt = Math.min(t - m[0].t + window.activeTime, 40);
+                x: (cursorData[0].x - cursorData[i].x) / (cursorData[0].t - cursorData[i].t), 
+                y: (cursorData[0].y - cursorData[i].y) / (cursorData[0].t - cursorData[i].t)
+            }, dt = Math.min(t - cursorData[0].t + window.activeTime, 40);
             return {
-                x: m[0].x + velocity.x * dt, y: m[0].y + velocity.y * dt,
-                r: Math.hypot(velocity.x, velocity.y) * Math.max(t - m[0].t, window.activeTime)
+                x: cursorData[0].x + velocity.x * dt, y: cursorData[0].y + velocity.y * dt,
+                r: Math.hypot(velocity.x, velocity.y) * Math.max(t - cursorData[0].t, window.activeTime)
             };
         };
         function mousemoveCallback(e) {
             window.game.mouseX = (e.clientX - gfx.xoffset) / gfx.width * 512;
             window.game.mouseY = (e.clientY - gfx.yoffset) / gfx.height * 384;
-            movehistory.unshift({
+            cursorData.unshift({
                 x: window.game.mouseX, y: window.game.mouseY, t: new Date().getTime()
             });
-            if (movehistory.length > 10) movehistory.pop();
+            if (cursorData.length > 10) cursorData.pop();
         }
         function mousedownCallback(e) {
             mousemoveCallback(e);

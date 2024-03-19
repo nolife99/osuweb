@@ -19,9 +19,9 @@ const twoPi = 2 * Math.PI, vertexSrc = `
     }`, borderwidth = .128, innerPortion = 1 - borderwidth, edgeFade = .5, centerFade = .3, blurrate = .015, width = 200;
 
 function newTexture(colors, SliderTrackOverride, SliderBorder) {
-    let buff = new Uint8Array(colors.length * width * 4);
+    const buff = new Uint8Array(colors.length * width * 4);
     for (let k = 0; k < colors.length; ++k) {
-        let tint = SliderTrackOverride ? SliderTrackOverride : colors[k], bordertint = SliderBorder ? SliderBorder : 0xffffff,
+        const tint = SliderTrackOverride ? SliderTrackOverride : colors[k], bordertint = SliderBorder ? SliderBorder : 0xffffff,
             borderR = bordertint >> 16, borderG = (bordertint >> 8) & 255, borderB = bordertint & 255, borderA = 1,
             innerR = tint >> 16, innerG = (tint >> 8) & 255, innerB = tint & 255, innerA = 1;
 
@@ -43,24 +43,23 @@ function newTexture(colors, SliderTrackOverride, SliderBorder) {
             G *= A;
             B *= A;
 
-            let ease = 1 - position;
+            const ease = 1 - position;
             if (ease < blurrate) {
-                let blur = ease / blurrate;
+                const blur = ease / blurrate;
                 R *= blur;
                 G *= blur;
                 B *= blur;
                 A *= blur;
             }
             if (innerPortion - position > 0 && innerPortion - position < blurrate) {
-                let mu = (innerPortion - position) / blurrate;
-                let ea = (1 - mu) * borderA;
+                const mu = (innerPortion - position) / blurrate, ea = (1 - mu) * borderA;
                 R = mu * R + ea * borderR;
                 G = mu * G + ea * borderG;
                 B = mu * B + ea * borderB;
                 A = mu * innerA + ea;
             }
 
-            let col = (k * width + i) * 4;
+            const col = (k * width + i) * 4;
             buff[col] = R;
             buff[col + 1] = G;
             buff[col + 2] = B;
@@ -72,12 +71,12 @@ function newTexture(colors, SliderTrackOverride, SliderBorder) {
 
 const DIVIDES = 32;
 function curveGeometry(curve, length, radius) {
-    let vert = [], index = [], first = curve.pointAt(0), res = Math.ceil(length / 4);
+    const vert = [], index = [], first = curve.pointAt(0), res = Math.ceil(length / 4);
     vert.push(first.x, first.y, first.t, 0);
 
     for (let i = 1; i < res; ++i) {
-        let curCurve = curve.pointAt((i + 1) / res), lastCurve = curve.pointAt(i / res);
-        let x = curCurve.x, y = curCurve.y, t = curCurve.t,
+        const curCurve = curve.pointAt((i + 1) / res), lastCurve = curve.pointAt(i / res), 
+            x = curCurve.x, y = curCurve.y, t = curCurve.t,
             lx = lastCurve.x, ly = lastCurve.y, lt = lastCurve.t,
             dx = x - lx, dy = y - ly, length = Math.hypot(dx, dy),
             ox = radius * -dy / length, oy = radius * dx / length;
@@ -88,7 +87,7 @@ function curveGeometry(curve, length, radius) {
         vert.push(x - ox, y - oy, t, 1);
         vert.push(x, y, t, 0);
 
-        let n = 5 * i + 1;
+        const n = 5 * i + 1;
         index.push(n - 6, n - 5, n - 1, n - 5, n - 1, n - 3);
         index.push(n - 6, n - 4, n - 1, n - 4, n - 1, n - 2);
     }
@@ -112,7 +111,7 @@ function curveGeometry(curve, length, radius) {
     addArc(5 * res - 5, 5 * res - 6, 5 * res - 7, curve.pointAt(1).t);
 
     for (let i = 1; i < res - 1; ++i) {
-        let c = curve.pointAt((i + 1) / res), b = curve.pointAt(i / res), n = curve.pointAt((i + 2) / res), 
+        const c = curve.pointAt((i + 1) / res), b = curve.pointAt(i / res), n = curve.pointAt((i + 2) / res), 
             t = (c.x - b.x) * (n.y - c.y) - (n.x - c.x) * (c.y - b.y);
         if (t > 0) addArc(5 * i, 5 * i - 1, 5 * i + 2);
         else addArc(5 * i, 5 * i + 1, 5 * i - 2);
@@ -120,10 +119,10 @@ function curveGeometry(curve, length, radius) {
     return new PIXI.Geometry().addAttribute('position', vert, 4).addIndex(index);
 }
 function circleGeometry(radius) {
-    let vert = [], index = [];
+    const vert = [], index = [];
     vert.push(0, 0, 0, 0);
     for (let i = 0; i < DIVIDES; ++i) {
-        let theta = twoPi / DIVIDES * i;
+        const theta = twoPi / DIVIDES * i;
         vert.push(radius * Math.cos(theta), radius * Math.sin(theta), 0, 1);
         index.push(0, i + 1, (i + 1) % DIVIDES + 1);
     }
@@ -146,7 +145,7 @@ export default class SliderMesh extends PIXI.Container {
         this._renderDefault(renderer);
     }
     _renderDefault(renderer) {
-        let shader = this.shader;
+        const shader = this.shader;
         shader.alpha = this.worldAlpha;
         if (shader.update) shader.update();
         renderer.batch.flush();
@@ -156,7 +155,9 @@ export default class SliderMesh extends PIXI.Container {
         this.uniforms.dt = 0;
         this.uniforms.ot = .5;
 
-        let ox0 = this.uniforms.ox, oy0 = this.uniforms.oy, gl = renderer.gl, glType, indexLength;
+        const ox0 = this.uniforms.ox, oy0 = this.uniforms.oy, gl = renderer.gl;
+        let glType, indexLength;
+
         gl.clearDepth(1);
         gl.clear(gl.DEPTH_BUFFER_BIT);
         gl.colorMask(false, false, false, false);

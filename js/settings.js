@@ -1,8 +1,8 @@
 window.addEventListener('DOMContentLoaded', () => {
     function loadFromLocal() {
-        let str = window.localStorage.getItem('osugamesettings');
+        const str = window.localStorage.getItem('osugamesettings');
         if (str) {
-            let s = JSON.parse(str);
+            const s = JSON.parse(str);
             if (s) Object.assign(gamesettings, s);
         }
     }
@@ -10,7 +10,7 @@ window.addEventListener('DOMContentLoaded', () => {
         window.localStorage.setItem('osugamesettings', JSON.stringify(window.gamesettings));
     }
 
-    let defaultsettings = {
+    const defaultsettings = {
         dim: 80, blur: 0,
         cursorsize: 1, showhwmouse: false,
         snakein: true, snakeout: false,
@@ -18,7 +18,7 @@ window.addEventListener('DOMContentLoaded', () => {
         disableWheel: false, disableButton: false,
         K1name: 'Z', K2name: 'X', K1keycode: 90, K2keycode: 88,
 
-        mastervolume: 100, effectvolume: 100, musicvolume: 100, beatmapHitsound: false,
+        mastervolume: 100, effectvolume: 100, musicvolume: 100, audiooffset: 0, beatmapHitsound: false,
         easy: false, daycore: false, hardrock: false, nightcore: false, hidden: false, autoplay: false,
         hideNumbers: false, hideGreat: true, hideFollow: false
     };
@@ -44,6 +44,7 @@ window.addEventListener('DOMContentLoaded', () => {
             window.game.masterVolume = this.mastervolume / 100;
             window.game.effectVolume = this.effectvolume / 100;
             window.game.musicVolume = this.musicvolume / 100;
+	        window.game.globalOffset = parseFloat(this.audiooffset);
 
             window.game.easy = this.easy;
             window.game.daycore = this.daycore;
@@ -60,7 +61,7 @@ window.addEventListener('DOMContentLoaded', () => {
     gamesettings.restoreCallbacks = [];
 
     function bindcheck(id, item) {
-        let c = document.getElementById(id);
+        const c = document.getElementById(id);
         c.checked = gamesettings[item];
         gamesettings.restoreCallbacks.push(() => c.checked = gamesettings[item]);
         c.onclick = () => {
@@ -69,7 +70,7 @@ window.addEventListener('DOMContentLoaded', () => {
         }
     }
     function bindExclusiveCheck(id1, item1, id2, item2) {
-        let c1 = document.getElementById(id1), c2 = document.getElementById(id2);
+        const c1 = document.getElementById(id1), c2 = document.getElementById(id2);
         c1.checked = gamesettings[item1];
         c2.checked = gamesettings[item2];
 
@@ -89,8 +90,7 @@ window.addEventListener('DOMContentLoaded', () => {
         }
     }
     function bindrange(id, item, feedback) {
-        let range = document.getElementById(id);
-        let indicator = document.getElementById(id + '-indicator');
+        const range = document.getElementById(id), indicator = document.getElementById(id + '-indicator');
         range.onmousedown = function() {
             indicator.hidden = false;
         }
@@ -115,7 +115,7 @@ window.addEventListener('DOMContentLoaded', () => {
         }
     }
     function bindkeyselector(id, keynameitem, keycodeitem) {
-        let btn = document.getElementById(id);
+        const btn = document.getElementById(id);
         function activate() {
             function deactivate() {
                 btn.onclick = activate;
@@ -151,6 +151,7 @@ window.addEventListener('DOMContentLoaded', () => {
     bindrange('mastervolume-range', 'mastervolume', v => v + '%');
     bindrange('effectvolume-range', 'effectvolume', v => v + '%');
     bindrange('musicvolume-range', 'musicvolume', v => v + '%');
+	bindrange("audiooffset-range", "audiooffset", v => v + 'ms');
     bindExclusiveCheck('easy-check', 'easy', 'hardrock-check', 'hardrock');
     bindExclusiveCheck('daycore-check', 'daycore', 'nightcore-check', 'nightcore');
     bindcheck('hidden-check', 'hidden');

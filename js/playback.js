@@ -32,7 +32,6 @@ export default function Playback(game, osu, track) {
     self.newHits = [];
     self.hits = track.hitObjects.map(h => Object.assign({}, h));
 
-    self.offset = 0;
     self.currentHitIndex = 0;
     self.approachScale = 3;
 
@@ -297,7 +296,7 @@ export default function Playback(game, osu, track) {
         }
     }
     this.createJudgement = (x, y, depth, finalTime) => {
-        let judge = new PIXI.Text('', {
+        const judge = new PIXI.Text('', {
             fontFamily: 'Venera', fontSize: 20, fill: 0xffffff
         });
         judge.anchor.set(.5);
@@ -336,7 +335,7 @@ export default function Playback(game, osu, track) {
                 return;
             }
             judge.alpha = t < 100 ? t / 100 : t < 600 ? 1 : 1 - (t - 600) / 200;
-            judge.width = 80 * this.hitSpriteScale;
+            judge.width = 18 * this.hitSpriteScale * judge.text.length;
             let t5 = Math.pow(t / 800, 5);
             judge.y = judge.basey + 100 * t5 * this.hitSpriteScale;
             judge.rotation = .7 * t5;
@@ -348,7 +347,7 @@ export default function Playback(game, osu, track) {
             }
             judge.alpha = t < 100 ? t / 100 : 1 - (t - 100) / 400;
             let tQ = t / 1800 - 1;
-            judge.width = (80 + 35 * (tQ * tQ * tQ * tQ * tQ + 1)) * this.hitSpriteScale;
+            judge.width = (18 + 9 * (tQ * tQ * tQ * tQ * tQ + 1)) * this.hitSpriteScale * judge.text.length;
         }
     };
     this.createBackground = () => {
@@ -1026,7 +1025,7 @@ export default function Playback(game, osu, track) {
         window.lastPlaybackRenderTime = this.realtime;
 
         if (this.audioReady) {
-            var time = osu.audio.pos * 1000 + self.offset;
+            var time = osu.audio.pos * 1000 + game.globalOffset;
             for (let i = this.breakIndex; i < track.breaks.length; ++i) {
                 let b = track.breaks[i];
                 if (time >= b.startTime && time <= b.endTime) {
