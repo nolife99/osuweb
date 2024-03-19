@@ -26,7 +26,6 @@ export default function Playback(game, osu, track) {
     window.playback = this;
     self.osu = osu;
     self.track = track;
-    self.background = null;
     self.ready = true;
     self.started = false;
 
@@ -217,28 +216,27 @@ export default function Playback(game, osu, track) {
     setPlayerActions(self);
     game.paused = false;
 
-    let menu = document.getElementById('pause-menu'),
-        btn_continue = document.getElementById('pausebtn-continue'),
-        btn_retry = document.getElementById('pausebtn-retry'),
-        btn_quit = document.getElementById('pausebtn-quit');
+    let menu = document.getElementsByClassName('pause-menu')[0],
+        buttons = document.getElementsByClassName('pausebutton'),
+        cont = buttons[0], retry = buttons[1], quit = buttons[2];
 
     this.pause = () => {
         if (osu.audio.pause()) {
             game.paused = true;
             menu.hidden = false;
 
-            btn_continue.onclick = () => {
+            cont.onclick = () => {
                 self.resume();
-                btn_continue.onclick = null;
-                btn_retry.onclick = null;
-                btn_quit.onclick = null;
+                cont.onclick = null;
+                retry.onclick = null;
+                quit.onclick = null;
             }
-            btn_retry.onclick = () => {
+            retry.onclick = () => {
                 game.paused = false;
                 menu.hidden = true;
                 self.retry();
             }
-            btn_quit.onclick = () => {
+            quit.onclick = () => {
                 game.paused = false;
                 menu.hidden = true;
                 self.quit();
@@ -356,33 +354,33 @@ export default function Playback(game, osu, track) {
     this.createBackground = () => {
         function loadBackground(uri) {
             let loader = new PIXI.Loader();
-            loader.add('bg', uri, {
+            loader.add(uri, {
                 loadType: PIXI.LoaderResource.LOAD_TYPE.IMAGE
             }).load((_loader, resources) => {
-                let sprite = new PIXI.Sprite(resources.bg.texture);
+                let txt = resources[uri].texture, sprite = new PIXI.Sprite(txt);
                 if (game.backgroundBlurRate > .0001) {
-                    let width = resources.bg.texture.width, height = resources.bg.texture.height;
                     sprite.anchor.set(.5);
-                    sprite.x = width / 2;
-                    sprite.y = height / 2;
+                    sprite.x = txt.width / 2;
+                    sprite.y = txt.height / 2;
 
-                    let blurstrength = game.backgroundBlurRate * Math.min(width, height);
-                    t = Math.max(Math.min(width, height), Math.max(10, blurstrength) * 3);
+                    let blurstrength = game.backgroundBlurRate * Math.min(txt.width, txt.height);
+                    t = Math.max(Math.min(txt.width, txt.height), Math.max(10, blurstrength) * 3);
                     sprite.scale.set(t / (t - 2 * Math.max(10, blurstrength)));
 
                     let blurFilter = new PIXI.filters.BlurFilter(blurstrength, 14);
                     blurFilter.autoFit = false;
                     sprite.filters = [blurFilter];
                 }
-                let texture = PIXI.RenderTexture.create(resources.bg.texture.width, resources.bg.texture.height);
+                let texture = PIXI.RenderTexture.create(txt.width, txt.height);
                 window.app.renderer.render(sprite, texture);
+                sprite.destroy();
 
                 self.background = new PIXI.Sprite(texture);
                 self.background.anchor.set(.5);
                 self.background.x = window.innerWidth / 2;
                 self.background.y = window.innerHeight / 2;
-                self.background.scale.set(Math.max(window.innerWidth / self.background.texture.width, window.innerHeight / self.background.texture.height));
-                game.stage.addChildAt(self.background, 0);
+                self.background.scale.set(Math.max(window.innerWidth / txt.width, window.innerHeight / txt.height));
+                window.app.stage.addChildAt(self.background, 0);
             });
         }
         if (track.events.length > 0) {
@@ -392,7 +390,7 @@ export default function Playback(game, osu, track) {
             file = file.substr(1, file.length - 2);
 
             let entry = osu.zip.getChildByName(file);
-            if (entry) entry.getBlob('image/jpeg', function (blob) {
+            if (entry) entry.getBlob('image/jpeg').then(function (blob) {
                 loadBackground(URL.createObjectURL(blob));
                 self.ready = true;
             });
@@ -413,13 +411,13 @@ export default function Playback(game, osu, track) {
     if (track.colors.SliderTrackOverride) SliderTrackOverride = convertcolor(track.colors.SliderTrackOverride);
     if (track.colors.SliderBorder) SliderBorder = convertcolor(track.colors.SliderBorder);
 
-    game.stage.addChild(this.gamefield);
-    game.stage.addChild(this.scoreOverlay);
-    game.stage.addChild(this.errorMeter);
-    game.stage.addChild(this.progressOverlay);
-    game.stage.addChild(this.breakOverlay);
-    game.stage.addChild(this.volumeMenu);
-    game.stage.addChild(this.loadingMenu);
+    window.app.stage.addChild(this.gamefield);
+    window.app.stage.addChild(this.scoreOverlay);
+    window.app.stage.addChild(this.errorMeter);
+    window.app.stage.addChild(this.progressOverlay);
+    window.app.stage.addChild(this.breakOverlay);
+    window.app.stage.addChild(this.volumeMenu);
+    window.app.stage.addChild(this.loadingMenu);
 
     this.createHitCircle = hit => {
         function newHitSprite(spritename, depth, scalemul = 1, anchorx = .5, anchory = .5) {
@@ -1084,7 +1082,8 @@ export default function Playback(game, osu, track) {
         self.breakOverlay.destroy(opt);
         self.progressOverlay.destroy(opt);
         self.gamefield.destroy(opt);
-        self.background.destroy();
+        self.background.texture.destroy(opt);
+        self.background.destroy(opt);
         SliderMesh.prototype.deallocate();
 
         window.onresize = null;

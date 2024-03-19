@@ -141,8 +141,6 @@ export default class SliderMesh extends PIXI.Container {
         this.endt = 1;
         this.state = PIXI.State.for2d();
         this.drawMode = PIXI.DRAW_MODES.TRIANGLES;
-        this.blendMode = PIXI.BLEND_MODES.NORMAL;
-        this._roundPixels = PIXI.settings.ROUND_PIXELS;
     }
     _render(renderer) {
         this._renderDefault(renderer);

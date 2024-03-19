@@ -4,8 +4,6 @@ import Playback from './playback.js';
 
 let game = {
     window: window,
-    stage: null,
-    updatePlayerActions: null,
     backgroundDimRate: .7,
     backgroundBlurRate: 0,
     cursorSize: 1,
@@ -30,7 +28,6 @@ let game = {
     hideFollow: false,
     mouseX: 0,
     mouseY: 0,
-    mouse: null,
     K1down: false,
     K2down: false,
     M1down: false,
@@ -39,17 +36,14 @@ let game = {
     finished: false,
     sample: [{}, {}, {}, {}],
     sampleSet: 1
-};
+}, progresses = document.getElementsByClassName('progress');
 window.game = game;
 
-if (window.gamesettings) window.gamesettings.loadToGame();
-game.stage = new PIXI.Container();
-game.cursor = null;
-
 PIXI.Loader.shared.add('asset/skin/sprites.json').load(() => {
-    document.getElementById('skin-progress').classList.add('finished');
+    progresses[1].classList.add('finished');
     window.skin = PIXI.Loader.shared.resources['asset/skin/sprites.json'].textures;
 });
+
 let sample = [
     'asset/hitsound/normal-hitnormal.ogg',
     'asset/hitsound/normal-hitwhistle.ogg',
@@ -85,7 +79,7 @@ sounds.whenLoaded = () => {
     game.sample[3].hitclap = sounds[sample[13]];
     game.sample[3].slidertick = sounds[sample[14]];
     game.sampleComboBreak = sounds[sample[15]];
-    document.getElementById('sound-progress').classList.add('finished');
+    progresses[2].classList.add('finished');
 };
 sounds.load(sample);
 
@@ -113,14 +107,14 @@ class BeatmapController {
         });
         document.body.classList.add('gaming');
 
+        window.gamesettings.loadToGame();
         if (!game.showhwmouse || game.autoplay) {
             game.cursor = new PIXI.Sprite(window.skin['cursor.png']);
             game.cursor.anchor.x = game.cursor.anchor.y = .5;
             game.cursor.scale.x = game.cursor.scale.y = .3 * game.cursorSize;
-            game.stage.addChild(game.cursor);
         }
 
-        let pGameArea = document.getElementById('game-area'), pMainPage = document.getElementById('main-page');
+        let pGameArea = document.getElementsByClassName('game-area')[0], pMainPage = document.getElementsByClassName('main-page')[0];
         pGameArea.appendChild(app.view);
 
         if (game.autoplay) {
@@ -138,7 +132,6 @@ class BeatmapController {
         pMainPage.hidden = true;
         pGameArea.hidden = false;
 
-        let gameLoop;
         window.quitGame = function () {
             pGameArea.hidden = true;
             pMainPage.hidden = false;
@@ -147,7 +140,7 @@ class BeatmapController {
             window.alert = defaultAlert;
 
             if (game.cursor) {
-                game.stage.removeChild(game.cursor);
+                app.stage.removeChild(game.cursor);
                 game.cursor.destroy();
                 game.cursor = null;
             }
@@ -155,27 +148,23 @@ class BeatmapController {
                 children: true, texture: false
             });
 
-            window.cancelAnimationFrame(window.animationRequestID);
             window.app = null;
-            gameLoop = null;
+            window.cancelAnimationFrame(window.frameID);
         };
 
         let playback = new Playback(game, this.osu, this.osu.tracks[trackid]);
         playback.load();
 
-        gameLoop = time => {
-            playback.render(time);
+        window.requestAnimationFrame(function gameLoop(t) {
             if (game.cursor) {
                 game.cursor.x = game.mouseX / 512 * gfx.width + gfx.xoffset;
                 game.cursor.y = game.mouseY / 384 * gfx.height + gfx.yoffset;
-                game.cursor.bringToFront();
+                app.stage.addChild(game.cursor);
             }
-            if (!app.renderer) return;
-
-            app.renderer.render(game.stage);
-            window.requestAnimationFrame(gameLoop);
-        };
-        window.requestAnimationFrame(gameLoop);
+            playback.render(t);
+            app.renderer.render(app.stage);
+            window.frameID = window.requestAnimationFrame(gameLoop);
+        });
     }
     createBeatmapBox() {
         let map = this,
@@ -205,22 +194,21 @@ class BeatmapController {
             if (!window.showingDifficultyBox) {
                 e.stopPropagation();
                 let difficultyBox = document.createElement('div');
+                function closeDifficultyMenu() {
+                    pBeatmapBox.removeChild(difficultyBox);
+                    window.showingDifficultyBox = false;
+                    window.removeEventListener('click', closeDifficultyMenu, false);
+                }
                 difficultyBox.className = 'difficulty-box';
 
                 let rect = this.getBoundingClientRect(), x = e.clientX - rect.left, y = e.clientY - rect.top;
                 difficultyBox.style.left = x + 'px';
                 difficultyBox.style.top = y + 'px';
 
-                function closeDifficultyMenu() {
-                    pBeatmapBox.removeChild(difficultyBox);
-                    window.showingDifficultyBox = false;
-                    window.removeEventListener('click', closeDifficultyMenu, false);
-                };
-
                 for (let i = 0; i < map.osu.tracks.length; ++i) {
-                    let difficultyItem = document.createElement('div');
-                    let difficultyRing = document.createElement('div');
-                    let difficultyText = document.createElement('span');
+                    let difficultyItem = document.createElement('div'),
+                        difficultyRing = document.createElement('div'),
+                        difficultyText = document.createElement('span');
                     difficultyItem.className = 'difficulty-item';
                     difficultyRing.className = 'difficulty-ring';
 
@@ -254,23 +242,24 @@ class BeatmapController {
     }
 }
 
-let pDragbox = document.getElementById('beatmap-dragbox'),
-    pDragboxInner = document.getElementById('beatmap-dragbox-inner'),
-    pDragboxHint = document.getElementById('beatmap-dragbox-hint'),
-    pBeatmapList = document.getElementById('beatmap-list');
+let pDragbox = document.getElementsByClassName('dragbox')[0],
+    pDragboxInner = document.getElementsByClassName('dragbox-inner')[0],
+    pDragboxHint = document.getElementsByClassName('dragbox-hint')[0],
+    pBeatmapList = document.getElementsByClassName('beatmap-list')[0];
 
-pDragboxHint.defaultHint = 'Drag and drop a beatmap (.osz) file here';
-pDragboxHint.modeErrHint = 'Only supports osu! (std) mode beatmaps. Drop another file.';
-pDragboxHint.nonValidHint = 'Not a valid osz file. Drop another file.';
-pDragboxHint.noTransferHint = 'Not receiving any file. Please retry.';
-pDragboxHint.nonOszHint = 'Not an osz file. Drop another file.';
-pDragboxHint.loadingHint = 'loading...';
+const defaultHint = 'Drag and drop a beatmap (.osz) file here',
+    modeErrHint = 'Only supports osu! (std) mode beatmaps. Drop another file.',
+    nonValidHint = 'Not a valid osz file. Drop another file.',
+    noTransferHint = 'Not receiving any file. Please retry.',
+    nonOszHint = 'Not an osz file. Drop another file.',
+    loadingHint = 'Loading...';
 
 let beatmapFileList = [];
 localforage.getItem('beatmapfilelist', (err, names) => {
     if (!err && names && names.length) {
         console.log('local beatmap list:', names);
-        document.getElementById('bm-total-counter').innerText = names.length;
+        let counter = progresses[3].childNodes;
+        counter[3].innerText = names.length;
 
         let tempbox = new Array(names.length);
         for (let i = 0; i < names.length; ++i) {
@@ -279,22 +268,19 @@ localforage.getItem('beatmapfilelist', (err, names) => {
             pBeatmapList.insertBefore(box, pDragbox);
             tempbox[i] = box;
         }
-
-        let loadingCounter = document.getElementById('bm-loaded-counter');
-        let loadingn = 0;
+        let loadingCounter = counter[1], loadingn = 0;
 
         beatmapFileList = names;
-        for (let i = 0; i < names.length; ++i) localforage.getItem(names[i], (err, blob) => {
+        for (let i = 0; i < names.length; ++i) localforage.getItem(names[i], async (err, blob) => {
             if (!err && blob) {
                 let fs = new zip.fs.FS();
                 fs.filename = names[i];
-                fs.root.importBlob(blob, () => {
-                    addbeatmap(fs, box => {
-                        pBeatmapList.replaceChild(box, tempbox[i]);
-                        pDragboxHint.innerText = pDragboxHint.defaultHint;
-                    });
-                    loadingCounter.innerText = ++loadingn;
-                }, _e => pDragboxHint.innerText = pDragboxHint.nonValidHint);
+                await fs.importBlob(blob);
+                addbeatmap(fs, box => {
+                    pBeatmapList.replaceChild(box, tempbox[i]);
+                    pDragboxHint.innerText = defaultHint;
+                });
+                loadingCounter.innerText = ++loadingn;
             }
             else console.warn('error while loading beatmap:', names[i], err);
         });
@@ -309,14 +295,14 @@ function addbeatmap(osz, f) {
         map.osu.sortTracks();
 
         if (!map.osu.tracks.some(t => t.general.Mode !== 3)) {
-            pDragboxHint.innerText = pDragboxHint.modeErrHint;
+            pDragboxHint.innerText = modeErrHint;
             return;
         }
         f(map.createBeatmapBox());
 
         if (!beatmapFileList.includes(map.filename)) {
             beatmapFileList.push(map.filename);
-            localforage.setItem('beatmapfilelist', beatmapFileList, (err, _val) => {
+            localforage.setItem('beatmapfilelist', beatmapFileList, err => {
                 if (err) console.warn('Error while saving beatmap list', err);
             });
         }
@@ -328,25 +314,25 @@ function handleDragDrop(e) {
     e.stopPropagation();
     e.preventDefault();
 
-    pDragboxHint.innerText = pDragboxHint.loadingHint;
+    pDragboxHint.innerText = loadingHint;
     for (let i = 0; i < e.dataTransfer.files.length; ++i) {
         let raw_file = e.dataTransfer.files[i];
         if (!raw_file) {
-            pDragboxHint.innerText = pDragboxHint.noTransferHint;
+            pDragboxHint.innerText = noTransferHint;
             return;
         }
         if (raw_file.name.indexOf('.osz') === raw_file.name.length - 4) {
             let fs = new zip.fs.FS();
             fs.filename = raw_file.name;
-            localforage.setItem(raw_file.name, raw_file, (err, _val) => {
+            localforage.setItem(raw_file.name, raw_file, err => {
                 if (err) console.warn('Error while saving beatmap', fs.filename, err);
             })
             fs.root.importBlob(raw_file, () => addbeatmap(fs, box => {
                 pBeatmapList.insertBefore(box, pDragbox);
-                pDragboxHint.innerText = pDragboxHint.defaultHint;
-            }), _e => pDragboxHint.innerText = pDragboxHint.nonValidHint);
+                pDragboxHint.innerText = defaultHint;
+            }), _e => pDragboxHint.innerText = nonValidHint);
         }
-        else pDragboxHint.innerText = pDragboxHint.nonOszHint;
+        else pDragboxHint.innerText = nonOszHint;
     }
 }
 pDragbox.ondrop = handleDragDrop;
@@ -354,14 +340,6 @@ pDragbox.ondrop = handleDragDrop;
 window.addEventListener('dragover', e => e.preventDefault(), false);
 window.addEventListener('drop', e => e.preventDefault(), false);
 
-pDragboxHint.innerText = pDragboxHint.defaultHint;
+pDragboxHint.innerText = defaultHint;
 pDragboxInner.hidden = false;
-document.getElementById('script-progress').classList.add('finished');
-
-PIXI.Sprite.prototype.bringToFront = function () {
-    let parent = this.parent;
-    if (parent) {
-        parent.removeChild(this);
-        parent.addChild(this);
-    }
-};
+progresses[0].classList.add('finished');

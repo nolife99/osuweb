@@ -64,7 +64,6 @@ class Track {
         let self = this;
         this.track = track;
         this.zip = zip;
-        this.ondecoded = null;
         this.general = {};
         this.metadata = {};
         this.difficulty = {};
@@ -75,7 +74,7 @@ class Track {
         this.hitObjects = [];
 
         this.decode = (() => {
-            let lines = self.track.replace('\r', '').split('\n'), section = null, combo = 0, index = 0, forceNewCombo = false;
+            let lines = self.track.replace('\r', '').split('\n'), section, combo = 0, index = 0, forceNewCombo = false;
             for (let i = 0; i < lines.length; ++i) {
                 let line = lines[i].trim();
                 if (line === '' || line.indexOf('//') === 0) continue;
@@ -277,7 +276,7 @@ class Track {
             this.length = (this.hitObjects[this.hitObjects.length - 1].endTime - this.hitObjects[0].time) / 1000;
             stackHitObjects(this);
 
-            if (this.ondecoded !== null) this.ondecoded(this);
+            if (this.ondecoded) this.ondecoded(this);
         }).bind(this);
     }
 }
@@ -285,18 +284,15 @@ export default class Osu {
     constructor(zip) {
         let self = this;
         this.zip = zip;
-        this.song = null;
-        this.ondecoded = null;
-        this.onready = null;
         this.tracks = [];
         let count = 0;
 
         this.track_decoded = () => {
-            if (++count === self.raw_tracks.length && self.ondecoded !== null) self.ondecoded(this);
+            if (++count === self.raw_tracks.length && self.ondecoded) self.ondecoded(this);
         };
         this.load = () => {
             self.raw_tracks = zip.children.filter(c => c.name.indexOf('.osu') === c.name.length - 4);
-            self.raw_tracks.forEach(t => t.getText(text => {
+            self.raw_tracks.forEach(t => t.getText().then(text => {
                 let track = new Track(zip, text);
                 self.tracks.push(track);
                 track.ondecoded = self.track_decoded;
@@ -310,7 +306,7 @@ export default class Osu {
                     let file = trEv[0][2];
                     if (trEv[0][0] === 'Video') file = trEv[1][2];
                     file = file.substr(1, file.length - 2);
-                    zip.getChildByName(file).getBlob('image/jpeg', blob => img.src = URL.createObjectURL(blob));
+                    zip.getChildByName(file).getBlob('image/jpeg').then(blob => img.src = URL.createObjectURL(blob));
                     break;
                 }
                 catch (error) {
@@ -322,7 +318,7 @@ export default class Osu {
         this.sortTracks = () => self.tracks.sort((a, b) => a.difficulty.OverallDifficulty - b.difficulty.OverallDifficulty);
 
         this.load_mp3 = () => zip.children.find(c => c.name.toLowerCase() === self.tracks[0].general.AudioFilename.toLowerCase())
-            .getBlob('audio/mpeg', blob => {
+            .getBlob('audio/mpeg').then(blob => {
                 let reader = new FileReader();
                 reader.onload = e => self.audio = new OsuAudio(e.target.result, () => {
                     if (self.onready) self.onready();

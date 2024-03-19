@@ -57,7 +57,6 @@ window.addEventListener('DOMContentLoaded', () => {
             window.game.hideFollow = this.hideFollow;
         }
     }
-    gamesettings.loadToGame();
     gamesettings.restoreCallbacks = [];
 
     function bindcheck(id, item) {
@@ -66,7 +65,6 @@ window.addEventListener('DOMContentLoaded', () => {
         gamesettings.restoreCallbacks.push(() => c.checked = gamesettings[item]);
         c.onclick = () => {
             gamesettings[item] = c.checked;
-            gamesettings.loadToGame();
             saveToLocal();
         }
     }
@@ -81,14 +79,12 @@ window.addEventListener('DOMContentLoaded', () => {
             gamesettings[item1] = c1.checked;
             gamesettings[item2] = false;
             c2.checked = false;
-            gamesettings.loadToGame();
             saveToLocal();
         }
         c2.onclick = () => {
             gamesettings[item2] = c2.checked;
             gamesettings[item1] = false;
             c1.checked = false;
-            gamesettings.loadToGame();
             saveToLocal();
         }
     }
@@ -115,7 +111,6 @@ window.addEventListener('DOMContentLoaded', () => {
         range.oninput();
         range.onchange = function() {
             gamesettings[item] = range.value;
-            gamesettings.loadToGame();
             saveToLocal();
         }
     }
@@ -131,7 +126,6 @@ window.addEventListener('DOMContentLoaded', () => {
                 gamesettings[keycodeitem] = e.keyCode;
                 gamesettings[keynameitem] = e.key.toUpperCase();
                 btn.value = gamesettings[keynameitem];
-                gamesettings.loadToGame();
                 saveToLocal();
                 deactivate();
             }
@@ -168,11 +162,9 @@ window.addEventListener('DOMContentLoaded', () => {
     document.getElementById('restoredefault-btn').onclick = () => {
         Object.assign(gamesettings, defaultsettings);
         for (const c of gamesettings.restoreCallbacks) c();
-        gamesettings.loadToGame();
         saveToLocal();
     }
-    document.getElementById('deletemaps-btn').onclick = () => {
-        localforage.removeItem('beatmapfilelist');
-        location.reload();
+    document.getElementById('deletemaps-btn').onclick = async () => {
+        localforage.removeItem('beatmapfilelist').then(() => location.reload());
     }
 });

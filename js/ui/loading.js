@@ -7,11 +7,16 @@ export default class LoadingMenu extends PIXI.Container {
         this.hidden = false;
 
         this.bg = new PIXI.Sprite(window.skin['hpbarright.png']);
+        this.loading = new PIXI.Sprite(window.skin['dot.png']);
         this.bg.rotation = Math.PI / 2;
         this.bg.anchor.set(.5);
         this.bg.scale.set(.6, 500);
         this.bg.alpha = .8;
+        this.loading.anchor.set(.5, .3);
+        this.loading.scale.set(1, .6);
+        
         this.addChild(this.bg);
+        this.addChild(this.loading);
 
         let allFont = {
             fontFamily: 'Venera', fontSize: 14, fill: 0xffffff
@@ -35,11 +40,6 @@ export default class LoadingMenu extends PIXI.Container {
         this.addChild(this.sourcetext);
         this.addChild(this.mappertext);
 
-        this.loading = new PIXI.Sprite(window.skin['dot.png']);
-        this.loading.anchor.set(.5, .3);
-        this.loading.scale.set(1, .6);
-        this.addChild(this.loading);
-
         this.resize(windowfield);
     }
     resize(windowfield) {
@@ -62,12 +62,14 @@ export default class LoadingMenu extends PIXI.Container {
         this.hidden = true;
     }
     update(timestamp) {
+        if (this.alpha <= 0) this.visible = false;
         if (!this.visible) return;
+
         if (!this.hidden) {
             this.loading.rotation = timestamp * .0075;
             return;
         }
-        if (this.hidden && !this.t0) {
+        else if (!this.t0) {
             this.t0 = timestamp;
             this.changed = false;
         }

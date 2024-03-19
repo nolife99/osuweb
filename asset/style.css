@@ -565,7 +565,7 @@ div[hidden=""] {
 
 .grading .grade {
     position: absolute;
-    top: 210px;
+    top: 190px;
     right: 180px;
     font-style: italic;
     font-size: 20em;
@@ -610,7 +610,6 @@ div[hidden=""] {
     left: 120px;
     height: 100px;
     width: 500px;
-    padding-top: 20px;
     padding-bottom: 20px;
     display: flex;
     flex-wrap: wrap;
@@ -643,7 +642,7 @@ div[hidden=""] {
     background: #6b00c6;
     width: 500px;
     text-align: right;
-    padding-top: 0em;
+    padding-top: 0%;
     line-height: 90px;
     padding-right: 20px;
     height: 100px;
