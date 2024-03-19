@@ -4,10 +4,9 @@ const twoPi = 2 * Math.PI, vertexSrc = `
     varying float dist;
     uniform float dx, dy, dt, ox, oy, ot;
     void main() {
-        dist = position[3];
-        gl_Position = vec4(position[0], position[1], position[3] + 2.0 * float(position[2] * dt > ot), 1.0);
-        gl_Position.x = gl_Position.x * dx + ox;
-        gl_Position.y = gl_Position.y * dy + oy;
+        dist = position.w;
+        gl_Position = vec4(position.xy, position.w + 2.0 * float(position.z * dt > ot), 1.0);
+        gl_Position.xy = gl_Position.xy * vec2(dx, dy) + vec2(ox, oy);
     }`, fragmentSrc = `
     precision lowp float;
     varying float dist;
@@ -72,7 +71,7 @@ function newTexture(colors, SliderTrackOverride, SliderBorder) {
 const DIVIDES = 32;
 function curveGeometry(curve, length, radius) {
     const vert = [], index = [], first = curve.pointAt(0), res = Math.ceil(length / 4);
-    vert.push(first.x, first.y, first.t, 0);
+    vert.push(first.x, first.y, 0, 0);
 
     for (let i = 1; i < res; ++i) {
         const curCurve = curve.pointAt((i + 1) / res), lastCurve = curve.pointAt(i / res), 
@@ -107,8 +106,8 @@ function curveGeometry(curve, length, radius) {
         }
         index.push(c, last, p2);
     }
-    addArc(0, 1, 2, first.t);
-    addArc(5 * res - 5, 5 * res - 6, 5 * res - 7, curve.pointAt(1).t);
+    addArc(0, 1, 2, 0);
+    addArc(5 * res - 5, 5 * res - 6, 5 * res - 7, 1);
 
     for (let i = 1; i < res - 1; ++i) {
         const c = curve.pointAt((i + 1) / res), b = curve.pointAt(i / res), n = curve.pointAt((i + 2) / res), 

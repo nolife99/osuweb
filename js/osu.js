@@ -324,7 +324,7 @@ export default class Osu {
             });
     }
     requestStar() {
-        fetch('https://api.sayobot.cn/v2/beatmapinfo?0=' + this.tracks[0].metadata.BeatmapSetID).then(r => r.json()).then(e => {
+        return fetch('https://api.sayobot.cn/v2/beatmapinfo?0=' + this.tracks[0].metadata.BeatmapSetID).then(r => r.json()).then(e => {
             if (e.status === 0) for (const data of e.data.bid_data) for (const track of this.tracks) if (track.metadata.BeatmapID == data.bid) {
                 track.difficulty.star = data.star;
                 track.length = data.length;

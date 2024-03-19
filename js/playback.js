@@ -362,15 +362,15 @@ export default function Playback(game, osu, track) {
                     sprite.x = txt.width / 2;
                     sprite.y = txt.height / 2;
 
-                    let blurstrength = game.backgroundBlurRate * Math.min(txt.width, txt.height);
+                    const blurstrength = game.backgroundBlurRate * Math.min(txt.width, txt.height);
                     t = Math.max(Math.min(txt.width, txt.height), Math.max(10, blurstrength) * 3);
                     sprite.scale.set(t / (t - 2 * Math.max(10, blurstrength)));
 
-                    let blurFilter = new PIXI.filters.BlurFilter(blurstrength, 14);
+                    const blurFilter = new PIXI.filters.BlurFilter(blurstrength, 14);
                     blurFilter.autoFit = false;
                     sprite.filters = [blurFilter];
                 }
-                let texture = PIXI.RenderTexture.create(txt.width, txt.height);
+                const texture = PIXI.RenderTexture.create(txt.width, txt.height);
                 window.app.renderer.render(sprite, texture);
                 sprite.destroy();
 
