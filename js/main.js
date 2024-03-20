@@ -40,9 +40,9 @@ const game = {
 }, progresses = document.getElementsByClassName('progress');
 window.game = game;
 
-PIXI.Loader.shared.add('asset/skin/sprites.json').load(() => {
+PIXI.Loader.shared.add('asset/skin/sprites.json').load((_loader, resources) => {
     progresses[1].classList.add('finished');
-    window.skin = PIXI.Loader.shared.resources['asset/skin/sprites.json'].textures;
+    window.skin = resources['asset/skin/sprites.json'].textures;
 });
 
 const sample = [
@@ -132,7 +132,7 @@ class BeatmapController {
         pMainPage.hidden = true;
         pGameArea.hidden = false;
 
-        window.quitGame = function () {
+        window.quitGame = () => {
             pGameArea.hidden = true;
             pMainPage.hidden = false;
             document.body.classList.remove('gaming');
@@ -152,10 +152,17 @@ class BeatmapController {
             window.cancelAnimationFrame(window.frameID);
         };
 
-        const playback = new Playback(game, this.osu, this.osu.tracks[trackid]);
-        playback.load();
+        this.osu.load_mp3(trackid);
+        let playback = new Playback(this.osu, this.osu.tracks[trackid]);
 
-        window.requestAnimationFrame(function gameLoop(t) {
+        window.restartGame = () => {
+            window.cancelAnimationFrame(window.frameID);
+            playback = new Playback(this.osu, this.osu.tracks[trackid]);
+            this.osu.onready();
+            window.requestAnimationFrame(gameLoop);
+        };
+
+        function gameLoop(t) {
             if (game.cursor) {
                 game.cursor.x = game.mouseX / 512 * gfx.width + gfx.xoffset;
                 game.cursor.y = game.mouseY / 384 * gfx.height + gfx.yoffset;
@@ -164,7 +171,8 @@ class BeatmapController {
             playback.render(t);
             app.renderer.render(app.stage);
             window.frameID = window.requestAnimationFrame(gameLoop);
-        });
+        }
+        window.requestAnimationFrame(gameLoop);
     }
     createBeatmapBox() {
         const map = this,

@@ -91,22 +91,20 @@ window.addEventListener('DOMContentLoaded', () => {
     }
     function bindrange(id, item, feedback) {
         const range = document.getElementById(id), indicator = document.getElementById(id + '-indicator');
-        range.onmousedown = function() {
+        range.onmousedown = () => {
             indicator.hidden = false;
         }
         range.onmouseup = function() {
             indicator.hidden = true;
         };
         range.oninput = function() {
-            let min = parseFloat(range.min), max = parseFloat(range.max),val = parseFloat(range.value);
-            let pos = (val - min) / (max - min);
-            let length = range.clientWidth - 20;
+            const min = parseFloat(range.min), val = parseFloat(range.value), pos = (val - min) / (parseFloat(range.max) - min), length = range.clientWidth - 20;
             indicator.style.left = (pos * length + 13) + 'px';
             indicator.innerText = feedback(val);
         }
         range.value = gamesettings[item];
-        gamesettings.restoreCallbacks.push(function() { 
-            range.value = gamesettings[item]; 
+        gamesettings.restoreCallbacks.push(function() {
+            range.value = gamesettings[item];
         });
         range.oninput();
         range.onchange = function() {

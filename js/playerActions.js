@@ -2,7 +2,7 @@ function triggerTap() {
     const click = {
         x: game.mouseX, y: game.mouseY,
         time: playback.osu.audio.pos * 1000 + game.globalOffset
-    }; 
+    };
     let hit = playback.newHits.find(inUpcoming(click));
     if (!hit && game.mouse) {
         const res = game.mouse(new Date().getTime());
@@ -11,7 +11,7 @@ function triggerTap() {
     }
     else if (hit) {
         if (hit.type === 'circle' || hit.type === 'slider') {
-            if (playback.autoplay) playback.hitSuccess(hit, 300, hit.time);
+            if (game.autoplay) playback.hitSuccess(hit, 300, hit.time);
             else {
                 let points = 50;
                 const diff = click.time - hit.time;
@@ -30,7 +30,7 @@ const inUpcoming = click => hit => {
     return hit.score < 0 && dx * dx + dy * dy < r * r && Math.abs(predict.time - hit.time) < playback.MehTime;
 }, spinRadius = 60;
 export default function playerActions(playback) {
-    if (playback.autoplay) var auto = {
+    if (window.game.autoplay) var auto = {
         curObj: null, curid: 0, lastx: window.game.mouseX, lasty: window.game.mouseY, lasttime: 0
     }
     window.game.updatePlayerActions = time => {
@@ -48,7 +48,7 @@ export default function playerActions(playback) {
                 window.game.mouseY = cur.ball.y || cur.y;
             }
             else if (!window.game.paused) {
-                let ang = Math.atan2(window.game.mouseY - cur.y, window.game.mouseX - cur.x) + .75;
+                const ang = Math.atan2(window.game.mouseY - cur.y, window.game.mouseX - cur.x) + .75;
                 window.game.mouseX = cur.x + spinRadius * Math.cos(ang);
                 window.game.mouseY = cur.y + spinRadius * Math.sin(ang);
             }
@@ -60,7 +60,7 @@ export default function playerActions(playback) {
             if (hit.score < 0) {
                 let targX = hit.x, targY = hit.y;
                 if (hit.type === 'spinner') {
-                    let ang = Math.atan2(window.game.mouseY - targY, window.game.mouseX - targX);
+                    const ang = Math.atan2(window.game.mouseY - targY, window.game.mouseX - targX);
                     targX += spinRadius * Math.cos(ang);
                     targY += spinRadius * Math.sin(ang);
                 }
@@ -87,7 +87,7 @@ export default function playerActions(playback) {
                 targX += spinRadius * Math.cos(ang);
                 targY += spinRadius * Math.sin(ang);
             }
-            let t = .5 - Math.sin((Math.pow(1 - Math.max(0, Math.min(1, (time - auto.lasttime) / (cur.time - auto.lasttime))), 1.5) - .5) * Math.PI) / 2;
+            const t = .5 - Math.sin((Math.pow(1 - Math.max(0, Math.min(1, (time - auto.lasttime) / (cur.time - auto.lasttime))), 1.5) - .5) * Math.PI) / 2;
 
             window.game.mouseX = t * targX + (1 - t) * auto.lastx;
             window.game.mouseY = t * targY + (1 - t) * auto.lasty;
@@ -98,12 +98,12 @@ export default function playerActions(playback) {
             }
         }
     };
-    if (!playback.autoplay) {
+    if (!window.game.autoplay) {
         const cursorData = [{
             x: 256, y: 192, t: new Date().getTime()
         }];
         let k1, k2, m1, m2;
-        
+
         window.game.mouse = t => {
             let i = 0;
             while (i < cursorData.length - 1 && cursorData[0].t - cursorData[i].t < 40 && t - cursorData[i].t < 100) ++i;
@@ -111,7 +111,7 @@ export default function playerActions(playback) {
             const velocity = i === 0 ? {
                 x: 0, y: 0
             } : {
-                x: (cursorData[0].x - cursorData[i].x) / (cursorData[0].t - cursorData[i].t), 
+                x: (cursorData[0].x - cursorData[i].x) / (cursorData[0].t - cursorData[i].t),
                 y: (cursorData[0].y - cursorData[i].y) / (cursorData[0].t - cursorData[i].t)
             }, dt = Math.min(t - cursorData[0].t + window.activeTime, 40);
             return {

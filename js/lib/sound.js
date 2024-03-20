@@ -2,17 +2,17 @@ export const sounds = {
     toLoad: 0,
     loaded: 0,
     audioExtensions: ['mp3', 'ogg', 'wav', 'webm'],
-    whenLoaded: undefined,
-    onProgress: undefined,
+    whenLoaded: () => { },
+    onProgress: () => { },
     onFailed: (source, _e) => {
         throw new Error('Audio could not be loaded: ' + source);
     },
     load: function (sources) {
         sounds.toLoad = sources.length;
         for (const source of sources) {
-            let extension = source.split('.').pop();
+            const extension = source.split('.').pop();
             if (sounds.audioExtensions.indexOf(extension) !== -1) {
-                let soundSprite = makeSound(source, sounds.loadHandler.bind(sounds), true, sounds.onFailed);
+                const soundSprite = makeSound(source, sounds.loadHandler, true, sounds.onFailed);
                 soundSprite.name = source;
                 sounds[soundSprite.name] = soundSprite;
             }
@@ -20,13 +20,13 @@ export const sounds = {
     },
     loadHandler: function (source) {
         ++sounds.loaded;
-        if (sounds.onProgress) sounds.onProgress(100 * sounds.loaded / sounds.toLoad, {
+        sounds.onProgress(100 * sounds.loaded / sounds.toLoad, {
             url: source
         });
         if (sounds.toLoad === sounds.loaded) {
             sounds.toLoad = 0;
             sounds.loaded = 0;
-            if (sounds.whenLoaded) sounds.whenLoaded();
+            sounds.whenLoaded();
         }
     }
 };
@@ -49,7 +49,7 @@ function makeSound(source, loadHandler, shouldLoadSound, failHandler) {
             o.soundNode.playbackRate.value = o.speed;
             o.soundNode.connect(o.volumeNode);
             o.volumeNode.connect(actx.destination);
-    
+
             o.soundNode.loop = o.loop;
             o.soundNode.start(0, o.startOffset % o.buffer.duration);
             o.playing = true;

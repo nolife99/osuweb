@@ -30,7 +30,7 @@ function errortext(a) {
     let sum = 0;
     for (const i of a) sum += i;
 
-    const avg = sum / a.length; 
+    const avg = sum / a.length;
     let sumsqerr = 0;
 
     for (const i of a) {
@@ -42,7 +42,7 @@ function errortext(a) {
     return sgnavg + '±' + Math.sqrt(sumsqerr / a.length).toFixed(0) + 'ms';
 }
 function modstext() {
-    let l = '+'; 
+    let l = '+';
     if (window.game.easy) l += 'EZ';
     if (window.game.daycore) l += 'DC';
     if (window.game.hidden) l += 'HD';
@@ -205,7 +205,7 @@ export default class ScoreOverlay extends PIXI.Container {
         setSpriteArrayPos(this.accuracyDigits, basex - this.scoreDigits.width / 2 - this.accuracyDigits.width - 16 * unit, basey + 3 * unit);
         setSpriteArrayPos(this.comboDigits, basex + this.scoreDigits.width / 2 + 16 * unit, basey + 3 * unit);
     }
-    showSummary(metadata, a, retryCallback, quitCallback) {
+    showSummary(metadata, a, playback) {
         const acc = this.judgeTotal / this.maxJudgeTotal, rank = grade(acc), grading = newdiv(null, 'grading');
         grading.classList.add('transparent');
         document.body.appendChild(grading);
@@ -236,11 +236,11 @@ export default class ScoreOverlay extends PIXI.Container {
 
         b1.onclick = () => {
             grading.remove();
-            retryCallback();
+            playback.retry();
         };
         b2.onclick = () => {
             grading.remove();
-            quitCallback();
+            playback.quit();
         };
         window.setTimeout(() => grading.classList.remove('transparent'), 100);
     }

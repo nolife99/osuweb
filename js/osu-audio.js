@@ -14,7 +14,8 @@ export default class OsuAudio {
             if (callback) callback(this);
         }, e => {
             console.warn('Error decoding audio:', e);
-            const buf8 = new Uint8Array(node.buf), i = node.sync;
+            const buf8 = new Uint8Array(node.buf)
+            let i = node.sync;
             buf8.indexOf = Array.prototype.indexOf;
             const b = buf8;
 
