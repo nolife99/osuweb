@@ -1,6 +1,7 @@
 import Osu from './osu.js';
-import { sounds } from './lib/sound.js';
+import { sounds } from './osu-audio.js';
 import Playback from './playback.js';
+import { fs } from "https://unpkg.com/@zip.js/zip.js/index.js";
 
 const game = {
     window: window,
@@ -39,6 +40,39 @@ const game = {
     sampleSet: 1
 }, progresses = document.getElementsByClassName('progress');
 window.game = game;
+
+let beatmapFileList = [];
+localforage.getItem('beatmapfilelist').then(names => {
+    console.log('Local beatmaps:', names);
+    const counter = progresses[3].childNodes;
+    counter[3].innerText = names.length;
+
+    const tempbox = new Array(names.length);
+    for (let i = 0; i < names.length; ++i) {
+        const box = document.createElement('div');
+        box.className = 'beatmapbox';
+        pBeatmapList.insertBefore(box, pDragbox);
+        tempbox[i] = box;
+    }
+    const loadingCounter = counter[1];
+
+    beatmapFileList = names;
+    let loadedCount = 0;
+    for (let i = 0; i < names.length; ++i) localforage.getItem(names[i]).then(blob => {
+        const zipFs = new fs.FS;
+        zipFs.filename = names[i];
+        zipFs.importBlob(blob).then(() => {
+            addbeatmap(zipFs, box => {
+                pBeatmapList.replaceChild(box, tempbox[i]);
+                pDragboxHint.innerText = defaultHint;
+            });
+            loadingCounter.innerText = ++loadedCount;
+        }).catch(e => {
+            console.warn('Error importing beatmap:', names[i], e);
+            pDragboxHint.innerText = nonValidHint;
+        });
+    }).catch(err => console.warn('Error getting beatmap:', names[i], err));
+}).catch(err => console.warn('Error searching beatmaps:', err));
 
 PIXI.Loader.shared.add('asset/skin/sprites.json').load((_loader, resources) => {
     progresses[1].classList.add('finished');
@@ -262,39 +296,6 @@ const defaultHint = 'Drag and drop a beatmap (.osz) file here',
     nonOszHint = 'Not an osz file. Drop another file.',
     loadingHint = 'Loading...';
 
-let beatmapFileList = [];
-localforage.getItem('beatmapfilelist').then(names => {
-    console.log('Local beatmaps:', names);
-    const counter = progresses[3].childNodes;
-    counter[3].innerText = names.length;
-
-    const tempbox = new Array(names.length);
-    for (let i = 0; i < names.length; ++i) {
-        const box = document.createElement('div');
-        box.className = 'beatmapbox';
-        pBeatmapList.insertBefore(box, pDragbox);
-        tempbox[i] = box;
-    }
-    const loadingCounter = counter[1];
-
-    beatmapFileList = names;
-    let loadedCount = 0;
-    for (let i = 0; i < names.length; ++i) localforage.getItem(names[i]).then(blob => {
-        const fs = new zip.fs.FS;
-        fs.filename = names[i];
-        fs.importBlob(blob).then(() => {
-            addbeatmap(fs, box => {
-                pBeatmapList.replaceChild(box, tempbox[i]);
-                pDragboxHint.innerText = defaultHint;
-            });
-            loadingCounter.innerText = ++loadedCount;
-        }).catch(e => {
-            console.warn('Error importing beatmap:', names[i], e);
-            pDragboxHint.innerText = nonValidHint;
-        });
-    }).catch(err => console.warn('Error getting beatmap:', names[i], err));
-}).catch(err => console.warn('Error searching beatmaps:', err));
-
 function addbeatmap(osz, f) {
     const map = new BeatmapController(osz);
     map.osu.ondecoded = () => {
@@ -327,15 +328,15 @@ function handleDragDrop(e) {
             return;
         }
         if (raw_file.name.indexOf('.osz') === raw_file.name.length - 4) {
-            const fs = new zip.fs.FS;
-            fs.filename = raw_file.name;
-            localforage.setItem(raw_file.name, raw_file).catch(err => console.warn('Error saving beatmap:', fs.filename, err));
+            const zipFs = new fs.FS;
+            zipFs.filename = raw_file.name;
+            localforage.setItem(raw_file.name, raw_file).catch(err => console.warn('Error saving beatmap:', zipFs.filename, err));
 
-            fs.importBlob(raw_file).then(() => addbeatmap(fs, box => {
+            zipFs.importBlob(raw_file).then(() => addbeatmap(zipFs, box => {
                 pBeatmapList.insertBefore(box, pDragbox);
                 pDragboxHint.innerText = defaultHint;
             })).catch(ex => {
-                console.warn('Error during file transfer:', fs.filename, ex);
+                console.warn('Error during file transfer:', zipFs.filename, ex);
                 pDragboxHint.innerText = nonValidHint;
             });
         }

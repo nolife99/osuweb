@@ -308,7 +308,7 @@ export default class Osu {
     load() {
         this.raw_tracks = this.zip.children.filter(c => c.name.indexOf('.osu') === c.name.length - 4);
         for (const t of this.raw_tracks) t.getText().then(text => {
-            const track = new Track(zip, text);
+            const track = new Track(this.zip, text);
             this.tracks.push(track);
             track.ondecoded = () => {
                 if (++this.count === this.raw_tracks.length) this.ondecoded(this);
@@ -322,12 +322,11 @@ export default class Osu {
                 const file = track.events[0][2];
                 if (track.events[0][0] === 'Video') file = track.events[1][2];
                 this.zip.getChildByName(file.slice(1, file.length - 1)).getBlob('image/jpeg').then(blob => img.src = URL.createObjectURL(blob));
-                break;
+                return;
             }
-            catch (error) {
-                img.src = 'asset/skin/defaultbg.jpg';
-            }
+            catch { }
         }
+        img.src = 'asset/skin/defaultbg.jpg';
     }
     filterTracks() {
         this.tracks = this.tracks.filter(t => t.general.Mode !== 3);
