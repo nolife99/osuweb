@@ -5,7 +5,7 @@ import LinearBezier from './curve/LinearBezier.js';
 const HIT_TYPE_CIRCLE = 1, HIT_TYPE_SLIDER = 2, HIT_TYPE_NEWCOMBO = 4, HIT_TYPE_SPINNER = 8;
 function stackHitObjects(track) {
     const AR = track.difficulty.ApproachRate, approachTime = AR < 5 ? 1800 - 120 * AR : 1950 - 150 * AR,
-        stackDistance = 3, stackThreshold = approachTime * track.general.StackLeniency;
+        stackDistance = 3.53553390593, stackThreshold = approachTime * track.general.StackLeniency;
 
     function getintv(A, B) {
         let endTime = A.time;
@@ -13,7 +13,12 @@ function stackHitObjects(track) {
         return B.time - endTime;
     }
     function getdist(A, B) {
-        const x = A.x, y = A.y;
+        let x = A.x, y = A.y;
+        if (A.type == "slider" && A.repeat % 2 == 1) {
+            const pt = A.curve.pointAt(1);
+            x = pt.x;
+            y = pt.y;
+        }
         return Math.hypot(x - B.x, y - B.y);
     }
 
@@ -44,6 +49,17 @@ function stackHitObjects(track) {
         const ofs = dep * stackScale;
         hit.x += ofs;
         hit.y += ofs;
+        if (hit.type == "slider") {
+            for (const k of hit.keyframes) {
+                k.x += ofs;
+                k.y += ofs;
+            }
+            if (hit.sliderType === 'P' && hit.keyframes.length === 2) hit.curve = ArcPath(hit);
+            else for (const p of hit.curve.path) {
+                p.x += ofs;
+                p.y += ofs;
+            }
+        }
     }
     for (let i = 0; i < chains.length; ++i) {
         if (chains[i][0].type === 'slider') for (let j = 0, dep = 0; j < chains[i].length; ++j) {

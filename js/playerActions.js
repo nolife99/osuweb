@@ -31,7 +31,7 @@ const inUpcoming = click => hit => {
 }, spinRadius = 60;
 export default function playerActions(playback) {
     if (window.game.autoplay) var auto = {
-        curObj: null, curid: 0, lastx: window.game.mouseX, lasty: window.game.mouseY, lasttime: 0
+        curid: 0, lastx: window.game.mouseX, lasty: window.game.mouseY, lasttime: 0
     }
     window.game.updatePlayerActions = time => {
         let cur = auto.curObj;

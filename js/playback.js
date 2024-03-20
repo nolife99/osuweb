@@ -71,7 +71,7 @@ export default class Playback {
         };
 
         const gfx = window.gfx = {};
-        this.gamefield = new PIXI.Container();
+        this.gamefield = new PIXI.Container;
         this.destroyHit = o => {
             this.gamefield.removeChild(o);
             o.destroy();
@@ -431,7 +431,7 @@ export default class Playback {
     }
     createBackground() {
         const loadBackground = uri => {
-            const loader = new PIXI.Loader();
+            const loader = new PIXI.Loader;
             loader.add(uri, {
                 loadType: PIXI.LoaderResource.LOAD_TYPE.IMAGE
             }).load((_loader, resources) => {
@@ -512,12 +512,12 @@ export default class Playback {
             lastTick.result = false;
         }
         if (hit.repeat > 1) {
-            const p = hit.curve.pointAt(1), p2 = hit.curve.pointAt(.99);
+            const p = hit.curve.pointAt(1), p2 = hit.curve.pointAt(1 - Number.EPSILON);
             hit.reverse = newSprite('reversearrow.png', p.x, p.y, .36, true);
             hit.reverse.rotation = Math.atan2(p2.y - p.y, p2.x - p.x);
         }
         if (hit.repeat > 2) {
-            const p2 = hit.curve.pointAt(.01);
+            const p2 = hit.curve.pointAt(Number.EPSILON);
             hit.reverse_b = newSprite('reversearrow.png', hit.x, hit.y, .36, true);
             hit.reverse_b.rotation = Math.atan2(p2.y - hit.y, p2.x - hit.x);
             hit.reverse_b.visible = false;
@@ -577,7 +577,7 @@ export default class Playback {
             }
         }
 
-        const container = new PIXI.Container();
+        const container = new PIXI.Container;
         container.depth = 3;
         container.x1 = x1;
         container.y1 = y1;
@@ -823,8 +823,7 @@ export default class Playback {
             }
 
             hit.currentRepeat = Math.min(Math.ceil(t), hit.repeat);
-            t = repeatclamp(Math.min(t, hit.repeat));
-            const at = hit.curve.pointAt(t);
+            const at = hit.curve.pointAt(repeatclamp(Math.min(t, hit.repeat)));
 
             hit.follow.x = at.x;
             hit.follow.y = at.y;
@@ -1022,10 +1021,10 @@ export default class Playback {
             else if (time < this.skipTime) this.breakOverlay.countdown(this.skipTime, time);
             else this.breakOverlay.visible = false;
 
-            this.updateBackground(time);
             this.updateHitObjects(time);
-            this.scoreOverlay.update(time);
             if (window.game.autoplay) window.game.updatePlayerActions(time);
+            this.updateBackground(time);
+            this.scoreOverlay.update(time);
             this.progressOverlay.update(time);
             this.errorMeter.update(time);
         }

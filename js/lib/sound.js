@@ -7,7 +7,7 @@ export const sounds = {
     onFailed: (source, _e) => {
         throw new Error('Audio could not be loaded: ' + source);
     },
-    load: function (sources) {
+    load: sources => {
         sounds.toLoad = sources.length;
         for (const source of sources) {
             const extension = source.split('.').pop();
@@ -18,7 +18,7 @@ export const sounds = {
             }
         }
     },
-    loadHandler: function (source) {
+    loadHandler: source => {
         ++sounds.loaded;
         sounds.onProgress(100 * sounds.loaded / sounds.toLoad, {
             url: source
@@ -31,14 +31,21 @@ export const sounds = {
     }
 };
 
-export const actx = new AudioContext();
+export const actx = new AudioContext;
 function makeSound(source, loadHandler, shouldLoadSound, failHandler) {
     const o = {
         volumeNode: new GainNode(actx),
+        get volume() {
+            return o.volumeValue;
+        },
+        set volume(value) {
+            o.volumeNode.gain.value = value;
+            o.volumeValue = value;
+        },
+        volumeValue: 1,
         source: source,
         loop: false,
         playing: false,
-        volumeValue: 1,
         startTime: 0,
         startOffset: 0,
         speed: 1,
@@ -84,16 +91,6 @@ function makeSound(source, loadHandler, shouldLoadSound, failHandler) {
         },
         fadeOut: durationInSeconds => o.fade(0, durationInSeconds)
     };
-    Object.defineProperties(o, {
-        volume: {
-            get: () => o.volumeValue,
-            set: value => {
-                o.volumeNode.gain.value = value;
-                o.volumeValue = value;
-            },
-            enumerable: true, configurable: true
-        }
-    });
     if (shouldLoadSound) fetch(source).then(response => response.arrayBuffer()).then(buf => actx.decodeAudioData(buf, buffer => {
         o.buffer = buffer;
         o.hasLoaded = true;

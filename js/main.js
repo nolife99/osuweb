@@ -279,8 +279,8 @@ localforage.getItem('beatmapfilelist').then(names => {
 
     beatmapFileList = names;
     let loadedCount = 0;
-    for (let i = 0, j = 0; i < names.length; ++i) localforage.getItem(names[i]).then(blob => {
-        const fs = new zip.fs.FS();
+    for (let i = 0; i < names.length; ++i) localforage.getItem(names[i]).then(blob => {
+        const fs = new zip.fs.FS;
         fs.filename = names[i];
         fs.importBlob(blob).then(() => {
             addbeatmap(fs, box => {
@@ -327,7 +327,7 @@ function handleDragDrop(e) {
             return;
         }
         if (raw_file.name.indexOf('.osz') === raw_file.name.length - 4) {
-            const fs = new zip.fs.FS();
+            const fs = new zip.fs.FS;
             fs.filename = raw_file.name;
             localforage.setItem(raw_file.name, raw_file).catch(err => console.warn('Error saving beatmap:', fs.filename, err));
 

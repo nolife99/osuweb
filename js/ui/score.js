@@ -60,7 +60,7 @@ function newdiv(parent, classname, text) {
     return div;
 }
 function f(a, mul) {
-    for (let i = 0; i < a.length; ++i) a[i].scale.x = a[i].scale.y = mul;
+    for (const b of a) b.scale.x = b.scale.y = mul;
 }
 function setSpriteArrayText(arr, str) {
     arr.width = 0;
@@ -71,14 +71,11 @@ function setSpriteArrayText(arr, str) {
         digit.visible = true;
         arr.width += digit.knownwidth;
     }
-
     for (let i = str.length; i < arr.length; ++i) arr[i].visible = false;
-    arr.useLength = str.length;
 }
 function setSpriteArrayPos(arr, x, y) {
     let curx = x;
-    for (let i = 0; i < arr.useLength; ++i) {
-        const s = arr[i];
+    for (const s of arr) {
         s.x = curx + s.scale.x * charSpacing / 2;
         s.y = y;
         curx += s.knownwidth;
@@ -127,7 +124,7 @@ export default class ScoreOverlay extends PIXI.Container {
     newSpriteArray(len, scaleMul, tint = 0xffffff) {
         const a = new Array(len);
         for (let i = 0; i < len; ++i) {
-            const s = new PIXI.Sprite();
+            const s = new PIXI.Sprite;
             s.scale.x = s.scale.y = this.scaleMul * scaleMul;
             s.anchor.x = 0;
             s.anchor.y = 0;

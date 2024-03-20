@@ -74,7 +74,7 @@ function curveGeometry(curve, length, radius) {
     vert.push(first.x, first.y, 0, 0);
 
     for (let i = 1; i < res; ++i) {
-        const curCurve = curve.pointAt((i + 1) / res), lastCurve = curve.pointAt(i / res), 
+        const curCurve = curve.pointAt((i + 1) / res), lastCurve = curve.pointAt(i / res),
             x = curCurve.x, y = curCurve.y, t = curCurve.t,
             lx = lastCurve.x, ly = lastCurve.y, lt = lastCurve.t,
             dx = x - lx, dy = y - ly, length = Math.hypot(dx, dy),
@@ -110,7 +110,7 @@ function curveGeometry(curve, length, radius) {
     addArc(5 * res - 5, 5 * res - 6, 5 * res - 7, 1);
 
     for (let i = 1; i < res - 1; ++i) {
-        const c = curve.pointAt((i + 1) / res), b = curve.pointAt(i / res), n = curve.pointAt((i + 2) / res), 
+        const c = curve.pointAt((i + 1) / res), b = curve.pointAt(i / res), n = curve.pointAt((i + 2) / res),
             t = (c.x - b.x) * (n.y - c.y) - (n.x - c.x) * (c.y - b.y);
         if (t > 0) addArc(5 * i, 5 * i - 1, 5 * i + 2);
         else addArc(5 * i, 5 * i + 1, 5 * i - 2);
