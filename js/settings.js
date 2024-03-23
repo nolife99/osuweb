@@ -1,16 +1,5 @@
-window.addEventListener('DOMContentLoaded', () => {
-    function loadFromLocal() {
-        const str = window.localStorage.getItem('osugamesettings');
-        if (str) {
-            const s = JSON.parse(str);
-            if (s) Object.assign(gamesettings, s);
-        }
-    }
-    function saveToLocal() {
-        window.localStorage.setItem('osugamesettings', JSON.stringify(window.gamesettings));
-    }
-
-    const defaultsettings = {
+const saveToLocal = () => localStorage.setItem('osugamesettings', JSON.stringify(settings)),
+    defaultsettings = {
         dim: 80, blur: 0,
         cursorsize: 1, showhwmouse: false,
         snakein: true, snakeout: false,
@@ -22,146 +11,145 @@ window.addEventListener('DOMContentLoaded', () => {
         easy: false, daycore: false, hardrock: false, nightcore: false, hidden: false, autoplay: false,
         hideNumbers: false, hideGreat: true, hideFollow: false
     };
-    window.gamesettings = {};
 
-    Object.assign(gamesettings, defaultsettings);
-    loadFromLocal();
+export const settings = JSON.parse(localStorage.getItem('osugamesettings')) ?? defaultsettings;
+settings.loadToGame = game => {
+    if (game) {
+        game.backgroundDimRate = settings.dim / 100;
+        game.backgroundBlurRate = settings.blur / 100;
+        game.cursorSize = settings.cursorsize;
+        game.showhwmouse = settings.showhwmouse;
+        game.snakein = settings.snakein;
+        game.snakeout = settings.snakeout;
 
-    window.gamesettings.loadToGame = function() {
-        if (window.game) {
-            window.game.backgroundDimRate = this.dim / 100;
-            window.game.backgroundBlurRate = this.blur / 100;
-            window.game.cursorSize = this.cursorsize;
-            window.game.showhwmouse = this.showhwmouse;
-            window.game.snakein = this.snakein;
-            window.game.snakeout = this.snakeout;
+        game.allowMouseScroll = !settings.disableWheel;
+        game.allowMouseButton = !settings.disableButton;
+        game.K1keycode = settings.K1keycode;
+        game.K2keycode = settings.K2keycode;
 
-            window.game.allowMouseScroll = !this.disableWheel;
-            window.game.allowMouseButton = !this.disableButton;
-            window.game.K1keycode = this.K1keycode;
-            window.game.K2keycode = this.K2keycode;
+        game.masterVolume = settings.mastervolume / 100;
+        game.effectVolume = settings.effectvolume / 100;
+        game.musicVolume = settings.musicvolume / 100;
+        game.globalOffset = +settings.audiooffset;
 
-            window.game.masterVolume = this.mastervolume / 100;
-            window.game.effectVolume = this.effectvolume / 100;
-            window.game.musicVolume = this.musicvolume / 100;
-	        window.game.globalOffset = parseFloat(this.audiooffset);
+        game.easy = settings.easy;
+        game.daycore = settings.daycore;
+        game.hardrock = settings.hardrock;
+        game.nightcore = settings.nightcore;
+        game.hidden = settings.hidden;
+        game.autoplay = settings.autoplay;
 
-            window.game.easy = this.easy;
-            window.game.daycore = this.daycore;
-            window.game.hardrock = this.hardrock;
-            window.game.nightcore = this.nightcore;
-            window.game.hidden = this.hidden;
-            window.game.autoplay = this.autoplay;
-
-            window.game.hideNumbers = this.hideNumbers;
-            window.game.hideGreat = this.hideGreat;
-            window.game.hideFollow = this.hideFollow;
-        }
+        game.hideNumbers = settings.hideNumbers;
+        game.hideGreat = settings.hideGreat;
+        game.hideFollow = settings.hideFollow;
     }
-    gamesettings.restoreCallbacks = [];
+}
+settings.restoreCallbacks = [];
 
-    function bindcheck(id, item) {
-        const c = document.getElementById(id);
-        c.checked = gamesettings[item];
-        gamesettings.restoreCallbacks.push(() => c.checked = gamesettings[item]);
-        c.onclick = () => {
-            gamesettings[item] = c.checked;
-            saveToLocal();
-        }
-    }
-    function bindExclusiveCheck(id1, item1, id2, item2) {
-        const c1 = document.getElementById(id1), c2 = document.getElementById(id2);
-        c1.checked = gamesettings[item1];
-        c2.checked = gamesettings[item2];
-
-        gamesettings.restoreCallbacks.push(() => c1.checked = gamesettings[item1]);
-        gamesettings.restoreCallbacks.push(() => c2.checked = gamesettings[item2]);
-        c1.onclick = () => {
-            gamesettings[item1] = c1.checked;
-            gamesettings[item2] = false;
-            c2.checked = false;
-            saveToLocal();
-        }
-        c2.onclick = () => {
-            gamesettings[item2] = c2.checked;
-            gamesettings[item1] = false;
-            c1.checked = false;
-            saveToLocal();
-        }
-    }
-    function bindrange(id, item, feedback) {
-        const range = document.getElementById(id), indicator = document.getElementById(id + '-indicator');
-        range.onmousedown = () => {
-            indicator.hidden = false;
-        }
-        range.onmouseup = function() {
-            indicator.hidden = true;
-        };
-        range.oninput = function() {
-            const min = parseFloat(range.min), val = parseFloat(range.value), pos = (val - min) / (parseFloat(range.max) - min), length = range.clientWidth - 20;
-            indicator.style.left = (pos * length + 13) + 'px';
-            indicator.innerText = feedback(val);
-        }
-        range.value = gamesettings[item];
-        gamesettings.restoreCallbacks.push(function() {
-            range.value = gamesettings[item];
-        });
-        range.oninput();
-        range.onchange = function() {
-            gamesettings[item] = range.value;
-            saveToLocal();
-        }
-    }
-    function bindkeyselector(id, keynameitem, keycodeitem) {
-        const btn = document.getElementById(id);
-        function activate() {
-            function deactivate() {
-                btn.onclick = activate;
-                btn.classList.remove('using');
-                document.removeEventListener('keydown', listenkey);
-            }
-            function listenkey(e) {
-                gamesettings[keycodeitem] = e.keyCode;
-                gamesettings[keynameitem] = e.key.toUpperCase();
-                btn.value = gamesettings[keynameitem];
-                saveToLocal();
-                deactivate();
-            }
-            btn.classList.add('using');
-            document.addEventListener('keydown', listenkey);
-            btn.onclick = deactivate;
-        }
-        btn.onclick = activate;
-        btn.value = gamesettings[keynameitem];
-        gamesettings.restoreCallbacks.push(() => btn.value = gamesettings[keynameitem]);
-    }
-
-    bindrange('dim-range', 'dim', v => v + '%');
-    bindrange('blur-range', 'blur', v => v + '%');
-    bindrange('cursorsize-range', 'cursorsize', v => v.toFixed(2) + 'x');
-    bindcheck('showhwmouse-check', 'showhwmouse');
-    bindcheck('snakein-check', 'snakein');
-    bindcheck('snakeout-check', 'snakeout');
-    bindcheck('disable-wheel-check', 'disableWheel');
-    bindcheck('disable-button-check', 'disableButton');
-    bindkeyselector('lbutton1select', 'K1name', 'K1keycode');
-    bindkeyselector('rbutton1select', 'K2name', 'K2keycode');
-    bindrange('mastervolume-range', 'mastervolume', v => v + '%');
-    bindrange('effectvolume-range', 'effectvolume', v => v + '%');
-    bindrange('musicvolume-range', 'musicvolume', v => v + '%');
-	bindrange("audiooffset-range", "audiooffset", v => v + 'ms');
-    bindExclusiveCheck('easy-check', 'easy', 'hardrock-check', 'hardrock');
-    bindExclusiveCheck('daycore-check', 'daycore', 'nightcore-check', 'nightcore');
-    bindcheck('hidden-check', 'hidden');
-    bindcheck('autoplay-check', 'autoplay');
-    bindcheck('hidenumbers-check', 'hideNumbers');
-    bindcheck('hidegreat-check', 'hideGreat');
-    bindcheck('hidefollowpoints-check', 'hideFollow');
-
-    document.getElementById('restoredefault-btn').onclick = () => {
-        Object.assign(gamesettings, defaultsettings);
-        for (const c of gamesettings.restoreCallbacks) c();
+function bindcheck(id, item) {
+    const c = document.getElementById(id);
+    c.checked = settings[item];
+    settings.restoreCallbacks.push(() => c.checked = settings[item]);
+    c.onclick = () => {
+        settings[item] = c.checked;
         saveToLocal();
     }
-    document.getElementById('deletemaps-btn').onclick = () => localforage.removeItem('beatmapfilelist').then(() => location.reload());
-});
+}
+function bindExclusiveCheck(id1, item1, id2, item2) {
+    const c1 = document.getElementById(id1), c2 = document.getElementById(id2);
+    c1.checked = settings[item1];
+    c2.checked = settings[item2];
+
+    settings.restoreCallbacks.push(() => c1.checked = settings[item1]);
+    settings.restoreCallbacks.push(() => c2.checked = settings[item2]);
+    c1.onclick = () => {
+        settings[item1] = c1.checked;
+        settings[item2] = false;
+        c2.checked = false;
+        saveToLocal();
+    }
+    c2.onclick = () => {
+        settings[item2] = c2.checked;
+        settings[item1] = false;
+        c1.checked = false;
+        saveToLocal();
+    }
+}
+function bindrange(id, item, feedback) {
+    const range = document.getElementById(id), indicator = document.getElementById(id + '-indicator');
+    range.onmousedown = () => {
+        indicator.hidden = false;
+    }
+    range.onmouseup = () => {
+        indicator.hidden = true;
+    };
+    range.oninput = () => {
+        const min = +range.min, val = +range.value;
+        indicator.style.left = ((val - min) / (+range.max - min) * (range.clientWidth - 20) + 13) + 'px';
+        indicator.innerText = feedback(val);
+    }
+    range.value = settings[item];
+    settings.restoreCallbacks.push(() => range.value = settings[item]);
+    range.oninput();
+    range.onchange = () => {
+        settings[item] = range.value;
+        saveToLocal();
+    }
+}
+function bindkeyselector(id, keynameitem, keycodeitem) {
+    const btn = document.getElementById(id);
+    function activate() {
+        function deactivate() {
+            btn.onclick = activate;
+            btn.classList.remove('using');
+            document.removeEventListener('keydown', listenkey);
+        }
+        function listenkey(e) {
+            settings[keycodeitem] = e.keyCode;
+            settings[keynameitem] = e.key.toUpperCase();
+            btn.value = settings[keynameitem];
+            saveToLocal();
+            deactivate();
+        }
+        btn.classList.add('using');
+        document.addEventListener('keydown', listenkey);
+        btn.onclick = deactivate;
+    }
+    btn.onclick = activate;
+    btn.value = settings[keynameitem];
+    settings.restoreCallbacks.push(() => btn.value = settings[keynameitem]);
+}
+
+bindrange('dim-range', 'dim', v => v + '%');
+bindrange('blur-range', 'blur', v => v + '%');
+bindrange('cursorsize-range', 'cursorsize', v => v.toFixed(2) + 'x');
+bindcheck('showhwmouse-check', 'showhwmouse');
+bindcheck('snakein-check', 'snakein');
+bindcheck('snakeout-check', 'snakeout');
+bindcheck('disable-wheel-check', 'disableWheel');
+bindcheck('disable-button-check', 'disableButton');
+bindkeyselector('lbutton1select', 'K1name', 'K1keycode');
+bindkeyselector('rbutton1select', 'K2name', 'K2keycode');
+bindrange('mastervolume-range', 'mastervolume', v => v + '%');
+bindrange('effectvolume-range', 'effectvolume', v => v + '%');
+bindrange('musicvolume-range', 'musicvolume', v => v + '%');
+bindrange("audiooffset-range", "audiooffset", v => v + 'ms');
+bindExclusiveCheck('easy-check', 'easy', 'hardrock-check', 'hardrock');
+bindExclusiveCheck('daycore-check', 'daycore', 'nightcore-check', 'nightcore');
+bindcheck('hidden-check', 'hidden');
+bindcheck('autoplay-check', 'autoplay');
+bindcheck('hidenumbers-check', 'hideNumbers');
+bindcheck('hidegreat-check', 'hideGreat');
+bindcheck('hidefollowpoints-check', 'hideFollow');
+
+document.getElementById('restoredefault-btn').onclick = () => {
+    Object.assign(settings, defaultsettings);
+    for (const c of settings.restoreCallbacks) c();
+    saveToLocal();
+}
+document.getElementById('deletemaps-btn').onclick = () => {
+    const names = JSON.parse(localStorage.getItem('beatmapfilelist'));
+    localStorage.removeItem('beatmapfilelist');
+    if (names) for (const name of names) localforage.removeItem(name);
+    location.reload();
+}

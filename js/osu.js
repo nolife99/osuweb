@@ -2,7 +2,7 @@ import OsuAudio from './osu-audio.js';
 import ArcPath from './curve/ArcPath.js';
 import LinearBezier from './curve/LinearBezier.js';
 
-const HIT_TYPE_CIRCLE = 1, HIT_TYPE_SLIDER = 2, HIT_TYPE_NEWCOMBO = 4, HIT_TYPE_SPINNER = 8;
+const typeCirc = 1, typeSlider = 2, typeNC = 4, typeSpin = 8, clamp = (num, min, max) => Math.min(Math.max(num, min), max);
 function stackHitObjects(track) {
     const AR = track.difficulty.ApproachRate, approachTime = AR < 5 ? 1800 - 120 * AR : 1950 - 150 * AR,
         stackDistance = Math.sqrt(12.5), stackThreshold = approachTime * track.general.StackLeniency;
@@ -159,7 +159,7 @@ class Track {
                         type: +parts[3],
                         hitSound: +parts[4]
                     };
-                    if ((hit.type & HIT_TYPE_NEWCOMBO) > 0 || forceNewCombo) {
+                    if ((hit.type & typeNC) > 0 || forceNewCombo) {
                         ++combo;
                         combo += (hit.type >> 4) & 7;
                         index = 0;
@@ -168,7 +168,7 @@ class Track {
                     hit.combo = combo;
                     hit.index = index++;
 
-                    if ((hit.type & HIT_TYPE_CIRCLE) > 0) {
+                    if ((hit.type & typeCirc) > 0) {
                         hit.type = 'circle';
                         const hitSample = (parts.length > 5 ? parts[5] : '0:0:0:0:').split(':');
                         hit.hitSample = {
@@ -179,7 +179,7 @@ class Track {
                             filename: hitSample[4]
                         };
                     }
-                    else if ((hit.type & HIT_TYPE_SLIDER) > 0) {
+                    else if ((hit.type & typeSlider) > 0) {
                         hit.type = 'slider';
                         const sliderKeys = parts[5].split('|');
                         hit.sliderType = sliderKeys[0];
@@ -223,8 +223,8 @@ class Track {
                             filename: hitSample[4]
                         };
                     }
-                    else if ((hit.type & HIT_TYPE_SPINNER) > 0) {
-                        if (hit.type & HIT_TYPE_NEWCOMBO) --combo;
+                    else if ((hit.type & typeSpin) > 0) {
+                        if (hit.type & typeNC) --combo;
                         hit.combo = combo - ((hit.type >> 4) & 7);
                         forceNewCombo = true;
                         hit.type = 'spinner';
@@ -282,7 +282,7 @@ class Track {
 
             if (hit.type === 'circle') hit.endTime = hit.time;
             else if (hit.type === 'slider') {
-                hit.sliderTime = (hit.timing.beatMs ? hit.timing.beatMs : hit.timing.inherited.beatMs) * (hit.pixelLength / this.difficulty.SliderMultiplier) / 100;
+                hit.sliderTime = (hit.timing.beatMs || hit.timing.inherited.beatMs) * (hit.pixelLength / this.difficulty.SliderMultiplier) / 100;
                 hit.sliderTimeTotal = hit.sliderTime * hit.repeat;
                 hit.endTime = hit.time + hit.sliderTimeTotal;
 
@@ -293,6 +293,7 @@ class Track {
         this.length = (this.hitObjects[this.hitObjects.length - 1].endTime - this.hitObjects[0].time) / 1000;
         stackHitObjects(this);
 
+        this.oldStar = (this.difficulty.HPDrainRate + this.difficulty.CircleSize + this.difficulty.OverallDifficulty + clamp(this.hitObjects.length / this.length * 8, 0, 16)) / 38 * 5;
         this.ondecoded(this);
     }
 }
@@ -306,12 +307,12 @@ export default class Osu {
         this.ondecoded = () => { };
     }
     load() {
-        this.raw_tracks = this.zip.children.filter(c => c.name.indexOf('.osu') === c.name.length - 4);
-        for (const t of this.raw_tracks) t.getText().then(text => {
-            const track = new Track(zip, text);
+        const rawTracks = this.zip.children.filter(c => c.name.indexOf('.osu') === c.name.length - 4);
+        for (const t of rawTracks) t.getText().then(text => {
+            const track = new Track(this.zip, text);
             this.tracks.push(track);
             track.ondecoded = () => {
-                if (++this.count === this.raw_tracks.length) this.ondecoded(this);
+                if (++this.count === rawTracks.length) this.ondecoded(this);
             };
             track.decode();
         });
@@ -321,23 +322,31 @@ export default class Osu {
             try {
                 const file = track.events[0][2];
                 if (track.events[0][0] === 'Video') file = track.events[1][2];
-                this.zip.getChildByName(file.slice(1, file.length - 1)).getBlob('image/jpeg').then(blob => img.src = URL.createObjectURL(blob));
-                break;
+
+                const entry = this.zip.getChildByName(file.slice(1, file.length - 1)), id = entry.id.toString();
+                entry.getData64URI().then(b => {
+                    img.src = b;
+                    if (!PIXI.Loader.shared.resources[id]) PIXI.Loader.shared.add({
+                        key: id,
+                        url: b,
+                        loadType: PIXI.LoaderResource.LOAD_TYPE.IMAGE
+                    });
+                }).catch(e => console.log("Couldn't cache background:", e.message));
+                return;
             }
-            catch (error) {
-                img.src = 'asset/skin/defaultbg.jpg';
-            }
+            catch { }
         }
+        img.src = 'asset/skin/defaultbg.jpg';
     }
     filterTracks() {
         this.tracks = this.tracks.filter(t => t.general.Mode !== 3);
     }
     sortTracks() {
-        this.tracks.sort((a, b) => a.difficulty.OverallDifficulty - b.difficulty.OverallDifficulty);
+        this.tracks = this.tracks.filter(t => t.general.Mode !== 3);
+        this.tracks.sort((a, b) => a.oldStar - b.oldStar);
     }
     load_mp3(tIndex) {
-        this.zip.getChildByName(this.tracks[tIndex].general.AudioFilename)
-            .getBlob('audio/mpeg').then(blob => blob.arrayBuffer().then(e => this.audio = new OsuAudio(e, () => this.onready())));
+        this.zip.getChildByName(this.tracks[tIndex].general.AudioFilename).getUint8Array().then((e => this.audio = new OsuAudio(e, this.onready)));
     }
     requestStar() {
         fetch('https://api.sayobot.cn/v2/beatmapinfo?0=' + this.tracks[0].metadata.BeatmapSetID).then(r => r.json()).then(e => {

@@ -1,3 +1,5 @@
+import { skin } from '../main.js'
+
 export default class LoadingMenu extends PIXI.Container {
     constructor(windowfield, track) {
         super();
@@ -6,15 +8,15 @@ export default class LoadingMenu extends PIXI.Container {
         this.alpha = 1;
         this.hidden = false;
 
-        this.bg = new PIXI.Sprite(window.skin['hpbarright.png']);
-        this.loading = new PIXI.Sprite(window.skin['dot.png']);
+        this.bg = new PIXI.Sprite(skin['hpbarright.png']);
+        this.loading = new PIXI.Sprite(skin['dot.png']);
         this.bg.rotation = Math.PI / 2;
         this.bg.anchor.set(.5);
         this.bg.scale.set(.6, 500);
         this.bg.alpha = .8;
         this.loading.anchor.set(.5, .3);
         this.loading.scale.set(1, .6);
-        
+
         this.addChild(this.bg);
         this.addChild(this.loading);
 

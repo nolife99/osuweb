@@ -24,8 +24,10 @@ function newTexture(colors, SliderTrackOverride, SliderBorder) {
             borderR = bordertint >> 16, borderG = (bordertint >> 8) & 255, borderB = bordertint & 255, borderA = 1,
             innerR = tint >> 16, innerG = (tint >> 8) & 255, innerB = tint & 255, innerA = 1;
 
-        for (let i = 0; i < width; i++) {
-            let position = i / width, R, G, B, A;
+        for (let i = 0; i < width; ++i) {
+            const position = i / width; 
+            let R, G, B, A;
+            
             if (position >= innerPortion) {
                 R = borderR;
                 G = borderG;
@@ -91,8 +93,8 @@ function curveGeometry(curve, length, radius) {
         index.push(n - 6, n - 4, n - 1, n - 4, n - 1, n - 2);
     }
     function addArc(c, p1, p2, t) {
-        let theta_1 = Math.atan2(vert[4 * p1 + 1] - vert[4 * c + 1], vert[4 * p1] - vert[4 * c]),
-            theta_2 = Math.atan2(vert[4 * p2 + 1] - vert[4 * c + 1], vert[4 * p2] - vert[4 * c]);
+        const theta_1 = Math.atan2(vert[4 * p1 + 1] - vert[4 * c + 1], vert[4 * p1] - vert[4 * c]);
+        let theta_2 = Math.atan2(vert[4 * p2 + 1] - vert[4 * c + 1], vert[4 * p2] - vert[4 * c]);
         if (theta_1 > theta_2) theta_2 += twoPi;
         let theta = theta_2 - theta_1, divs = Math.ceil(DIVIDES * Math.abs(theta) / twoPi);
         theta /= divs;
@@ -100,7 +102,7 @@ function curveGeometry(curve, length, radius) {
         let last = p1;
         for (let i = 1; i < divs; ++i) {
             vert.push(vert[4 * c] + radius * Math.cos(theta_1 + i * theta), vert[4 * c + 1] + radius * Math.sin(theta_1 + i * theta), t, 1);
-            let newv = vert.length / 4 - 1;
+            const newv = vert.length / 4 - 1;
             index.push(c, last, newv);
             last = newv;
         }
@@ -166,7 +168,7 @@ export default class SliderMesh extends PIXI.Container {
         function bind(geometry) {
             renderer.shader.bind(shader);
             renderer.geometry.bind(geometry, shader);
-            let byteSize = geometry.indexBuffer.data.BYTES_PER_ELEMENT;
+            const byteSize = geometry.indexBuffer.data.BYTES_PER_ELEMENT;
             glType = byteSize === 2 ? gl.UNSIGNED_SHORT : gl.UNSIGNED_INT;
             indexLength = geometry.indexBuffer.data.length;
         }
@@ -185,7 +187,7 @@ export default class SliderMesh extends PIXI.Container {
             }
             this.uniforms.dt = 0;
             this.uniforms.ot = 1;
-            let p = this.curve.pointAt(this.startt);
+            const p = this.curve.pointAt(this.startt);
             this.uniforms.ox += p.x * this.uniforms.dx;
             this.uniforms.oy += p.y * this.uniforms.dy;
 
@@ -201,7 +203,7 @@ export default class SliderMesh extends PIXI.Container {
             }
             this.uniforms.dt = 0;
             this.uniforms.ot = 1;
-            let p = this.curve.pointAt(this.endt);
+            const p = this.curve.pointAt(this.endt);
             this.uniforms.ox += p.x * this.uniforms.dx;
             this.uniforms.oy += p.y * this.uniforms.dy;
 

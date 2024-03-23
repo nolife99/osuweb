@@ -4,7 +4,13 @@ function timeformat(ms) {
         prefix = '-';
         s = -s;
     }
-    return prefix + Math.floor(s / 60) + ':' + (s % 60).toFixed(0).padStart(2, '0');
+
+    let m = Math.floor(s / 60);
+    if (m >= 60) {
+        prefix += Math.floor(m / 60) + ':';
+        m %= 60;
+    }
+    return prefix + m + ':' + (s % 60).toFixed(0).padStart(2, '0');
 }
 export default class ProgressOverlay extends PIXI.Container {
     constructor(windowfield, starttime, endtime) {
@@ -13,12 +19,12 @@ export default class ProgressOverlay extends PIXI.Container {
         this.starttime = starttime;
         this.endtime = endtime;
 
-        const font =  {
+        const font = {
             fontFamily: 'Venera', fontSize: 16, fill: 0xddffff
         };
-        this.remaining = new PIXI.Text('', font);
+        this.remaining = new PIXI.Text(null, font);
         this.remaining.anchor.set(1);
-        this.past = new PIXI.Text('', font);
+        this.past = new PIXI.Text(null, font);
         this.past.anchor.set(0, 1);
         this.addChild(this.remaining);
         this.addChild(this.past);

@@ -1,3 +1,5 @@
+import { game, skin } from '../main.js';
+
 const charSpacing = 10;
 class LazyNumber {
     constructor(value) {
@@ -43,12 +45,12 @@ function errortext(a) {
 }
 function modstext() {
     let l = '+';
-    if (window.game.easy) l += 'EZ';
-    if (window.game.daycore) l += 'DC';
-    if (window.game.hidden) l += 'HD';
-    if (window.game.hardrock) l += 'HR';
-    if (window.game.nightcore) l += 'NC';
-    if (window.game.autoplay) l += 'AT';
+    if (game.easy) l += 'EZ';
+    if (game.daycore) l += 'DC';
+    if (game.hidden) l += 'HD';
+    if (game.hardrock) l += 'HR';
+    if (game.nightcore) l += 'NC';
+    if (game.autoplay) l += 'AT';
     if (l === '+') return '';
     return l;
 }
@@ -66,7 +68,7 @@ function setSpriteArrayText(arr, str) {
     arr.width = 0;
     for (let i = 0; i < str.length; ++i) {
         const digit = arr[i], ch = str[i];
-        digit.texture = window.skin['score-' + (ch === '%' ? 'percent' : ch) + '.png'];
+        digit.texture = skin['score-' + (ch === '%' ? 'percent' : ch) + '.png'];
         digit.knownwidth = digit.scale.x * (digit.texture.width + charSpacing);
         digit.visible = true;
         arr.width += digit.knownwidth;
@@ -111,9 +113,9 @@ export default class ScoreOverlay extends PIXI.Container {
         this.accuracyDigits = this.newSpriteArray(7, .2, 0xddffff);
 
         this.HPbar = this.newSpriteArray(3, .5);
-        this.HPbar[0].texture = window.skin['hpbarleft.png'];
-        this.HPbar[1].texture = window.skin['hpbarright.png'];
-        this.HPbar[2].texture = window.skin['hpbarmid.png'];
+        this.HPbar[0].texture = skin['hpbarleft.png'];
+        this.HPbar[1].texture = skin['hpbarright.png'];
+        this.HPbar[2].texture = skin['hpbarmid.png'];
         this.HPbar[0].anchor.x = 1;
         this.HPbar[0].scale.x = this.field.width / 500;
         this.HPbar[1].scale.x = this.field.width / 500;
@@ -156,7 +158,7 @@ export default class ScoreOverlay extends PIXI.Container {
             case 50: return .01 * (4 - this.HPdrain);
             case 100: return .01 * (8 - this.HPdrain);
             case 300: return .01 * (10.2 - this.HPdrain);
-            default: return 0;
+            default: return .005 * (10.2 - this.HPdrain);
         }
     }
     hit(result, maxresult, time) {
@@ -178,8 +180,8 @@ export default class ScoreOverlay extends PIXI.Container {
         ++this.fullcombo;
 
         if (result === 0 && oldCombo > 20) {
-            window.game.sampleComboBreak.volume = window.game.masterVolume * window.game.effectVolume;
-            window.game.sampleComboBreak.play();
+            game.sampleComboBreak.volume = game.masterVolume * game.effectVolume;
+            game.sampleComboBreak.play();
         }
 
         this.score4display.set(time, this.score);

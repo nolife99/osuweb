@@ -123,7 +123,7 @@ canvas {
     background: #333;
     border-radius: 5px;
     box-shadow: 0 2px 3px 0 rgba(0, 0, 0, .1);
-    margin: 20px auto;
+    margin-top: 20px;
     padding: 20px 20px 20px;
     width: 370px;
     height: 100%;
@@ -194,19 +194,19 @@ canvas {
 }
 
 .beatmaptitle {
-    padding-top: 142px;
-    padding-left: 13px;
+    padding-top: 140px;
+    padding-left: 10px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
 .beatmapauthor {
-    padding-left: 13px;
+    padding-left: 10px;
     float: left;
     color: #888;
     font-size: 14px;
-    padding-top: 5px;
+    padding-top: 3px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -214,11 +214,11 @@ canvas {
 }
 
 .beatmaplength {
-    padding-right: 13px;
+    padding-right: 10px;
     float: right;
     color: #888;
     font-size: 14px;
-    padding-top: 5px;
+    padding-top: 3px;
 }
 
 table {
@@ -244,6 +244,7 @@ td:nth-child(2) {
 
 input {
     cursor: pointer;
+    border: none;
 }
 
 input:focus {
@@ -343,11 +344,8 @@ input[type=checkbox]:checked+span::after {
 }
 
 input[type=range] {
-    cursor: pointer;
     height: 1em;
-    background: none;
-    padding-left: 0;
-    padding-right: 0;
+    padding: 0;
 }
 
 input[type=range]:focus {

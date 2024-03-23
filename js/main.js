@@ -1,9 +1,10 @@
-import Osu from './osu.js';
-import { sounds } from './lib/sound.js';
+import { sounds } from './osu-audio.js';
+import { settings } from './settings.js';
 import Playback from './playback.js';
+import Osu from './osu.js';
+import { fs } from "https://unpkg.com/@zip.js/zip.js/index.js";
 
-const game = {
-    window: window,
+export const game = {
     backgroundDimRate: .7,
     backgroundBlurRate: 0,
     cursorSize: 1,
@@ -27,6 +28,7 @@ const game = {
     hideNumbers: false,
     hideGreat: false,
     hideFollow: false,
+    mouse: null,
     mouseX: 0,
     mouseY: 0,
     K1down: false,
@@ -37,12 +39,49 @@ const game = {
     finished: false,
     sample: [{}, {}, {}, {}],
     sampleSet: 1
-}, progresses = document.getElementsByClassName('progress');
-window.game = game;
+}, progresses = document.getElementsByClassName('progress'), pDragbox = document.getElementsByClassName('dragbox')[0],
+    pDragboxInner = document.getElementsByClassName('dragbox-inner')[0],
+    pDragboxHint = document.getElementsByClassName('dragbox-hint')[0],
+    pBeatmapList = document.getElementsByClassName('beatmap-list')[0];
 
-PIXI.Loader.shared.add('asset/skin/sprites.json').load((_loader, resources) => {
+const beatmapFileList = JSON.parse(localStorage.getItem('beatmapfilelist')) ?? [];
+if (beatmapFileList.length > 0) {
+    console.log('Local beatmaps:', beatmapFileList);
+    const counter = progresses[3].childNodes;
+    counter[3].innerText = beatmapFileList.length;
+
+    const tempbox = new Array(beatmapFileList.length);
+    for (let i = 0; i < beatmapFileList.length; ++i) {
+        const box = document.createElement('div');
+        box.className = 'beatmapbox';
+        pBeatmapList.insertBefore(box, pDragbox);
+        tempbox[i] = box;
+    }
+    const loadingCounter = counter[1];
+
+    let loadedCount = 0;
+    for (let i = 0; i < beatmapFileList.length; ++i) localforage.getItem(beatmapFileList[i]).then(blob => {
+        const zipFs = new fs.FS;
+        zipFs.name = beatmapFileList[i];
+        zipFs.importUint8Array(blob).then(() => {
+            addbeatmap(zipFs, box => {
+                pBeatmapList.replaceChild(box, tempbox[i]);
+                pDragboxHint.innerText = defaultHint;
+            });
+            loadingCounter.innerText = ++loadedCount;
+        }).catch(e => {
+            console.warn('Error importing beatmap:', beatmapFileList[i], e);
+            pDragboxHint.innerText = nonValidHint;
+        });
+    }).catch(err => console.warn('Error getting beatmap:', beatmapFileList[i], err));
+}
+
+export let skin;
+const sheetUrl = 'asset/skin/sprites.json';
+
+PIXI.Loader.shared.add(sheetUrl).load((_, resources) => {
     progresses[1].classList.add('finished');
-    window.skin = resources['asset/skin/sprites.json'].textures;
+    skin = resources[sheetUrl].textures;
 });
 
 const sample = [
@@ -63,7 +102,7 @@ const sample = [
     'asset/hitsound/drum-slidertick.ogg',
     'asset/hitsound/combobreak.ogg'
 ];
-sounds.whenLoaded = () => {
+sounds.load(sample, () => {
     game.sample[1].hitnormal = sounds[sample[0]];
     game.sample[1].hitwhistle = sounds[sample[1]];
     game.sample[1].hitfinish = sounds[sample[2]];
@@ -81,17 +120,19 @@ sounds.whenLoaded = () => {
     game.sample[3].slidertick = sounds[sample[14]];
     game.sampleComboBreak = sounds[sample[15]];
     progresses[2].classList.add('finished');
-};
-sounds.load(sample);
+});
+
+export let app, stopGame;
+let showingDifficultyBox, frameID;
 
 class BeatmapController {
     constructor(osz) {
         this.osu = new Osu(osz.root);
-        this.filename = osz.filename;
+        this.filename = osz.name;
     }
     startGame(trackid) {
-        if (window.app) return;
-        const app = window.app = new PIXI.Application({
+        if (app) return;
+        app = new PIXI.Application({
             width: window.innerWidth,
             height: window.innerHeight,
             resolution: window.devicePixelRatio || 1,
@@ -107,11 +148,11 @@ class BeatmapController {
         });
         document.body.classList.add('gaming');
 
-        window.gamesettings.loadToGame();
+        settings.loadToGame(game);
         if (!game.showhwmouse || game.autoplay) {
-            game.cursor = new PIXI.Sprite(window.skin['cursor.png']);
-            game.cursor.anchor.x = game.cursor.anchor.y = .5;
-            game.cursor.scale.x = game.cursor.scale.y = .3 * game.cursorSize;
+            var cursor = new PIXI.Sprite(skin['cursor.png']);
+            cursor.anchor.x = cursor.anchor.y = .5;
+            cursor.scale.x = cursor.scale.y = .3 * game.cursorSize;
         }
 
         const pGameArea = document.getElementsByClassName('game-area')[0], pMainPage = document.getElementsByClassName('main-page')[0];
@@ -132,51 +173,43 @@ class BeatmapController {
         pMainPage.hidden = true;
         pGameArea.hidden = false;
 
-        window.quitGame = () => {
-            pGameArea.hidden = true;
-            pMainPage.hidden = false;
-            document.body.classList.remove('gaming');
-            document.body.scrollTop = scrollTop;
-            window.alert = defaultAlert;
-
-            if (game.cursor) {
-                app.stage.removeChild(game.cursor);
-                game.cursor.destroy();
-                game.cursor = null;
-            }
-            app.destroy(true, {
-                children: true, texture: false
-            });
-
-            window.app = null;
-            window.cancelAnimationFrame(window.frameID);
-        };
-
         this.osu.load_mp3(trackid);
         let playback = new Playback(this.osu, this.osu.tracks[trackid]);
 
-        window.restartGame = () => {
-            window.cancelAnimationFrame(window.frameID);
+        stopGame = restart => {
+            if (!restart) {
+                pGameArea.hidden = true;
+                pMainPage.hidden = false;
+                document.body.classList.remove('gaming');
+                document.body.scrollTop = scrollTop;
+                window.alert = defaultAlert;
+
+                app.ticker.stop();
+                app.destroy(true, {
+                    children: true, texture: false
+                });
+                app = null;
+                return;
+            }
+
+            app.ticker.stop();
             playback = new Playback(this.osu, this.osu.tracks[trackid]);
             this.osu.onready();
-            window.requestAnimationFrame(gameLoop);
+            app.ticker.start();
         };
-
-        function gameLoop(t) {
-            if (game.cursor) {
-                game.cursor.x = game.mouseX / 512 * gfx.width + gfx.xoffset;
-                game.cursor.y = game.mouseY / 384 * gfx.height + gfx.yoffset;
-                app.stage.addChild(game.cursor);
+        const gameLoop = t => {
+            playback.render(t, app.ticker.lastTime);
+            if (cursor) {
+                cursor.x = game.mouseX / 512 * playback.gfx.width + playback.gfx.xoffset;
+                cursor.y = game.mouseY / 384 * playback.gfx.height + playback.gfx.yoffset;
+                app.stage.addChild(cursor);
             }
-            playback.render(t);
             app.renderer.render(app.stage);
-            window.frameID = window.requestAnimationFrame(gameLoop);
         }
-        window.requestAnimationFrame(gameLoop);
+        app.ticker.add(gameLoop).start();
     }
     createBeatmapBox() {
-        const map = this,
-            pBeatmapBox = document.createElement('div'), pBeatmapCover = document.createElement('img'),
+        const pBeatmapBox = document.createElement('div'), pBeatmapCover = document.createElement('img'),
             pBeatmapTitle = document.createElement('div'), pBeatmapAuthor = document.createElement('div');
 
         pBeatmapBox.className = 'beatmapbox';
@@ -187,40 +220,45 @@ class BeatmapController {
         pBeatmapBox.appendChild(pBeatmapTitle);
         pBeatmapBox.appendChild(pBeatmapAuthor);
 
-        pBeatmapTitle.innerText = map.osu.tracks[0].metadata.Title;
-        pBeatmapAuthor.innerText = map.osu.tracks[0].metadata.Artist + '/' + map.osu.tracks[0].metadata.Creator;
-        map.osu.getCoverSrc(pBeatmapCover);
+        pBeatmapTitle.innerText = this.osu.tracks[0].metadata.Title;
+        pBeatmapAuthor.innerText = this.osu.tracks[0].metadata.Artist + '/' + this.osu.tracks[0].metadata.Creator;
+        this.osu.getCoverSrc(pBeatmapCover);
 
-        if (map.osu.tracks[0].length) {
+        const first = this.osu.tracks[0].length;
+        if (first) {
             const pBeatmapLength = document.createElement('div');
             pBeatmapLength.className = 'beatmaplength';
             pBeatmapBox.appendChild(pBeatmapLength);
-            const length = map.osu.tracks[0].length;
-            pBeatmapLength.innerText = Math.floor(length / 60) + ':' + (length % 60 < 10 ? '0' : '') + Math.round(length % 60);
+
+            let mins = Math.floor(first / 60);
+            if (mins >= 60) {
+                pBeatmapLength.innerText = Math.floor(mins / 60) + ':';
+                mins %= 60;
+            }
+            pBeatmapLength.innerText += mins + ':' + (first % 60 < 10 ? '0' : '') + (first % 60).toFixed(0);
         }
-        pBeatmapBox.onclick = function (e) {
-            if (!window.showingDifficultyBox) {
+        pBeatmapBox.onclick = e => {
+            if (!showingDifficultyBox) {
                 e.stopPropagation();
-                const difficultyBox = document.createElement('div');
-                function closeDifficultyMenu() {
+                const difficultyBox = document.createElement('div'), closeDifficultyMenu = () => {
                     pBeatmapBox.removeChild(difficultyBox);
-                    window.showingDifficultyBox = false;
+                    showingDifficultyBox = false;
                     window.removeEventListener('click', closeDifficultyMenu, false);
                 }
                 difficultyBox.className = 'difficulty-box';
 
-                const rect = this.getBoundingClientRect();
+                const rect = pBeatmapBox.getBoundingClientRect();
                 difficultyBox.style.left = e.clientX - rect.left + 'px';
                 difficultyBox.style.top = e.clientY - rect.top + 'px';
 
-                for (let i = 0; i < map.osu.tracks.length; ++i) {
+                for (let i = 0; i < this.osu.tracks.length; ++i) {
                     const difficultyItem = document.createElement('div'),
                         difficultyRing = document.createElement('div'),
                         difficultyText = document.createElement('span');
                     difficultyItem.className = 'difficulty-item';
                     difficultyRing.className = 'difficulty-ring';
 
-                    const star = map.osu.tracks[i].difficulty.star;
+                    const star = this.osu.tracks[i].difficulty.star;
                     if (star) {
                         if (star < 2) difficultyRing.classList.add('easy');
                         else if (star < 2.7) difficultyRing.classList.add('normal');
@@ -230,30 +268,25 @@ class BeatmapController {
                         else difficultyRing.classList.add('expert-plus');
                     }
 
-                    difficultyText.innerText = map.osu.tracks[i].metadata.Version;
+                    difficultyText.innerText = this.osu.tracks[i].metadata.Version;
                     difficultyItem.appendChild(difficultyRing);
                     difficultyItem.appendChild(difficultyText);
                     difficultyBox.appendChild(difficultyItem);
                     difficultyItem.onclick = e => {
                         e.stopPropagation();
                         closeDifficultyMenu();
-                        map.startGame(i);
+                        this.startGame(i);
                     };
                 }
                 pBeatmapBox.appendChild(difficultyBox);
 
-                window.showingDifficultyBox = true;
+                showingDifficultyBox = true;
                 window.addEventListener('click', closeDifficultyMenu, false);
             }
         };
         return pBeatmapBox;
     }
 }
-
-const pDragbox = document.getElementsByClassName('dragbox')[0],
-    pDragboxInner = document.getElementsByClassName('dragbox-inner')[0],
-    pDragboxHint = document.getElementsByClassName('dragbox-hint')[0],
-    pBeatmapList = document.getElementsByClassName('beatmap-list')[0];
 
 const defaultHint = 'Drag and drop a beatmap (.osz) file here',
     modeErrHint = 'Only supports osu! (std) mode beatmaps. Drop another file.',
@@ -262,47 +295,14 @@ const defaultHint = 'Drag and drop a beatmap (.osz) file here',
     nonOszHint = 'Not an osz file. Drop another file.',
     loadingHint = 'Loading...';
 
-let beatmapFileList = [];
-localforage.getItem('beatmapfilelist').then(names => {
-    console.log('Local beatmaps:', names);
-    const counter = progresses[3].childNodes;
-    counter[3].innerText = names.length;
-
-    const tempbox = new Array(names.length);
-    for (let i = 0; i < names.length; ++i) {
-        const box = document.createElement('div');
-        box.className = 'beatmapbox';
-        pBeatmapList.insertBefore(box, pDragbox);
-        tempbox[i] = box;
-    }
-    const loadingCounter = counter[1];
-
-    beatmapFileList = names;
-    let loadedCount = 0;
-    for (let i = 0; i < names.length; ++i) localforage.getItem(names[i]).then(blob => {
-        const fs = new zip.fs.FS;
-        fs.filename = names[i];
-        fs.importBlob(blob).then(() => {
-            addbeatmap(fs, box => {
-                pBeatmapList.replaceChild(box, tempbox[i]);
-                pDragboxHint.innerText = defaultHint;
-            });
-            loadingCounter.innerText = ++loadedCount;
-        }).catch(e => {
-            console.warn('Error importing beatmap:', names[i], e);
-            pDragboxHint.innerText = nonValidHint;
-        });
-    }).catch(err => console.warn('Error getting beatmap:', names[i], err));
-}).catch(err => console.warn('Error searching beatmaps:', err));
-
 function addbeatmap(osz, f) {
-    const map = new BeatmapController(osz);
-    map.osu.ondecoded = () => {
-        map.osu.requestStar();
-        map.osu.filterTracks();
-        map.osu.sortTracks();
+    const map = new BeatmapController(osz), osu = map.osu;
+    osu.ondecoded = () => {
+        osu.requestStar();
+        osu.filterTracks();
+        osu.sortTracks();
 
-        if (!map.osu.tracks.some(t => t.general.Mode !== 3)) {
+        if (!osu.tracks.some(t => t.general.Mode !== 3)) {
             pDragboxHint.innerText = modeErrHint;
             return;
         }
@@ -310,32 +310,34 @@ function addbeatmap(osz, f) {
 
         if (!beatmapFileList.includes(map.filename)) {
             beatmapFileList.push(map.filename);
-            localforage.setItem('beatmapfilelist', beatmapFileList).catch(e => console.warn('Error saving beatmaps:', e));
+            localStorage.setItem('beatmapfilelist', JSON.stringify(beatmapFileList));
         }
     };
-    map.osu.onerror = e => console.warn('Error loading .osu:', e);
-    map.osu.load();
+    osu.onerror = e => console.warn('Error loading .osu:', e);
+    osu.load();
 }
 function handleDragDrop(e) {
     e.stopPropagation();
     e.preventDefault();
 
     pDragboxHint.innerText = loadingHint;
-    for (const raw_file of e.dataTransfer.files) {
-        if (!raw_file) {
+    for (const blob of e.dataTransfer.files) {
+        if (!blob) {
             pDragboxHint.innerText = noTransferHint;
             return;
         }
-        if (raw_file.name.indexOf('.osz') === raw_file.name.length - 4) {
-            const fs = new zip.fs.FS;
-            fs.filename = raw_file.name;
-            localforage.setItem(raw_file.name, raw_file).catch(err => console.warn('Error saving beatmap:', fs.filename, err));
+        if (blob.name.indexOf('.osz') === blob.name.length - 4) {
+            const zipFs = new fs.FS;
+            zipFs.name = blob.name;
 
-            fs.importBlob(raw_file).then(() => addbeatmap(fs, box => {
-                pBeatmapList.insertBefore(box, pDragbox);
-                pDragboxHint.innerText = defaultHint;
-            })).catch(ex => {
-                console.warn('Error during file transfer:', fs.filename, ex);
+            zipFs.importBlob(blob).then(() => {
+                addbeatmap(zipFs, box => {
+                    pBeatmapList.insertBefore(box, pDragbox);
+                    pDragboxHint.innerText = defaultHint;
+                });
+                localforage.setItem(blob.name, zipFs.exportUint8Array()).catch(err => console.warn('Error saving beatmap:', zipFs.name, err));
+            }).catch(ex => {
+                console.warn('Error during file transfer:', zipFs.name, ex);
                 pDragboxHint.innerText = nonValidHint;
             });
         }

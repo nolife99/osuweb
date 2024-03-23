@@ -1,3 +1,5 @@
+const volumeRange = document.getElementById('mastervolume-range');
+
 export default class VolumeMenu extends PIXI.Container {
     constructor(windowfield) {
         super();
@@ -12,7 +14,7 @@ export default class VolumeMenu extends PIXI.Container {
         });
         this.mastertext.anchor.set(.5);
 
-        this.volumetext = new PIXI.Text('', {
+        this.volumetext = new PIXI.Text(null, {
             fontFamily: 'Venera', fontSize: 40, fill: 0xffffff
         });
         this.volumetext.anchor.set(.5);
@@ -31,6 +33,10 @@ export default class VolumeMenu extends PIXI.Container {
     setVolume(volume) {
         this.changed = true;
         this.volumetext.text = volume.toFixed(0);
+
+        volumeRange.value = volume;
+        volumeRange.onchange();
+        volumeRange.oninput();
     }
     update(timestamp) {
         if (this.changed) {

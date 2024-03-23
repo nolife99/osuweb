@@ -35,7 +35,7 @@ function BSplineToPiecewiseLinear(points, degree) {
 
     const output = [], pointCount = points.length - 1, toFlatten = bSplineToBezierInternal(points, degree), freeBuffers = [],
         subdivisionBuffer1 = new Array(degree + 1), subdivisionBuffer2 = new Array(degree * 2 + 1), leftChild = subdivisionBuffer2;
-    
+
     while (toFlatten.length > 0) {
         const parent = toFlatten.pop();
         if (bezierIsFlatEnough(parent)) {
@@ -54,7 +54,7 @@ function BSplineToPiecewiseLinear(points, degree) {
     return output;
 }
 function bSplineToBezierInternal(controlPoints, degree) {
-    const result = [], pointCount = controlPoints.length - 1, points = controlPoints.map(h => Object.assign({}, h));
+    const result = [], pointCount = controlPoints.length - 1, points = controlPoints.map(a => ({...a}));
     if (degree === pointCount) result.push(points);
     else {
         for (let i = 0; i < pointCount - degree; ++i) {
