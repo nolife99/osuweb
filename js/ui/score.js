@@ -8,7 +8,7 @@ class LazyNumber {
         this.lasttime = -1000000;
     }
     update(time) {
-        this.value += (this.target - this.value) * (1 - Math.exp((this.lasttime - time) / 200));
+        this.value += (this.target - this.value) * (1 - Math.exp((this.lasttime - time) / 150));
         this.lasttime = time;
     }
     set(time, value) {
@@ -41,18 +41,18 @@ function errortext(a) {
     }
     let sgnavg = avg.toFixed(0);
     if (sgnavg[0] !== '-') sgnavg = '+' + sgnavg;
-    return sgnavg + '±' + Math.sqrt(sumsqerr / a.length).toFixed(0) + 'ms';
+    return sgnavg.concat('±', Math.sqrt(sumsqerr / a.length).toFixed(0), 'ms');
 }
 function modstext() {
-    let l = '+';
-    if (game.easy) l += 'EZ';
-    if (game.daycore) l += 'DC';
-    if (game.hidden) l += 'HD';
-    if (game.hardrock) l += 'HR';
-    if (game.nightcore) l += 'NC';
-    if (game.autoplay) l += 'AT';
-    if (l === '+') return '';
-    return l;
+    const l = '+', arr = [];
+    if (game.easy) arr.push('EZ');
+    if (game.daycore) arr.push('DC');
+    if (game.hidden) arr.push('HD');
+    if (game.hardrock) arr.push('HR');
+    if (game.nightcore) arr.push('NC');
+    if (game.autoplay) arr.push('AT');
+    if (arr.length === 0) return '';
+    return l.concat(...arr);
 }
 function newdiv(parent, classname, text) {
     const div = document.createElement('div');
@@ -68,7 +68,7 @@ function setSpriteArrayText(arr, str) {
     arr.width = 0;
     for (let i = 0; i < str.length; ++i) {
         const digit = arr[i], ch = str[i];
-        digit.texture = skin['score-' + (ch === '%' ? 'percent' : ch) + '.png'];
+        digit.texture = skin['score-'.concat(ch === '%' ? 'percent' : ch, '.png')];
         digit.knownwidth = digit.scale.x * (digit.texture.width + charSpacing);
         digit.visible = true;
         arr.width += digit.knownwidth;
@@ -117,11 +117,8 @@ export default class ScoreOverlay extends PIXI.Container {
         this.HPbar[1].texture = skin['hpbarright.png'];
         this.HPbar[2].texture = skin['hpbarmid.png'];
         this.HPbar[0].anchor.x = 1;
-        this.HPbar[0].scale.x = this.field.width / 500;
-        this.HPbar[1].scale.x = this.field.width / 500;
-        this.HPbar[0].y = -7 * this.scaleMul;
-        this.HPbar[1].y = -7 * this.scaleMul;
-        this.HPbar[2].y = -7 * this.scaleMul;
+        this.HPbar[0].scale.x = this.HPbar[1].scale.x = this.field.width / 500;
+        this.HPbar[0].y = this.HPbar[1].y = this.HPbar[2].y = -7 * this.scaleMul;
     }
     newSpriteArray(len, scaleMul, tint = 0xffffff) {
         const a = new Array(len);
@@ -133,7 +130,7 @@ export default class ScoreOverlay extends PIXI.Container {
             s.alpha = 1;
             s.tint = tint;
             a[i] = s;
-            this.addChild(s);
+            super.addChild(s);
         }
         return a;
     }
@@ -152,7 +149,11 @@ export default class ScoreOverlay extends PIXI.Container {
         this.HPbar[1].y = -7 * this.scaleMul;
         this.HPbar[2].y = -7 * this.scaleMul;
     }
-    HPincreasefor(result) {
+    HPincreasefor(result, isTick) {
+        if (isTick) {
+            if (result === 0) return -.005 * this.HPdrain;
+            else return .005 * (10.2 - this.HPdrain);
+        }
         switch (result) {
             case 0: return -.02 * this.HPdrain;
             case 50: return .01 * (4 - this.HPdrain);
@@ -162,7 +163,8 @@ export default class ScoreOverlay extends PIXI.Container {
         }
     }
     hit(result, maxresult, time) {
-        if (maxresult === 300) {
+        const isTick = maxresult !== 300;
+        if (!isTick) {
             if (result === 300) ++this.judgecnt.great;
             else if (result === 100) ++this.judgecnt.good;
             else if (result === 50) ++this.judgecnt.meh;
@@ -172,7 +174,7 @@ export default class ScoreOverlay extends PIXI.Container {
         this.judgeTotal += result;
         this.maxJudgeTotal += maxresult;
         this.score += result * (maxresult === 300 ? 1 + this.combo * this.scoreMultiplier / 25 : 1);
-        this.HP = Math.min(1, Math.max(0, this.HP + this.HPincreasefor(result)));
+        this.HP = Math.min(1, Math.max(0, this.HP + this.HPincreasefor(result, isTick)));
 
         const oldCombo = this.combo;
         this.combo = result > 0 ? this.combo + 1 : 0;
@@ -227,7 +229,7 @@ export default class ScoreOverlay extends PIXI.Container {
         newdiv(left, 'block meh', this.judgecnt.meh.toString());
         newdiv(left, 'block miss', this.judgecnt.miss.toString());
         newdiv(left, 'block placeholder');
-        newdiv(left, 'block combo', this.maxcombo.toString() + '/' + this.fullcombo.toString() + 'x');
+        newdiv(left, 'block combo', this.maxcombo.toString().concat('/', this.fullcombo.toString(), 'x'));
 
         const b1 = newdiv(grading, 'btn retry'), b2 = newdiv(grading, 'btn quit');
         newdiv(b1, 'inner', 'Retry');
@@ -242,5 +244,8 @@ export default class ScoreOverlay extends PIXI.Container {
             playback.quit();
         };
         window.setTimeout(() => grading.classList.remove('transparent'), 100);
+    }
+    destroy(opt) {
+        super.destroy(opt);
     }
 }

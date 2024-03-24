@@ -5,7 +5,7 @@ import LinearBezier from './curve/LinearBezier.js';
 const typeCirc = 1, typeSlider = 2, typeNC = 4, typeSpin = 8, clamp = (num, min, max) => Math.min(Math.max(num, min), max);
 function stackHitObjects(track) {
     const AR = track.difficulty.ApproachRate, approachTime = AR < 5 ? 1800 - 120 * AR : 1950 - 150 * AR,
-        stackDistance = Math.sqrt(12.5), stackThreshold = approachTime * track.general.StackLeniency;
+        stackThreshold = approachTime * track.general.StackLeniency;
 
     function getintv(A, B) {
         let endTime = A.time;
@@ -14,10 +14,10 @@ function stackHitObjects(track) {
     }
     function getdist(A, B) {
         let x = A.x, y = A.y;
-        if (A.type == "slider" && A.repeat % 2 == 1) {
+        if (A.type === 'slider' && A.repeat % 2 === 1) {
             const pt = A.curve.pointAt(1);
-            x = pt.x;
-            y = pt.y;
+            x = Math.round(pt.x);
+            y = Math.round(pt.y);
         }
         return Math.hypot(x - B.x, y - B.y);
     }
@@ -35,7 +35,7 @@ function stackHitObjects(track) {
         for (let j = i + 1; j < track.hitObjects.length; ++j) {
             const hitJ = track.hitObjects[j];
             if (hitJ.type === 'spinner' || getintv(newchain[newchain.length - 1], hitJ) > stackThreshold) break;
-            if (getdist(newchain[newchain.length - 1], hitJ) <= stackDistance) {
+            if (getdist(newchain[newchain.length - 1], hitJ) < 2) {
                 if (stacked[j]) break;
                 stacked[j] = true;
                 newchain.push(hitJ);
@@ -102,13 +102,13 @@ class Track {
             let key, value, parts;
             switch (section) {
                 case '[General]':
-                    key = line.slice(0, line.indexOf(':')), value = line.slice(line.indexOf(':') + 1).trim();
-                    if (isNaN(value)) this.general[key] = value;
+                    key = line.slice(0, line.indexOf(':')), value = line.slice(line.indexOf(':') + 1);
+                    if (isNaN(value)) this.general[key] = value.trim();
                     else this.general[key] = +value;
                     break;
 
                 case '[Metadata]':
-                    key = line.slice(0, line.indexOf(':')), value = line.slice(line.indexOf(':') + 1).trim();
+                    key = line.slice(0, line.indexOf(':')), value = line.slice(line.indexOf(':') + 1);
                     this.metadata[key] = value;
                     break;
 
@@ -122,7 +122,7 @@ class Track {
                     break;
 
                 case '[Difficulty]':
-                    parts = line.split(':'), value = parts[1].trim();
+                    parts = line.split(':'), value = parts[1];
                     if (isNaN(value)) this.difficulty[parts[0]] = value;
                     else this.difficulty[parts[0]] = (+value);
                     break;
@@ -144,7 +144,7 @@ class Track {
                     break;
 
                 case '[Colours]':
-                    parts = line.split(':'), key = parts[0].trim(), value = parts[1].trim();
+                    parts = line.split(':'), key = parts[0].trim(), value = parts[1];
                     if (key === 'SliderTrackOverride') this.colors.SliderTrackOverride = value.split(',');
                     else if (key === 'SliderBorder') this.colors.SliderBorder = value.split(',');
                     else this.colors.push(value.split(','));
@@ -267,7 +267,11 @@ class Track {
                 point.uninherit = 1;
                 point.beatMs *= -.01 * last.beatMs;
                 point.truebeatMs = last.truebeatMs;
-                point.inherited = last;
+
+                if (isNaN(point.beatMs)) {
+                    point.isNaN = true;
+                    point.beatMs = last.beatMs;
+                }
             }
             else {
                 last = point;
@@ -282,7 +286,7 @@ class Track {
 
             if (hit.type === 'circle') hit.endTime = hit.time;
             else if (hit.type === 'slider') {
-                hit.sliderTime = (hit.timing.beatMs || hit.timing.inherited.beatMs) * (hit.pixelLength / this.difficulty.SliderMultiplier) / 100;
+                hit.sliderTime = hit.timing.beatMs * (hit.pixelLength / this.difficulty.SliderMultiplier) / 100;
                 hit.sliderTimeTotal = hit.sliderTime * hit.repeat;
                 hit.endTime = hit.time + hit.sliderTimeTotal;
 
@@ -323,11 +327,11 @@ export default class Osu {
                 const file = track.events[0][2];
                 if (track.events[0][0] === 'Video') file = track.events[1][2];
 
-                const entry = this.zip.getChildByName(file.slice(1, file.length - 1)), id = entry.id.toString();
+                const entry = this.zip.getChildByName(file.slice(1, file.length - 1)), id = entry.id + entry.uncompressedSize;
                 entry.getData64URI().then(b => {
                     img.src = b;
                     if (!PIXI.Loader.shared.resources[id]) PIXI.Loader.shared.add({
-                        key: id,
+                        key: id.toString(),
                         url: b,
                         loadType: PIXI.LoaderResource.LOAD_TYPE.IMAGE
                     });

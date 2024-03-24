@@ -17,8 +17,8 @@ export default class LoadingMenu extends PIXI.Container {
         this.loading.anchor.set(.5, .3);
         this.loading.scale.set(1, .6);
 
-        this.addChild(this.bg);
-        this.addChild(this.loading);
+        super.addChild(this.bg);
+        super.addChild(this.loading);
 
         const allFont = {
             fontFamily: 'Venera', fontSize: 14, fill: 0xffffff
@@ -36,11 +36,11 @@ export default class LoadingMenu extends PIXI.Container {
         this.sourcetext.anchor.set(.5);
         this.mappertext.anchor.set(.5);
 
-        this.addChild(this.titletext);
-        this.addChild(this.artisttext);
-        this.addChild(this.versiontext);
-        this.addChild(this.sourcetext);
-        this.addChild(this.mappertext);
+        super.addChild(this.titletext);
+        super.addChild(this.artisttext);
+        super.addChild(this.versiontext);
+        super.addChild(this.sourcetext);
+        super.addChild(this.mappertext);
 
         this.resize(windowfield);
     }
@@ -64,20 +64,20 @@ export default class LoadingMenu extends PIXI.Container {
         this.hidden = true;
     }
     update(timestamp) {
-        if (this.alpha <= 0) this.visible = false;
+        if (super.alpha <= 0) this.visible = false;
         if (!this.visible) return;
 
         if (!this.hidden) {
             this.loading.rotation = timestamp * .0075;
             return;
         }
-        else if (!this.t0) {
-            this.t0 = timestamp;
-            this.changed = false;
-        }
+        else if (!this.t0) this.t0 = timestamp;
 
         const dt = timestamp - this.t0;
         if (dt > this.fadetime) this.visible = false;
-        else this.alpha = 1 - dt / this.fadetime;
+        else super.alpha = 1 - dt / this.fadetime;
+    }
+    destroy(opt) {
+        super.destroy(opt);
     }
 }

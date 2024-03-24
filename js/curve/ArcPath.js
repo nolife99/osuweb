@@ -30,15 +30,14 @@ export default function ArcPath(hit) {
         direct = -1;
         arcRange = twoPi - arcRange;
     }
-
-    const realAngle = hit.pixelLength / radius;
-    function pointAt(t) {
-        const ang = thetaStart + direct * t * realAngle;
-        return {
-            x: Math.cos(ang) * radius + center.x, y: Math.sin(ang) * radius + center.y, t: t
-        };
-    }
+    arcRange = hit.pixelLength / radius;
+    
     return {
-        pointAt: pointAt
+        pointAt: t => {
+            const ang = thetaStart + direct * t * arcRange;
+            return {
+                x: Math.cos(ang) * radius + center.x, y: Math.sin(ang) * radius + center.y, t: t
+            };
+        }
     };
 };

@@ -1,16 +1,15 @@
-const saveToLocal = () => localStorage.setItem('osugamesettings', JSON.stringify(settings)),
-    defaultsettings = {
-        dim: 80, blur: 0,
-        cursorsize: 1, showhwmouse: false,
-        snakein: true, snakeout: false,
+const saveToLocal = () => localStorage.setItem('osugamesettings', JSON.stringify(settings)), defaultsettings = {
+    dim: 80, blur: 0,
+    cursorsize: 1, showhwmouse: false,
+    snakein: true, snakeout: false,
 
-        disableWheel: false, disableButton: false,
-        K1name: 'Z', K2name: 'X', K1keycode: 90, K2keycode: 88,
+    disableWheel: false, disableButton: false,
+    K1name: 'Z', K2name: 'X', K1keycode: 'KeyZ', K2keycode: 'KeyX',
 
-        mastervolume: 100, effectvolume: 100, musicvolume: 100, audiooffset: 0, beatmapHitsound: false,
-        easy: false, daycore: false, hardrock: false, nightcore: false, hidden: false, autoplay: false,
-        hideNumbers: false, hideGreat: true, hideFollow: false
-    };
+    mastervolume: 100, effectvolume: 100, musicvolume: 100, audiooffset: 0, beatmapHitsound: false,
+    easy: false, daycore: false, hardrock: false, nightcore: false, hidden: false, autoplay: false,
+    hideNumbers: false, hideGreat: true, hideFollow: false
+};
 
 export const settings = JSON.parse(localStorage.getItem('osugamesettings')) ?? defaultsettings;
 settings.loadToGame = game => {
@@ -105,7 +104,7 @@ function bindkeyselector(id, keynameitem, keycodeitem) {
             document.removeEventListener('keydown', listenkey);
         }
         function listenkey(e) {
-            settings[keycodeitem] = e.keyCode;
+            settings[keycodeitem] = e.code;
             settings[keynameitem] = e.key.toUpperCase();
             btn.value = settings[keynameitem];
             saveToLocal();

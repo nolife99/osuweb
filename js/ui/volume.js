@@ -6,7 +6,6 @@ export default class VolumeMenu extends PIXI.Container {
 
         this.fadetime = 1000;
         this.visible = false;
-        this.alpha = 1;
         this.t0 = 0;
 
         this.mastertext = new PIXI.Text('MASTER', {
@@ -19,8 +18,8 @@ export default class VolumeMenu extends PIXI.Container {
         });
         this.volumetext.anchor.set(.5);
 
-        this.addChild(this.mastertext);
-        this.addChild(this.volumetext);
+            super.addChild(this.mastertext);
+            super.addChild(this.volumetext);
 
         this.resize(windowfield);
     }
@@ -48,6 +47,9 @@ export default class VolumeMenu extends PIXI.Container {
 
         const dt = timestamp - this.t0;
         if (dt > this.fadetime) this.visible = false;
-        else this.alpha = 1 - Math.pow(dt / this.fadetime, 5);
+        else super.alpha = 1 - Math.pow(dt / this.fadetime, 5);
+    }
+    destroy(opt) {
+        super.destroy(opt);
     }
 }

@@ -123,7 +123,7 @@ sounds.load(sample, () => {
 });
 
 export let app, stopGame;
-let showingDifficultyBox, frameID;
+let showingDifficultyBox;
 
 class BeatmapController {
     constructor(osz) {
@@ -132,6 +132,7 @@ class BeatmapController {
     }
     startGame(trackid) {
         if (app) return;
+        PIXI.settings.ROUND_PIXELS = true;
         app = new PIXI.Application({
             width: window.innerWidth,
             height: window.innerHeight,
@@ -186,7 +187,7 @@ class BeatmapController {
 
                 app.ticker.stop();
                 app.destroy(true, {
-                    children: true, texture: false
+                    children: true
                 });
                 app = null;
                 return;
@@ -221,7 +222,7 @@ class BeatmapController {
         pBeatmapBox.appendChild(pBeatmapAuthor);
 
         pBeatmapTitle.innerText = this.osu.tracks[0].metadata.Title;
-        pBeatmapAuthor.innerText = this.osu.tracks[0].metadata.Artist + '/' + this.osu.tracks[0].metadata.Creator;
+        pBeatmapAuthor.innerText = this.osu.tracks[0].metadata.Artist.concat('/', this.osu.tracks[0].metadata.Creator);
         this.osu.getCoverSrc(pBeatmapCover);
 
         const first = this.osu.tracks[0].length;
@@ -230,12 +231,12 @@ class BeatmapController {
             pBeatmapLength.className = 'beatmaplength';
             pBeatmapBox.appendChild(pBeatmapLength);
 
-            let mins = Math.floor(first / 60);
+            let mins = Math.floor(first / 60), text = '';
             if (mins >= 60) {
-                pBeatmapLength.innerText = Math.floor(mins / 60) + ':';
+                text = Math.floor(mins / 60) + ':';
                 mins %= 60;
             }
-            pBeatmapLength.innerText += mins + ':' + (first % 60 < 10 ? '0' : '') + (first % 60).toFixed(0);
+            pBeatmapLength.innerText = text.concat(mins, ':', first % 60 < 10 ? '0' : '', (first % 60).toFixed(0));
         }
         pBeatmapBox.onclick = e => {
             if (!showingDifficultyBox) {

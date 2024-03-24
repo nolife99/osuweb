@@ -9,7 +9,7 @@ export default class BreakOverlay extends PIXI.Container {
         this.visible = false;
 
         this.barmid = new PIXI.Sprite(skin['bar.png']);
-        this.barmid.anchor.set(.5, .5);
+        this.barmid.anchor.set(.5);
         this.barmid.x = 0;
         this.barmid.y = 0;
 
@@ -30,9 +30,9 @@ export default class BreakOverlay extends PIXI.Container {
         this.barleft.scale.set(.3);
         this.barright.scale.set(.3);
 
-        this.addChild(this.barmid);
-        this.addChild(this.barleft);
-        this.addChild(this.barright);
+        super.addChild(this.barmid);
+        super.addChild(this.barleft);
+        super.addChild(this.barright);
 
         this.number = new PIXI.Text(null, {
             fontFamily: 'Venera', fontSize: 40, fill: 0xffffff
@@ -40,7 +40,7 @@ export default class BreakOverlay extends PIXI.Container {
         this.number.anchor.set(.5);
         this.number.x = 0;
         this.number.y = -40;
-        this.addChild(this.number);
+        super.addChild(this.number);
         this.resize(windowfield);
     }
     resize(windowfield) {
@@ -64,6 +64,9 @@ export default class BreakOverlay extends PIXI.Container {
         this.barleft.x = -radius;
         this.barright.x = radius;
         this.number.text = Math.ceil(t / 1000).toString();
-        this.alpha = Math.max(0, Math.min(1, Math.min(t, time - this.starttime - 500) / this.fadetime));
+        super.alpha = Math.min(t, time - this.starttime - 500) / this.fadetime;
+    }
+    destroy(opt) {
+        super.destroy(opt);
     }
 }

@@ -29,7 +29,7 @@ export default class LinearBezier {
         if (!line && points.length > 1) beziers.push(new BSpline(points.splice(0)));
 
         let distAt = 0, curPoint = 0, curveIndex = 0, curCurve = beziers[0], lastCurve = curCurve.curve[0], lastDist = 0;
-        this.ncurve = Math.ceil(hit.pixelLength / 5);
+        this.ncurve = Math.ceil(hit.pixelLength / 8);
         this.path = new Array(this.ncurve + 1);
 
         for (let i = 0; i < this.path.length; ++i) {

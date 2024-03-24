@@ -1,11 +1,11 @@
 const twoPi = 2 * Math.PI, vertexSrc = `
     precision lowp float;
-    attribute vec4 position;
+    attribute vec4 pos;
     varying float dist;
     uniform float dx, dy, dt, ox, oy, ot;
     void main() {
-        dist = position.w;
-        gl_Position = vec4(position.xy, position.w + 2.0 * float(position.z * dt > ot), 1.0);
+        dist = pos.w;
+        gl_Position = vec4(pos.xy, pos.w + 2.0 * float(pos.z * dt > ot), 1.0);
         gl_Position.xy = gl_Position.xy * vec2(dx, dy) + vec2(ox, oy);
     }`, fragmentSrc = `
     precision lowp float;
@@ -70,9 +70,9 @@ function newTexture(colors, SliderTrackOverride, SliderBorder) {
     return PIXI.Texture.fromBuffer(buff, width, colors.length);
 }
 
-const DIVIDES = 32;
+const DIVIDES = 24;
 function curveGeometry(curve, length, radius) {
-    const vert = [], index = [], first = curve.pointAt(0), res = Math.ceil(length / 4);
+    const vert = [], index = [], first = curve.pointAt(0), res = Math.max(DIVIDES, Math.floor(length / 8));
     vert.push(first.x, first.y, 0, 0);
 
     for (let i = 1; i < res; ++i) {
@@ -112,12 +112,11 @@ function curveGeometry(curve, length, radius) {
     addArc(5 * res - 5, 5 * res - 6, 5 * res - 7, 1);
 
     for (let i = 1; i < res - 1; ++i) {
-        const c = curve.pointAt((i + 1) / res), b = curve.pointAt(i / res), n = curve.pointAt((i + 2) / res),
-            t = (c.x - b.x) * (n.y - c.y) - (n.x - c.x) * (c.y - b.y);
-        if (t > 0) addArc(5 * i, 5 * i - 1, 5 * i + 2);
+        const c = curve.pointAt((i + 1) / res), b = curve.pointAt(i / res), n = curve.pointAt((i + 2) / res);
+        if ((c.x - b.x) * (n.y - c.y) > (n.x - c.x) * (c.y - b.y)) addArc(5 * i, 5 * i - 1, 5 * i + 2);
         else addArc(5 * i, 5 * i + 1, 5 * i - 2);
     }
-    return new PIXI.Geometry().addAttribute('position', vert, 4).addIndex(index);
+    return new PIXI.Geometry().addAttribute('pos', vert, 4).addIndex(index);
 }
 function circleGeometry(radius) {
     const vert = [], index = [];
@@ -127,7 +126,7 @@ function circleGeometry(radius) {
         vert.push(radius * Math.cos(theta), radius * Math.sin(theta), 0, 1);
         index.push(0, i + 1, (i + 1) % DIVIDES + 1);
     }
-    return new PIXI.Geometry().addAttribute('position', vert, 4).addIndex(index);
+    return new PIXI.Geometry().addAttribute('pos', vert, 4).addIndex(index);
 }
 export default class SliderMesh extends PIXI.Container {
     constructor(hit, radius, tintid) {
@@ -139,7 +138,8 @@ export default class SliderMesh extends PIXI.Container {
         this.tintid = tintid;
         this.startt = 0;
         this.endt = 1;
-        this.state = PIXI.State.for2d();
+        this.state = new PIXI.State;
+        this.state.blendMode = PIXI.BLEND_MODES.SCREEN;
         this.drawMode = PIXI.DRAW_MODES.TRIANGLES;
     }
     _render(renderer) {
@@ -260,8 +260,8 @@ export default class SliderMesh extends PIXI.Container {
         this.uniforms.ox = transform.ox;
         this.uniforms.oy = transform.oy;
     }
-    destroy(options) {
-        super.destroy(options);
+    destroy(opt) {
+        super.destroy(opt);
         this.geometry.destroy();
     }
     deallocate() {
