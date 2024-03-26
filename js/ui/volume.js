@@ -11,15 +11,14 @@ export default class VolumeMenu extends PIXI.Container {
         this.mastertext = new PIXI.Text('MASTER', {
             fontFamily: 'Venera', fontSize: 20, fill: 0xffffff
         });
-        this.mastertext.anchor.set(.5);
-
         this.volumetext = new PIXI.Text(null, {
             fontFamily: 'Venera', fontSize: 40, fill: 0xffffff
         });
+        this.mastertext.anchor.set(.5);
         this.volumetext.anchor.set(.5);
 
-            super.addChild(this.mastertext);
-            super.addChild(this.volumetext);
+        super.addChild(this.mastertext);
+        super.addChild(this.volumetext);
 
         this.resize(windowfield);
     }

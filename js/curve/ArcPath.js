@@ -7,11 +7,8 @@ const twoPi = 2 * Math.PI, dotlen = a => a.x * a.x + a.y * a.y, vecsub = (a, b) 
 export default function ArcPath(hit) {
     const a = {
         x: hit.x, y: hit.y
-    }, b = {
-        x: hit.keyframes[0].x, y: hit.keyframes[0].y
-    }, c = {
-        x: hit.keyframes[1].x, y: hit.keyframes[1].y
-    }, d = 2 * (a.x * vecsub(b, c).y + b.x * vecsub(c, a).y + c.x * vecsub(a, b).y);
+    }, b = hit.keyframes[0], c = hit.keyframes[1], 
+    d = 2 * (a.x * vecsub(b, c).y + b.x * vecsub(c, a).y + c.x * vecsub(a, b).y);
 
     const aSq = dotlen(a), bSq = dotlen(b), cSq = dotlen(c), center = {
         x: (aSq * vecsub(b, c).y + bSq * vecsub(c, a).y + cSq * vecsub(a, b).y) / d,

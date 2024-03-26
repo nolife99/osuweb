@@ -132,7 +132,6 @@ class BeatmapController {
     }
     startGame(trackid) {
         if (app) return;
-        PIXI.settings.ROUND_PIXELS = true;
         app = new PIXI.Application({
             width: window.innerWidth,
             height: window.innerHeight,
@@ -198,7 +197,7 @@ class BeatmapController {
             this.osu.onready();
             app.ticker.start();
         };
-        const gameLoop = t => {
+        app.ticker.add(t => {
             playback.render(t, app.ticker.lastTime);
             if (cursor) {
                 cursor.x = game.mouseX / 512 * playback.gfx.width + playback.gfx.xoffset;
@@ -206,8 +205,7 @@ class BeatmapController {
                 app.stage.addChild(cursor);
             }
             app.renderer.render(app.stage);
-        }
-        app.ticker.add(gameLoop).start();
+        }).start();
     }
     createBeatmapBox() {
         const pBeatmapBox = document.createElement('div'), pBeatmapCover = document.createElement('img'),

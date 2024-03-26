@@ -12,9 +12,9 @@ export default class PlayerActions {
         this.playback = playback;
         if (game.autoplay) {
             this.curid = 0;
-            this.lastx = game.mouseX;
-            this.lasty = game.mouseY;
-            this.lasttime = 0;
+            this.lastX = game.mouseX;
+            this.lastY = game.mouseY;
+            this.lastTime = 0;
         }
         else {
             this.cursorData = [{
@@ -143,11 +143,16 @@ export default class PlayerActions {
         let cur = this.curObj;
         if (game.down && cur) {
             if (cur.type === 'circle' || time > cur.endTime) {
+                if (cur.type !== 'spinner') {
+                    game.mouseX = (cur.ball || cur).x;
+                    game.mouseY = (cur.ball || cur).y;
+                }
                 game.down = false;
+
                 this.curObj = null;
-                this.lasttime = time;
-                this.lastx = game.mouseX;
-                this.lasty = game.mouseY;
+                this.lastX = game.mouseX;
+                this.lastY = game.mouseY;
+                this.lastTime = time;
             }
             else if (cur.type === 'slider') {
                 game.mouseX = cur.ball.x || cur.x;
@@ -161,8 +166,10 @@ export default class PlayerActions {
         }
 
         cur = this.curObj;
-        while (this.curid < this.playback.hits.length && this.playback.hits[this.curid].time < time) {
+        for (; this.curid < this.playback.hits.length; ++this.curid) {
             const hit = this.playback.hits[this.curid];
+            if (hit.time > time) break;
+            
             if (hit.score < 0) {
                 let targX = hit.x, targY = hit.y;
                 if (hit.type === 'spinner') {
@@ -172,18 +179,22 @@ export default class PlayerActions {
                 }
                 game.mouseX = targX;
                 game.mouseY = targY;
-
+                
                 game.down = true;
                 this.triggerTap(this.playback);
+
+                if (!cur || cur.type === 'circle') {
+                    cur = hit;
+                    this.curObj = hit;
+                }
             }
-            ++this.curid;
         }
         if (!cur && this.curid < this.playback.hits.length) {
             cur = this.playback.hits[this.curid];
             this.curObj = cur;
         }
         if (!cur || cur.time > time + this.playback.approachTime) {
-            this.lasttime = time;
+            this.lastTime = time;
             return;
         }
         if (!game.down) {
@@ -193,15 +204,9 @@ export default class PlayerActions {
                 targX += spinRadius * Math.cos(ang);
                 targY += spinRadius * Math.sin(ang);
             }
-            const t = .5 - Math.sin((Math.pow(1 - Math.max(0, Math.min(1, (time - this.lasttime) / (cur.time - this.lasttime))), 1.5) - .5) * Math.PI) / 2;
-
-            game.mouseX = t * targX + (1 - t) * this.lastx;
-            game.mouseY = t * targY + (1 - t) * this.lasty;
-
-            if (time >= cur.time) {
-                game.down = true;
-                this.triggerTap();
-            }
+            const t = 1 - Math.pow(1 - Math.max(0, Math.min(1, (time - this.lastTime) / (cur.time - this.lastTime))), 2);
+            game.mouseX = t * targX + (1 - t) * this.lastX;
+            game.mouseY = t * targY + (1 - t) * this.lastY;
         }
     }
 };

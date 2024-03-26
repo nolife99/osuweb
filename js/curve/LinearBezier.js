@@ -1,78 +1,63 @@
-import BSpline from './BSpline.js';
+import FlattenBSpline from './BSpline.js';
 
 const lerp = (a, b, t) => a * (1 - t) + b * t;
 export default class LinearBezier {
     constructor(hit, line) {
-        const beziers = [], points = [];
-        let lastPoi;
+        this.definedLength = hit.pixelLength;
+        this.splines = [];
 
-        for (let i = -1; i < hit.keyframes.length; ++i) {
-            let tpoi;
-            if (i !== -1) tpoi = hit.keyframes[i];
-            else tpoi = {
+        const points = [];
+        for (let i = -1, lastPt; i < hit.keyframes.length; ++i) {
+            const pt = i !== -1 ? hit.keyframes[i] : {
                 x: hit.x,
                 y: hit.y
             };
             if (line) {
-                if (lastPoi) {
-                    points.push(tpoi);
-                    beziers.push(new BSpline(points.splice(0)));
+                if (lastPt) {
+                    points.push(pt);
+                    this.splines.push(FlattenBSpline(points.splice(0)));
                 }
             }
-            else if (lastPoi && tpoi.x === lastPoi.x && tpoi.y === lastPoi.y) {
+            else if (lastPt && pt.x === lastPt.x && pt.y === lastPt.y) {
                 const pts = points.splice(0);
-                if (pts.length > 1) beziers.push(new BSpline(pts));
+                if (pts.length > 1) this.splines.push(FlattenBSpline(pts));
             }
-            points.push(tpoi);
-            lastPoi = tpoi;
+            points.push(pt);
+            lastPt = pt;
         }
-        if (!line && points.length > 1) beziers.push(new BSpline(points.splice(0)));
+        if (!line && points.length > 1) this.splines.push(FlattenBSpline(points.splice(0)));
 
-        let distAt = 0, curPoint = 0, curveIndex = 0, curCurve = beziers[0], lastCurve = curCurve.curve[0], lastDist = 0;
-        this.ncurve = Math.ceil(hit.pixelLength / 8);
-        this.path = new Array(this.ncurve + 1);
-
-        for (let i = 0; i < this.path.length; ++i) {
-            const prefDistance = i * hit.pixelLength / this.ncurve;
-            while (distAt < prefDistance) {
-                lastDist = distAt;
-                lastCurve = curCurve.curve[curPoint++];
-
-                if (curPoint >= curCurve.curve.length) {
-                    if (curveIndex < beziers.length - 1) {
-                        curCurve = beziers[++curveIndex];
-                        curPoint = 0;
-                    }
-                    else {
-                        curPoint = curCurve.curve.length - 1;
-                        if (lastDist === distAt) break;
-                    }
-                }
-                if (curPoint > 0) distAt += curCurve.curveDistance(curPoint);
+        let total = 0;
+        this.preLens = this.splines.map(curve => {
+            const parts = new Float32Array(curve.length - 1);
+            for (let j = 0; j < curve.length - 1; ++j) {
+                const cur = curve[j], nex = curve[j + 1];
+                total += parts[j] = Math.hypot(nex.x - cur.x, nex.y - cur.y);
             }
-
-            const thisCurve = curCurve.curve[curPoint];
-            if (lastCurve === thisCurve) this.path[i] = thisCurve;
-            else {
-                const t = (prefDistance - lastDist) / (distAt - lastDist);
-                this.path[i] = {
-                    x: lerp(lastCurve.x, thisCurve.x, t),
-                    y: lerp(lastCurve.y, thisCurve.y, t)
-                };
-            }
-            this.path[i].t = i / this.ncurve;
-        }
+            return {
+                lengths: parts, total: total
+            };
+        });
     }
     pointAt(t) {
-        const indexF = t * this.ncurve, index = Math.floor(indexF);
-        if (index >= this.ncurve) return this.path[this.ncurve];
-        else {
-            const poi = this.path[index], poi2 = this.path[index + 1], t = indexF - index;
-            return {
-                x: lerp(poi.x, poi2.x, t),
-                y: lerp(poi.y, poi2.y, t),
-                t: lerp(poi.t, poi2.t, t)
-            };
+        const target = t * this.definedLength;
+        let length = 0, i = 0;
+        while (i < this.preLens.length - 1 && this.preLens[i].total < target) length = this.preLens[i++].total;
+
+        const curve = this.splines[i], preLen = this.preLens[i].lengths;
+        for (let j = 0; j < curve.length - 1; ++j) {
+            const partLen = preLen[j];
+            if (length + partLen >= target) {
+                const partT = (target - length) / partLen, cur = curve[j], nex = curve[j + 1];
+                return {
+                    x: lerp(cur.x, nex.x, partT), y: lerp(cur.y, nex.y, partT), t: t
+                };
+            }
+            length += partLen;
         }
+        const last = this.splines.at(-1).at(-1);
+        return {
+            x: last.x, y: last.y, t: t
+        };
     }
 };

@@ -15,7 +15,7 @@ const twoPi = 2 * Math.PI, vertexSrc = `
     uniform float texturepos;
     void main() {
         gl_FragColor = alpha * texture2D(uSampler2, vec2(dist, texturepos));
-    }`, borderwidth = .128, innerPortion = 1 - borderwidth, edgeFade = .5, centerFade = .3, blurrate = .015, width = 200;
+    }`, borderwidth = .13, innerPortion = 1 - borderwidth, edgeFade = .5, centerFade = .3, blurrate = .017, width = 200;
 
 function newTexture(colors, SliderTrackOverride, SliderBorder) {
     const buff = new Uint8Array(colors.length * width * 4);
@@ -25,9 +25,9 @@ function newTexture(colors, SliderTrackOverride, SliderBorder) {
             innerR = tint >> 16, innerG = (tint >> 8) & 255, innerB = tint & 255, innerA = 1;
 
         for (let i = 0; i < width; ++i) {
-            const position = i / width; 
+            const position = i / width;
             let R, G, B, A;
-            
+
             if (position >= innerPortion) {
                 R = borderR;
                 G = borderG;
@@ -70,9 +70,9 @@ function newTexture(colors, SliderTrackOverride, SliderBorder) {
     return PIXI.Texture.fromBuffer(buff, width, colors.length);
 }
 
-const DIVIDES = 24;
+const DIVIDES = 28;
 function curveGeometry(curve, length, radius) {
-    const vert = [], index = [], first = curve.pointAt(0), res = Math.max(DIVIDES, Math.floor(length / 8));
+    const vert = [], index = [], first = curve.pointAt(0), res = Math.ceil(length / (length > 45000 ? length / 10000 : 4.5));
     vert.push(first.x, first.y, 0, 0);
 
     for (let i = 1; i < res; ++i) {
@@ -93,16 +93,15 @@ function curveGeometry(curve, length, radius) {
         index.push(n - 6, n - 4, n - 1, n - 4, n - 1, n - 2);
     }
     function addArc(c, p1, p2, t) {
-        const theta_1 = Math.atan2(vert[4 * p1 + 1] - vert[4 * c + 1], vert[4 * p1] - vert[4 * c]);
-        let theta_2 = Math.atan2(vert[4 * p2 + 1] - vert[4 * c + 1], vert[4 * p2] - vert[4 * c]);
-        if (theta_1 > theta_2) theta_2 += twoPi;
-        let theta = theta_2 - theta_1, divs = Math.ceil(DIVIDES * Math.abs(theta) / twoPi);
+        const vrt = vert[4 * c], nextVrt = vert[4 * c + 1], theta1 = Math.atan2(vert[4 * p1 + 1] - nextVrt, vert[4 * p1] - vrt);
+        let theta2 = Math.atan2(vert[4 * p2 + 1] - nextVrt, vert[4 * p2] - vrt);
+        if (theta1 > theta2) theta2 += twoPi;
+        let theta = theta2 - theta1, divs = Math.ceil(DIVIDES * Math.abs(theta) / twoPi);
         theta /= divs;
 
         let last = p1;
         for (let i = 1; i < divs; ++i) {
-            vert.push(vert[4 * c] + radius * Math.cos(theta_1 + i * theta), vert[4 * c + 1] + radius * Math.sin(theta_1 + i * theta), t, 1);
-            const newv = vert.length / 4 - 1;
+            const newv = vert.push(vrt + radius * Math.cos(theta1 + i * theta), nextVrt + radius * Math.sin(theta1 + i * theta), t, 1) / 4 - 1;
             index.push(c, last, newv);
             last = newv;
         }
@@ -138,8 +137,6 @@ export default class SliderMesh extends PIXI.Container {
         this.tintid = tintid;
         this.startt = 0;
         this.endt = 1;
-        this.state = new PIXI.State;
-        this.state.blendMode = PIXI.BLEND_MODES.SCREEN;
         this.drawMode = PIXI.DRAW_MODES.TRIANGLES;
     }
     _render(renderer) {
@@ -162,7 +159,7 @@ export default class SliderMesh extends PIXI.Container {
         gl.clearDepth(1);
         gl.clear(gl.DEPTH_BUFFER_BIT);
         gl.colorMask(false, false, false, false);
-        renderer.state.set(this.state);
+        renderer.state.set(null);
         renderer.state.setDepthTest(true);
 
         function bind(geometry) {

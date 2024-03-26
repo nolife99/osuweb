@@ -13,6 +13,7 @@ const saveToLocal = () => localStorage.setItem('osugamesettings', JSON.stringify
 
 export const settings = JSON.parse(localStorage.getItem('osugamesettings')) ?? defaultsettings;
 settings.loadToGame = game => {
+    PIXI.settings.ROUND_PIXELS = true;
     if (game) {
         game.backgroundDimRate = settings.dim / 100;
         game.backgroundBlurRate = settings.blur / 100;

@@ -30,6 +30,7 @@ export default class LoadingMenu extends PIXI.Container {
         this.versiontext = new PIXI.Text(track.metadata.Version || '-', allFont);
         this.sourcetext = new PIXI.Text('Source: ' + (track.metadata.Source || '-'), allFont);
         this.mappertext = new PIXI.Text('Mapper: ' + (track.metadata.Creator || '-'), allFont);
+        
         this.titletext.anchor.set(.5);
         this.artisttext.anchor.set(.5);
         this.versiontext.anchor.set(.5);

@@ -1,80 +1,6 @@
 import OsuAudio from './osu-audio.js';
-import ArcPath from './curve/ArcPath.js';
-import LinearBezier from './curve/LinearBezier.js';
 
 const typeCirc = 1, typeSlider = 2, typeNC = 4, typeSpin = 8, clamp = (num, min, max) => Math.min(Math.max(num, min), max);
-function stackHitObjects(track) {
-    const AR = track.difficulty.ApproachRate, approachTime = AR < 5 ? 1800 - 120 * AR : 1950 - 150 * AR,
-        stackThreshold = approachTime * track.general.StackLeniency;
-
-    function getintv(A, B) {
-        let endTime = A.time;
-        if (A.type === 'slider') endTime += A.repeat * A.timing.beatMs * (A.pixelLength / track.difficulty.SliderMultiplier) / 100;
-        return B.time - endTime;
-    }
-    function getdist(A, B) {
-        let x = A.x, y = A.y;
-        if (A.type === 'slider' && A.repeat % 2 === 1) {
-            const pt = A.curve.pointAt(1);
-            x = Math.round(pt.x);
-            y = Math.round(pt.y);
-        }
-        return Math.hypot(x - B.x, y - B.y);
-    }
-
-    const chains = [], stacked = new Array(track.hitObjects.length);
-    stacked.fill(false);
-
-    for (let i = 0; i < track.hitObjects.length; ++i) {
-        if (stacked[i]) continue;
-        const hitI = track.hitObjects[i];
-        if (hitI.type === 'spinner') continue;
-        stacked[i] = true;
-        const newchain = [hitI];
-
-        for (let j = i + 1; j < track.hitObjects.length; ++j) {
-            const hitJ = track.hitObjects[j];
-            if (hitJ.type === 'spinner' || getintv(newchain[newchain.length - 1], hitJ) > stackThreshold) break;
-            if (getdist(newchain[newchain.length - 1], hitJ) < 2) {
-                if (stacked[j]) break;
-                stacked[j] = true;
-                newchain.push(hitJ);
-            }
-        }
-        if (newchain.length > 1) chains.push(newchain);
-    }
-
-    const stackScale = (1 - .7 * (track.difficulty.CircleSize - 5) / 5) * 3.2;
-    function movehit(hit, dep) {
-        const ofs = dep * stackScale;
-        hit.x += ofs;
-        hit.y += ofs;
-        if (hit.type == "slider") {
-            for (const k of hit.keyframes) {
-                k.x += ofs;
-                k.y += ofs;
-            }
-            if (hit.sliderType === 'P' && hit.keyframes.length === 2) hit.curve = ArcPath(hit);
-            else for (const p of hit.curve.path) {
-                p.x += ofs;
-                p.y += ofs;
-            }
-        }
-    }
-    for (let i = 0; i < chains.length; ++i) {
-        if (chains[i][0].type === 'slider') for (let j = 0, dep = 0; j < chains[i].length; ++j) {
-            movehit(chains[i][j], dep);
-            if (chains[i][j].type !== 'slider' || chains[i][j].repeat % 2 === 0) ++dep;
-        }
-        else for (let j = 0, dep = 0; j < chains[i].length; ++j) {
-            const cur = chains[i].length - 1 - j;
-            if (j > 0 && (chains[i][cur].type === 'slider' && chains[i][cur].repeat % 2 === 1)) --dep;
-            movehit(chains[i][cur], -dep);
-            ++dep;
-        }
-    }
-}
-
 class Track {
     constructor(zip, track) {
         this.track = track;
@@ -159,6 +85,7 @@ class Track {
                         type: +parts[3],
                         hitSound: +parts[4]
                     };
+                    hit.chain = 0;
                     if ((hit.type & typeNC) > 0 || forceNewCombo) {
                         ++combo;
                         combo += (hit.type >> 4) & 7;
@@ -196,7 +123,7 @@ class Track {
 
                         if (parts.length > 8) hit.edgeHitsounds = parts[8].split('|').map(Number);
                         else {
-                            hit.edgeHitsounds = new Array(hit.repeat + 1);
+                            hit.edgeHitsounds = new Uint8Array(hit.repeat + 1);
                             for (let wdnmd = 0; wdnmd < hit.repeat + 1; ++wdnmd) hit.edgeHitsounds[wdnmd] = 0;
                         }
 
@@ -224,6 +151,7 @@ class Track {
                         };
                     }
                     else if ((hit.type & typeSpin) > 0) {
+                        hit.chain = 0;
                         if (hit.type & typeNC) --combo;
                         hit.combo = combo - ((hit.type >> 4) & 7);
                         forceNewCombo = true;
@@ -255,12 +183,6 @@ class Track {
             [139, 191, 222]
         ];
 
-        if (this.difficulty.OverallDifficulty) {
-            this.difficulty.HPDrainRate = this.difficulty.HPDrainRate || this.difficulty.OverallDifficulty;
-            this.difficulty.CircleSize = this.difficulty.CircleSize || this.difficulty.OverallDifficulty;
-            this.difficulty.ApproachRate = this.difficulty.ApproachRate || this.difficulty.OverallDifficulty;
-        }
-
         let last = this.timing[0];
         for (const point of this.timing) {
             if (point.uninherit === 0) {
@@ -289,14 +211,9 @@ class Track {
                 hit.sliderTime = hit.timing.beatMs * (hit.pixelLength / this.difficulty.SliderMultiplier) / 100;
                 hit.sliderTimeTotal = hit.sliderTime * hit.repeat;
                 hit.endTime = hit.time + hit.sliderTimeTotal;
-
-                if (hit.sliderType === 'P' && hit.keyframes.length === 2) hit.curve = ArcPath(hit);
-                else hit.curve = new LinearBezier(hit, hit.keyframes.length === 1);
             }
         }
-        this.length = (this.hitObjects[this.hitObjects.length - 1].endTime - this.hitObjects[0].time) / 1000;
-        stackHitObjects(this);
-
+        this.length = (this.hitObjects.at(-1).endTime - this.hitObjects[0].time) / 1000;
         this.oldStar = (this.difficulty.HPDrainRate + this.difficulty.CircleSize + this.difficulty.OverallDifficulty + clamp(this.hitObjects.length / this.length * 8, 0, 16)) / 38 * 5;
         this.ondecoded(this);
     }

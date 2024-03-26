@@ -24,9 +24,10 @@ export default class ProgressOverlay extends PIXI.Container {
         };
         this.remaining = new PIXI.Text(null, font);
         this.remaining.anchor.set(1);
+        super.addChild(this.remaining);
+        
         this.past = new PIXI.Text(null, font);
         this.past.anchor.set(0, 1);
-        super.addChild(this.remaining);
         super.addChild(this.past);
 
         this.resize(windowfield);
