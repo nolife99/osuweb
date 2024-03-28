@@ -173,8 +173,8 @@ class BeatmapController {
         pMainPage.hidden = true;
         pGameArea.hidden = false;
 
-        this.osu.load_mp3(trackid);
         let playback = new Playback(this.osu, this.osu.tracks[trackid]);
+        this.osu.load_mp3(trackid);
 
         stopGame = restart => {
             if (!restart) {
@@ -194,8 +194,7 @@ class BeatmapController {
 
             app.ticker.stop();
             playback = new Playback(this.osu, this.osu.tracks[trackid]);
-            this.osu.onready();
-            app.ticker.start();
+            this.osu.onready.then(() => app.ticker.start());
         };
         app.ticker.add(t => {
             playback.render(t, app.ticker.lastTime);
@@ -298,7 +297,6 @@ function addbeatmap(osz, f) {
     const map = new BeatmapController(osz), osu = map.osu;
     osu.ondecoded = () => {
         osu.requestStar();
-        osu.filterTracks();
         osu.sortTracks();
 
         if (!osu.tracks.some(t => t.general.Mode !== 3)) {

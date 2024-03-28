@@ -112,7 +112,7 @@ export default class OsuAudio {
 
         actx.resume().then(() => actx.decodeAudioData(buffer.buffer, decoded => {
             this.decoded = decoded;
-            if (callback) callback(this);
+            callback();
         }));
     }
     get pos() {

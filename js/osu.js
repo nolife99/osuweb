@@ -57,18 +57,18 @@ class Track {
                     const t = {
                         offset: +parts[0],
                         beatMs: +parts[1],
-                        meter: +parts[2],
+                        // meter: +parts[2],
                         sampleSet: +parts[3],
-                        sampleIndex: +parts[4],
+                        // sampleIndex: +parts[4],
                         volume: +parts[5],
                         uninherit: +parts[6],
-                        kiaiMode: +parts[7]
+                        // kiaiMode: +parts[7]
                     };
                     this.timing.push(t);
                     break;
 
                 case '[Colours]':
-                    parts = line.split(':'), key = parts[0].trim(), value = parts[1];
+                    parts = line.split(':'), key = parts[0], value = parts[1];
                     if (key === 'SliderTrackOverride') this.colors.SliderTrackOverride = value.split(',');
                     else if (key === 'SliderBorder') this.colors.SliderBorder = value.split(',');
                     else this.colors.push(value.split(','));
@@ -98,9 +98,9 @@ class Track {
                         hit.hitSample = {
                             normalSet: +hitSample[0],
                             additionSet: +hitSample[1],
-                            index: +hitSample[2],
-                            volume: +hitSample[3],
-                            filename: hitSample[4]
+                            // index: +hitSample[2],
+                            // volume: +hitSample[3],
+                            // filename: hitSample[4]
                         };
                     }
                     else if ((hit.type & typeSlider) > 0) {
@@ -142,9 +142,9 @@ class Track {
                         hit.hitSample = {
                             normalSet: +hitSample[0],
                             additionSet: +hitSample[1],
-                            index: +hitSample[2],
-                            volume: +hitSample[3],
-                            filename: hitSample[4]
+                            // index: +hitSample[2],
+                            // volume: +hitSample[3],
+                            // filename: hitSample[4]
                         };
                     }
                     else if ((hit.type & typeSpin) > 0) {
@@ -160,9 +160,9 @@ class Track {
                         hit.hitSample = {
                             normalSet: +hitSample[0],
                             additionSet: +hitSample[1],
-                            index: +hitSample[2],
-                            volume: +hitSample[3],
-                            filename: hitSample[4]
+                            // index: +hitSample[2],
+                            // volume: +hitSample[3],
+                            // filename: hitSample[4]
                         };
                     }
                     this.hitObjects.push(hit);
@@ -208,11 +208,9 @@ class Track {
                 hit.sliderTimeTotal = hit.sliderTime * hit.repeat;
                 hit.endTime = hit.time + hit.sliderTimeTotal;
 
-                hit.repeats = new Array(hit.repeat);
+                hit.repeats = new Array(hit.repeat - 1);
                 for (let i = 1; i < hit.repeat; ++i) hit.repeats[i - 1] = {
-                    get time() {
-                        return hit.time + i * hit.sliderTime
-                    }
+                    time: hit.time + i * hit.sliderTime
                 };
             }
         }
@@ -261,9 +259,6 @@ export default class Osu {
             catch { }
         }
         img.src = 'asset/skin/defaultbg.jpg';
-    }
-    filterTracks() {
-        this.tracks = this.tracks.filter(t => t.general.Mode !== 3);
     }
     sortTracks() {
         this.tracks = this.tracks.filter(t => t.general.Mode !== 3);

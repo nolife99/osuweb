@@ -128,21 +128,16 @@ function circleGeometry(radius) {
     return new PIXI.Geometry().addAttribute('pos', vert, 4).addIndex(index);
 }
 export default class SliderMesh extends PIXI.Container {
-    constructor(hit, tintid) {
+    constructor(curve, tintid) {
         super();
 
-        this.curve = hit.curve;
-        this.geometry = curveGeometry(hit.curve, hit.pixelLength, this.radius);
-        this.alpha = 1;
+        this.curve = curve;
+        this.geometry = curveGeometry(curve, curve.pointLength, this.radius);
         this.tintid = tintid;
         this.startt = 0;
         this.endt = 1;
-        this.drawMode = PIXI.DRAW_MODES.TRIANGLES;
     }
     _render(renderer) {
-        this._renderDefault(renderer);
-    }
-    _renderDefault(renderer) {
         const shader = this.shader;
         shader.alpha = this.worldAlpha;
         if (shader.update) shader.update();
@@ -165,22 +160,22 @@ export default class SliderMesh extends PIXI.Container {
         function bind(geometry) {
             renderer.shader.bind(shader);
             renderer.geometry.bind(geometry, shader);
-            const byteSize = geometry.indexBuffer.data.BYTES_PER_ELEMENT;
-            glType = byteSize === 2 ? gl.UNSIGNED_SHORT : gl.UNSIGNED_INT;
-            indexLength = geometry.indexBuffer.data.length;
+            const data = geometry.indexBuffer.data;
+            glType = data.BYTES_PER_ELEMENT === 2 ? gl.UNSIGNED_SHORT : gl.UNSIGNED_INT;
+            indexLength = data.length;
         }
         if (this.startt === 0 && this.endt === 1) {
             this.uniforms.dt = 0;
             this.uniforms.ot = 1;
             bind(this.geometry);
-            gl.drawElements(this.drawMode, indexLength, glType, 0);
+            gl.drawElements(gl.TRIANGLES, indexLength, glType, 0);
         }
         else if (this.endt === 1) {
             if (this.startt !== 1) {
                 this.uniforms.dt = -1;
                 this.uniforms.ot = -this.startt;
                 bind(this.geometry);
-                gl.drawElements(this.drawMode, indexLength, glType, 0);
+                gl.drawElements(gl.TRIANGLES, indexLength, glType, 0);
             }
             this.uniforms.dt = 0;
             this.uniforms.ot = 1;
@@ -189,14 +184,14 @@ export default class SliderMesh extends PIXI.Container {
             this.uniforms.oy += p.y * this.uniforms.dy;
 
             bind(this.circle);
-            gl.drawElements(this.drawMode, indexLength, glType, 0);
+            gl.drawElements(gl.TRIANGLES, indexLength, glType, 0);
         }
         else if (this.startt === 0) {
             if (this.endt !== 0) {
                 this.uniforms.dt = 1;
                 this.uniforms.ot = this.endt;
                 bind(this.geometry);
-                gl.drawElements(this.drawMode, indexLength, glType, 0);
+                gl.drawElements(gl.TRIANGLES, indexLength, glType, 0);
             }
             this.uniforms.dt = 0;
             this.uniforms.ot = 1;
@@ -205,34 +200,34 @@ export default class SliderMesh extends PIXI.Container {
             this.uniforms.oy += p.y * this.uniforms.dy;
 
             bind(this.circle);
-            gl.drawElements(this.drawMode, indexLength, glType, 0);
+            gl.drawElements(gl.TRIANGLES, indexLength, glType, 0);
         }
 
         gl.depthFunc(gl.EQUAL);
         gl.colorMask(true, true, true, true);
 
-        if (this.startt === 0 && this.endt === 1) gl.drawElements(this.drawMode, indexLength, glType, 0);
+        if (this.startt === 0 && this.endt === 1) gl.drawElements(gl.TRIANGLES, indexLength, glType, 0);
         else if (this.endt === 1) {
             if (this.startt !== 1) {
-                gl.drawElements(this.drawMode, indexLength, glType, 0);
+                gl.drawElements(gl.TRIANGLES, indexLength, glType, 0);
                 this.uniforms.ox = ox0;
                 this.uniforms.oy = oy0;
                 this.uniforms.dt = -1;
                 this.uniforms.ot = -this.startt;
                 bind(this.geometry);
             }
-            gl.drawElements(this.drawMode, indexLength, glType, 0);
+            gl.drawElements(gl.TRIANGLES, indexLength, glType, 0);
         }
         else if (this.startt === 0) {
             if (this.endt !== 0) {
-                gl.drawElements(this.drawMode, indexLength, glType, 0);
+                gl.drawElements(gl.TRIANGLES, indexLength, glType, 0);
                 this.uniforms.ox = ox0;
                 this.uniforms.oy = oy0;
                 this.uniforms.dt = 1;
                 this.uniforms.ot = this.endt;
                 bind(this.geometry);
             }
-            gl.drawElements(this.drawMode, indexLength, glType, 0);
+            gl.drawElements(gl.TRIANGLES, indexLength, glType, 0);
         }
         gl.depthFunc(gl.LESS);
         renderer.state.setDepthTest(false);
@@ -243,10 +238,9 @@ export default class SliderMesh extends PIXI.Container {
     initialize(colors, radius, transform, SliderTrackOverride, SliderBorder) {
         this.radius = radius;
         this.ncolors = colors.length;
-        this.uSampler2 = newTexture(colors, SliderTrackOverride, SliderBorder);
         this.circle = circleGeometry(radius);
         this.uniforms = {
-            uSampler2: this.uSampler2, alpha: 1,
+            uSampler2: newTexture(colors, SliderTrackOverride, SliderBorder), alpha: 1,
             dx: transform.dx, dy: transform.dy, ox: transform.ox, oy: transform.oy,
             texturepos: 0
         };
@@ -260,11 +254,14 @@ export default class SliderMesh extends PIXI.Container {
     }
     destroy(opt) {
         super.destroy(opt);
-        this.geometry.destroy();
+        this.geometry.destroy(opt);
     }
     deallocate() {
-        this.uSampler2.destroy();
-        this.circle.destroy();
-        this.shader.destroy();
+        const opt = {
+            children: true, texture: true, baseTexture: true
+        };
+        this.uniforms.uSampler2.destroy(opt);
+        this.circle.destroy(opt);
+        this.shader.destroy(opt);
     }
 }

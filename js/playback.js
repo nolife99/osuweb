@@ -84,8 +84,11 @@ export default class Playback {
         this.gfx = {};
         this.gamefield = new PIXI.Container;
         this.destroyHit = o => {
+            const opt = {
+                children: true
+            }
             this.gamefield.removeChild(o);
-            o.destroy();
+            o.destroy(opt);
         }
         this.calcSize();
 
@@ -101,6 +104,27 @@ export default class Playback {
         osu.onready = () => {
             this.hits = track.hitObjects.map(a => {
                 const hit = structuredClone(a);
+                if (game.hidden && i++ > 0) {
+                    hit.objectFadeInTime = .4 * this.approachTime;
+                    hit.objectFadeOutOffset = -.6 * this.approachTime;
+                    hit.circleFadeOutTime = .3 * this.approachTime;
+
+                    if (hit.type === 'slider') {
+                        hit.fadeOutOffset = -.6 * this.approachTime;
+                        hit.fadeOutDuration = hit.sliderTimeTotal - hit.fadeOutOffset;
+                    }
+                }
+                else {
+                    hit.enableflash = true;
+                    hit.objectFadeInTime = Math.min(400, this.approachTime);
+                    hit.circleFadeOutTime = 100;
+                    hit.objectFadeOutOffset = this.MehTime;
+
+                    if (hit.type === 'slider') {
+                        hit.fadeOutOffset = hit.sliderTimeTotal;
+                        hit.fadeOutDuration = 300;
+                    }
+                }
                 if (game.hardrock) {
                     hit.y = -(hit.y - 192) + 192;
                     if (hit.type === 'slider') for (const k of hit.keyframes) k.y = -(k.y - 192) + 192;
@@ -156,47 +180,23 @@ export default class Playback {
             }
 
             const stackOfs = (1 - .7 * ((this.CS - 5) / 5)) * -3.2;
-            for (const hit of this.hits) if (hit.chain !== 0) {
-                const ofs = stackOfs * hit.chain;
-                hit.x += ofs;
-                hit.y += ofs;
-
-                if (hit.type == "slider") {
-                    for (const k of hit.keyframes) {
-                        k.x += ofs;
-                        k.y += ofs;
-                    }
-                    if (hit.sliderType === 'P') hit.curve = ArcPath(hit);
-                    else hit.curve = new LinearBezier(hit, hit.sliderType === 'L');
-                }
-            }
-
-            let i = 0;
+            let prev;
+            
             for (const hit of this.hits) {
-                if (game.hidden && i++ > 0) {
-                    hit.objectFadeInTime = .4 * this.approachTime;
-                    hit.objectFadeOutOffset = -.6 * this.approachTime;
-                    hit.circleFadeOutTime = .3 * this.approachTime;
+                if (hit.chain !== 0) {
+                    const ofs = stackOfs * hit.chain;
+                    hit.x += ofs;
+                    hit.y += ofs;
 
-                    if (hit.type === 'slider') {
-                        hit.fadeOutOffset = -.6 * this.approachTime;
-                        hit.fadeOutDuration = hit.sliderTimeTotal - hit.fadeOutOffset;
+                    if (hit.type == "slider") {
+                        for (const k of hit.keyframes) {
+                            k.x += ofs;
+                            k.y += ofs;
+                        }
+                        if (hit.sliderType === 'P') hit.curve = ArcPath(hit);
+                        else hit.curve = new LinearBezier(hit, hit.sliderType === 'L');
                     }
                 }
-                else {
-                    hit.enableflash = true;
-                    hit.objectFadeInTime = Math.min(400, this.approachTime);
-                    hit.circleFadeOutTime = 100;
-                    hit.objectFadeOutOffset = this.MehTime;
-
-                    if (hit.type === 'slider') {
-                        hit.fadeOutOffset = hit.sliderTimeTotal;
-                        hit.fadeOutDuration = 300;
-                    }
-                }
-            }
-            for (let i = 0; i < this.hits.length; ++i) {
-                const hit = this.hits[i];
                 hit.hitIndex = ++this.currentHitIndex;
                 hit.objects = [];
                 hit.judgements = [];
@@ -207,7 +207,8 @@ export default class Playback {
                     case 'slider': this.createSlider(hit); break;
                     case 'spinner': this.createSpinner(hit); break;
                 }
-                if (!game.hideFollow && i > 0 && hit.type !== 'spinner' && hit.type !== 'spinner' && hit.combo === this.hits[i - 1].combo) this.createFollowPoint(this.hits[i - 1], hit);
+                if (!game.hideFollow && prev && hit.type !== 'spinner' && hit.type !== 'spinner' && hit.combo === prev.combo) this.createFollowPoint(prev, hit);
+                prev = hit;
             }
 
             app.stage.addChild(this.scoreOverlay);
@@ -575,7 +576,7 @@ export default class Playback {
     createSlider(hit) {
         hit.nextRepeat = 1;
         hit.nexttick = 0;
-        hit.body = new SliderMesh(hit, hit.combo % this.combos.length);
+        hit.body = new SliderMesh(hit.curve, hit.combo % this.combos.length);
         hit.body.alpha = 0;
         hit.body.depth = 5 - .000001 * hit.hitIndex;
         hit.objects.push(hit.body);
@@ -697,15 +698,15 @@ export default class Playback {
     playTicksound(hit, time) {
         while (this.curtimingid + 1 < this.track.timing.length && this.track.timing[this.curtimingid + 1].offset <= time) ++this.curtimingid;
         while (this.curtimingid > 0 && this.track.timing[this.curtimingid].offset > time) --this.curtimingid;
-        const timing = this.track.timing[this.curtimingid], defaultSet = timing.sampleSet || game.sampleSet;
-        game.sample[defaultSet].slidertick.volume = game.masterVolume * game.effectVolume * (hit.hitSample.volume || timing.volume) / 100;
+        const timing = this.track.timing[this.curtimingid], defaultSet = hit.hitSample.normalSet || timing.sampleSet || game.sampleSet;
+        game.sample[defaultSet].slidertick.volume = game.masterVolume * game.effectVolume * timing.volume / 100;
         game.sample[defaultSet].slidertick.play();
     }
     playHitsound(hit, id, time) {
         while (this.curtimingid + 1 < this.track.timing.length && this.track.timing[this.curtimingid + 1].offset <= time) ++this.curtimingid;
         while (this.curtimingid > 0 && this.track.timing[this.curtimingid].offset > time) --this.curtimingid;
         const timing = this.track.timing[this.curtimingid],
-            volume = game.masterVolume * game.effectVolume * (hit.hitSample.volume || timing.volume) / 100,
+            volume = game.masterVolume * game.effectVolume * timing.volume / 100,
             defaultSet = timing.sampleSet || game.sampleSet;
 
         function playHit(bitmask, normalSet, additionSet) {

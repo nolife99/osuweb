@@ -184,7 +184,7 @@ export default class PlayerActions {
                 game.down = true;
                 this.triggerTap(this.playback);
 
-                if (!cur || hit.type !== 'circle') {
+                if (!cur || cur.type !== 'slider' || hit.type !== 'circle') {
                     cur = hit;
                     this.curObj = hit;
                 }
