@@ -44,7 +44,6 @@ class ErrorMeter extends PIXI.Container {
             tick.alpha = 0;
             tick.t0 = -23333;
             tick.x = 2;
-            tick.roundPixels = false;
             this.ticks[i] = tick;
             super.addChild(tick);
         }

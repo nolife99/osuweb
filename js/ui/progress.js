@@ -20,13 +20,15 @@ export default class ProgressOverlay extends PIXI.Container {
         this.endtime = endtime;
 
         const font = {
-            fontFamily: 'Venera', fontSize: 16, fill: 0xddffff
+            fontFamily: 'Venera', fontSize: 16, fill: 0xddffff, trim: true
         };
         this.remaining = new PIXI.Text(null, font);
+        this.remaining.roundPixels = true;
         this.remaining.anchor.set(1);
         super.addChild(this.remaining);
         
         this.past = new PIXI.Text(null, font);
+        this.past.roundPixels = true;
         this.past.anchor.set(0, 1);
         super.addChild(this.past);
 

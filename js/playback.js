@@ -70,27 +70,9 @@ export default class Playback {
         this.skipped = false;
         this.ended = false;
 
-        osu.onready = () => {
-            app.stage.addChild(this.scoreOverlay);
-            app.stage.addChild(this.errorMeter);
-            app.stage.addChild(this.progressOverlay);
-            app.stage.addChild(this.breakOverlay);
-
-            this.loadingMenu.hide();
-            this.audioReady = true;
-            this.start();
-        };
-
-        this.gfx = {};
-        this.gamefield = new PIXI.Container;
-        this.destroyHit = o => {
-            this.gamefield.removeChild(o);
-            o.destroy();
-        }
-        this.calcSize();
-
         game.mouseX = 256;
         game.mouseY = 192;
+
         this.loadingMenu = new LoadingMenu({
             width: window.innerWidth,
             height: window.innerHeight
@@ -99,33 +81,31 @@ export default class Playback {
             width: window.innerWidth,
             height: window.innerHeight
         });
-        this.breakOverlay = new BreakOverlay({
-            width: window.innerWidth,
-            height: window.innerHeight
-        });
+        this.gfx = {};
+        this.gamefield = new PIXI.Container;
+        this.destroyHit = o => {
+            this.gamefield.removeChild(o);
+            o.destroy();
+        }
+        this.calcSize();
 
         this.createBackground();
-        const convertcolor = color => (+color[0] << 16) | (+color[1] << 8) | (+color[2] << 0);
-        this.combos = new Uint32Array(track.colors.length);
-        for (let i = 0; i < track.colors.length; ++i) this.combos[i] = convertcolor(track.colors[i]);
-
-        let SliderTrackOverride, SliderBorder;
-        if (track.colors.SliderTrackOverride) SliderTrackOverride = convertcolor(track.colors.SliderTrackOverride);
-        if (track.colors.SliderBorder) SliderBorder = convertcolor(track.colors.SliderBorder);
-
         app.stage.addChild(this.gamefield);
         app.stage.addChild(this.loadingMenu);
         app.stage.addChild(this.volumeMenu);
 
-        this.hits = track.hitObjects.map(a => {
-            const hit = structuredClone(a);
-            if (game.hardrock) {
-                hit.y = -(hit.y - 192) + 192;
-                if (hit.type === 'slider') for (const k of hit.keyframes) k.y = -(k.y - 192) + 192;
-            }
-            if (hit.type === 'slider') {
-                if (hit.pixelLength <= 0) hit.type = 'circle';
-                else {
+        this.endTime = track.hitObjects.at(-1).endTime + 1500;
+        this.wait = Math.max(0, 1500 - track.hitObjects[0].time);
+        this.skipTime = track.hitObjects[0].time - 3000;
+
+        osu.onready = () => {
+            this.hits = track.hitObjects.map(a => {
+                const hit = structuredClone(a);
+                if (game.hardrock) {
+                    hit.y = -(hit.y - 192) + 192;
+                    if (hit.type === 'slider') for (const k of hit.keyframes) k.y = -(k.y - 192) + 192;
+                }
+                if (hit.type === 'slider') {
                     if (hit.sliderType === 'P') {
                         hit.curve = ArcPath(hit);
                         if (isNaN(hit.curve.pointAt(0).x)) {
@@ -135,30 +115,131 @@ export default class Playback {
                     }
                     else hit.curve = new LinearBezier(hit, hit.sliderType === 'L');
                 }
-            }
-            return hit;
-        });
+                return hit;
+            });
 
-        this.endTime = this.hits.at(-1).endTime + 1500;
-        this.wait = Math.max(0, 1500 - this.hits[0].time);
-        this.skipTime = this.hits[0].time - 3000;
+            const STACK_LENIENCE = 3;
+            for (let i = this.hits.length - 1; i > 0; --i) {
+                let n = i;
+                let objectI = this.hits[i];
+                if (objectI.chain != 0 || objectI.type === 'spinner') continue;
+
+                if (objectI.type === 'circle') {
+                    while (--n >= 0) {
+                        const objectN = this.hits[n];
+                        if (objectN.type === 'spinner') continue;
+                        if (objectI.time - this.approachTime * track.general.StackLeniency > objectN.endTime) break;
+
+                        if (objectN.type === 'slider' && getdist(objectN, objectI, true) < STACK_LENIENCE) {
+                            const offset = objectI.chain - objectN.chain + 1;
+                            for (let j = n + 1; j <= i; ++j) if (getdist(objectN, this.hits[j], true) < STACK_LENIENCE) this.hits[j].chain -= offset;
+                            break;
+                        }
+                        if (getdist(objectN, objectI) < STACK_LENIENCE) {
+                            objectN.chain = objectI.chain + 1;
+                            objectI = objectN;
+                        }
+                    }
+                }
+                else if (objectI.type === 'slider') {
+                    while (--n >= 0) {
+                        const objectN = this.hits[n];
+                        if (objectN.type === 'spinner') continue;
+
+                        if (objectI.time - (this.approachTime * track.general.StackLeniency) > objectN.time) break;
+                        if (getdist(objectN, objectI, objectN.type === 'slider') < STACK_LENIENCE) {
+                            objectN.chain = objectI.chain + 1;
+                            objectI = objectN;
+                        }
+                    }
+                }
+            }
+
+            const stackOfs = (1 - .7 * ((this.CS - 5) / 5)) * -3.2;
+            for (const hit of this.hits) if (hit.chain !== 0) {
+                const ofs = stackOfs * hit.chain;
+                hit.x += ofs;
+                hit.y += ofs;
+
+                if (hit.type == "slider") {
+                    for (const k of hit.keyframes) {
+                        k.x += ofs;
+                        k.y += ofs;
+                    }
+                    if (hit.sliderType === 'P') hit.curve = ArcPath(hit);
+                    else hit.curve = new LinearBezier(hit, hit.sliderType === 'L');
+                }
+            }
+
+            let i = 0;
+            for (const hit of this.hits) {
+                if (game.hidden && i++ > 0) {
+                    hit.objectFadeInTime = .4 * this.approachTime;
+                    hit.objectFadeOutOffset = -.6 * this.approachTime;
+                    hit.circleFadeOutTime = .3 * this.approachTime;
+
+                    if (hit.type === 'slider') {
+                        hit.fadeOutOffset = -.6 * this.approachTime;
+                        hit.fadeOutDuration = hit.sliderTimeTotal - hit.fadeOutOffset;
+                    }
+                }
+                else {
+                    hit.enableflash = true;
+                    hit.objectFadeInTime = Math.min(400, this.approachTime);
+                    hit.circleFadeOutTime = 100;
+                    hit.objectFadeOutOffset = this.MehTime;
+
+                    if (hit.type === 'slider') {
+                        hit.fadeOutOffset = hit.sliderTimeTotal;
+                        hit.fadeOutDuration = 300;
+                    }
+                }
+            }
+            for (let i = 0; i < this.hits.length; ++i) {
+                const hit = this.hits[i];
+                hit.hitIndex = ++this.currentHitIndex;
+                hit.objects = [];
+                hit.judgements = [];
+                hit.score = -1;
+
+                switch (hit.type) {
+                    case 'circle': this.createHitCircle(hit); break;
+                    case 'slider': this.createSlider(hit); break;
+                    case 'spinner': this.createSpinner(hit); break;
+                }
+                if (!game.hideFollow && i > 0 && hit.type !== 'spinner' && hit.type !== 'spinner' && hit.combo === this.hits[i - 1].combo) this.createFollowPoint(this.hits[i - 1], hit);
+            }
+            
+            app.stage.addChild(this.scoreOverlay);
+            app.stage.addChild(this.errorMeter);
+            app.stage.addChild(this.progressOverlay);
+            app.stage.addChild(this.breakOverlay);
+
+            this.loadingMenu.hide();
+            this.audioReady = true;
+            this.start();
+        };
+        
+        const convertcolor = color => (+color[0] << 16) | (+color[1] << 8) | (+color[2] << 0);
+        this.combos = new Uint32Array(track.colors.length);
+        for (let i = 0; i < track.colors.length; ++i) this.combos[i] = convertcolor(track.colors[i]);
+
+        let SliderTrackOverride, SliderBorder;
+        if (track.colors.SliderTrackOverride) SliderTrackOverride = convertcolor(track.colors.SliderTrackOverride);
+        if (track.colors.SliderBorder) SliderBorder = convertcolor(track.colors.SliderBorder);
 
         this.progressOverlay = new ProgressOverlay({
             width: window.innerWidth,
             height: window.innerHeight
-        }, this.hits[0].time, this.hits.at(-1).endTime);
+        }, track.hitObjects[0].time, track.hitObjects.at(-1).endTime);
+        this.breakOverlay = new BreakOverlay({
+            width: window.innerWidth,
+            height: window.innerHeight
+        });
         window.onresize = () => {
             app.renderer.resize(window.innerWidth, window.innerHeight);
             this.calcSize();
 
-            this.scoreOverlay.resize({
-                width: window.innerWidth,
-                height: window.innerHeight
-            });
-            this.errorMeter.resize({
-                width: window.innerWidth,
-                height: window.innerHeight
-            });
             this.loadingMenu.resize({
                 width: window.innerWidth,
                 height: window.innerHeight
@@ -167,14 +248,24 @@ export default class Playback {
                 width: window.innerWidth,
                 height: window.innerHeight
             });
-            this.breakOverlay.resize({
-                width: window.innerWidth,
-                height: window.innerHeight
-            });
-            this.progressOverlay.resize({
-                width: window.innerWidth,
-                height: window.innerHeight
-            });
+            if (this.audioReady) {
+                this.scoreOverlay.resize({
+                    width: window.innerWidth,
+                    height: window.innerHeight
+                });
+                this.errorMeter.resize({
+                    width: window.innerWidth,
+                    height: window.innerHeight
+                });
+                this.breakOverlay.resize({
+                    width: window.innerWidth,
+                    height: window.innerHeight
+                });
+                this.progressOverlay.resize({
+                    width: window.innerWidth,
+                    height: window.innerHeight
+                });
+            }
             if (this.background && this.background.texture) {
                 this.background.x = window.innerWidth / 2;
                 this.background.y = window.innerHeight / 2;
@@ -217,8 +308,8 @@ export default class Playback {
             height: window.innerHeight
         }, this.HP, scoreMult);
 
-        this.circleRadius = 32 * (1 - .7 * ((this.CS - 5) / 5));
-        this.hitSpriteScale = this.circleRadius / 60;
+        this.circleRadius = 64 * (1 - .7 * ((this.CS - 5) / 5));
+        this.hitSpriteScale = this.circleRadius / 128;
 
         this.MehTime = 200 - 10 * this.OD;
         this.GoodTime = 140 - 8 * this.OD;
@@ -230,84 +321,6 @@ export default class Playback {
 
         this.approachTime = this.AR <= 5 ? 1800 - 120 * this.AR : 1950 - 150 * this.AR;
         this.approachFadeInTime = Math.min(800, this.approachTime);
-
-        const STACK_LENIENCE = 3;
-        for (let i = this.hits.length - 1; i > 0; --i) {
-            let n = i;
-            let objectI = this.hits[i];
-            if (objectI.chain != 0 || objectI.type === 'spinner') continue;
-
-            if (objectI.type === 'circle') {
-                while (--n >= 0) {
-                    const objectN = this.hits[n];
-                    if (objectN.type === 'spinner') continue;
-                    if (objectI.time - this.approachTime * track.general.StackLeniency > objectN.endTime) break;
-
-                    if (objectN.type === 'slider' && getdist(objectN, objectI, true) < STACK_LENIENCE) {
-                        const offset = objectI.chain - objectN.chain + 1;
-                        for (let j = n + 1; j <= i; ++j) if (getdist(objectN, this.hits[j], true) < STACK_LENIENCE) this.hits[j].chain -= offset;
-                        break;
-                    }
-                    if (getdist(objectN, objectI) < STACK_LENIENCE) {
-                        objectN.chain = objectI.chain + 1;
-                        objectI = objectN;
-                    }
-                }
-            }
-            else if (objectI.type === 'slider') {
-                while (--n >= 0) {
-                    const objectN = this.hits[n];
-                    if (objectN.type === 'spinner') continue;
-
-                    if (objectI.time - (this.approachTime * track.general.StackLeniency) > objectN.time) break;
-                    if (getdist(objectN, objectI, objectN.type === 'slider') < STACK_LENIENCE) {
-                        objectN.chain = objectI.chain + 1;
-                        objectI = objectN;
-                    }
-                }
-            }
-        }
-
-        const stackOfs = (1 - .7 * ((this.CS - 5) / 5)) * -3.2;
-        for (const hit of this.hits) if (hit.chain !== 0) {
-            const ofs = stackOfs * hit.chain;
-            hit.x += ofs;
-            hit.y += ofs;
-
-            if (hit.type == "slider") {
-                for (const k of hit.keyframes) {
-                    k.x += ofs;
-                    k.y += ofs;
-                }
-                if (hit.sliderType === 'P') hit.curve = ArcPath(hit);
-                else hit.curve = new LinearBezier(hit, hit.sliderType === 'L');
-            }
-        }
-
-        let i = 0;
-        for (const hit of this.hits) {
-            if (game.hidden && i++ > 0) {
-                hit.objectFadeInTime = .4 * this.approachTime;
-                hit.objectFadeOutOffset = -.6 * this.approachTime;
-                hit.circleFadeOutTime = .3 * this.approachTime;
-
-                if (hit.type === 'slider') {
-                    hit.fadeOutOffset = -.6 * this.approachTime;
-                    hit.fadeOutDuration = hit.sliderTimeTotal - hit.fadeOutOffset;
-                }
-            }
-            else {
-                hit.enableflash = true;
-                hit.objectFadeInTime = Math.min(400, this.approachTime);
-                hit.circleFadeOutTime = 100;
-                hit.objectFadeOutOffset = this.MehTime;
-
-                if (hit.type === 'slider') {
-                    hit.fadeOutOffset = hit.sliderTimeTotal;
-                    hit.fadeOutDuration = 300;
-                }
-            }
-        }
 
         this.glowFadeOutTime = 350;
         this.glowMaxOpacity = .5;
@@ -352,27 +365,12 @@ export default class Playback {
         window.addEventListener('keydown', this.skipCallback);
         window.addEventListener('keyup', this.pauseCallback);
 
-        SliderMesh.prototype.initialize(this.combos, this.circleRadius, {
+        SliderMesh.prototype.initialize(this.combos, this.circleRadius / 2.1, {
             dx: 2 * this.gfx.width / window.innerWidth / 512,
             ox: -1 + 2 * this.gfx.xoffset / window.innerWidth,
             dy: -2 * this.gfx.height / window.innerHeight / 384,
             oy: 1 - 2 * this.gfx.yoffset / window.innerHeight
         }, SliderTrackOverride, SliderBorder);
-
-        for (let i = 0; i < this.hits.length; ++i) {
-            const hit = this.hits[i];
-            hit.hitIndex = ++this.currentHitIndex;
-            hit.objects = [];
-            hit.judgements = [];
-            hit.score = -1;
-
-            switch (hit.type) {
-                case 'circle': this.createHitCircle(hit); break;
-                case 'slider': this.createSlider(hit); break;
-                case 'spinner': this.createSpinner(hit); break;
-            }
-            if (!game.hideFollow && i > 0 && hit.type !== 'spinner' && hit.type !== 'spinner' && hit.combo === this.hits[i - 1].combo) this.createFollowPoint(this.hits[i - 1], hit);
-        }
 
         this.curtimingid = 0;
         this.futuremost = 0;
@@ -577,7 +575,7 @@ export default class Playback {
     createSlider(hit) {
         hit.nextRepeat = 1;
         hit.nexttick = 0;
-        hit.body = new SliderMesh(hit, this.circleRadius * .98, hit.combo % this.combos.length);
+        hit.body = new SliderMesh(hit, hit.combo % this.combos.length);
         hit.body.alpha = 0;
         hit.body.depth = 5 - .000001 * hit.hitIndex;
         hit.objects.push(hit.body);
@@ -925,7 +923,7 @@ export default class Playback {
             hit.ball.y = at.y;
 
             if (!game.autoplay) {
-                const dx = game.mouseX - at.x, dy = game.mouseY - at.y, followpx = hit.followSize * this.circleRadius * 1.4;
+                const dx = game.mouseX - at.x, dy = game.mouseY - at.y, followpx = hit.followSize * this.circleRadius / 1.8;
                 var isfollowing = dx * dx + dy * dy <= followpx * followpx;
 
                 if (!isfollowing) {

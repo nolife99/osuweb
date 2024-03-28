@@ -104,9 +104,7 @@ class Track {
                         };
                     }
                     else if ((hit.type & typeSlider) > 0) {
-                        hit.type = 'slider';
                         const sliderKeys = parts[5].split('|');
-                        hit.sliderType = sliderKeys[0];
                         hit.keyframes = [];
                         for (let j = 1; j < sliderKeys.length; ++j) {
                             const p = sliderKeys[j].split(':');
@@ -114,28 +112,32 @@ class Track {
                                 x: +p[0], y: +p[1]
                             });
                         }
-                        hit.repeat = +parts[6];
-                        hit.pixelLength = +parts[7];
-
-                        if (parts.length > 8) hit.edgeHitsounds = parts[8].split('|').map(Number);
+                        if (hit.keyframes.length === 0) hit.type = 'circle';
                         else {
-                            hit.edgeHitsounds = new Uint8Array(hit.repeat + 1);
-                            for (let wdnmd = 0; wdnmd < hit.repeat + 1; ++wdnmd) hit.edgeHitsounds[wdnmd] = 0;
-                        }
+                            hit.type = 'slider';
+                            hit.sliderType = sliderKeys[0];
+                            hit.repeat = +parts[6];
+                            hit.pixelLength = Math.abs(+parts[7]);
 
-                        hit.edgeSets = new Array(hit.repeat + 1);
-                        for (let wdnmd = 0; wdnmd < hit.repeat + 1; ++wdnmd) hit.edgeSets[wdnmd] = {
-                            normalSet: 0, additionSet: 0
-                        };
-                        if (parts.length > 9) {
-                            const additions = parts[9].split('|');
-                            for (let wdnmd = 0; wdnmd < additions.length; ++wdnmd) {
-                                const sets = additions[wdnmd].split(':');
-                                hit.edgeSets[wdnmd].normalSet = +sets[0];
-                                hit.edgeSets[wdnmd].additionSet = +sets[1];
+                            if (parts.length > 8) hit.edgeHitsounds = parts[8].split('|').map(Number);
+                            else {
+                                hit.edgeHitsounds = new Uint8Array(hit.repeat + 1);
+                                for (let wdnmd = 0; wdnmd < hit.repeat + 1; ++wdnmd) hit.edgeHitsounds[wdnmd] = 0;
+                            }
+
+                            hit.edgeSets = new Array(hit.repeat + 1);
+                            for (let wdnmd = 0; wdnmd < hit.repeat + 1; ++wdnmd) hit.edgeSets[wdnmd] = {
+                                normalSet: 0, additionSet: 0
+                            };
+                            if (parts.length > 9) {
+                                const additions = parts[9].split('|');
+                                for (let wdnmd = 0; wdnmd < additions.length; ++wdnmd) {
+                                    const sets = additions[wdnmd].split(':');
+                                    hit.edgeSets[wdnmd].normalSet = +sets[0];
+                                    hit.edgeSets[wdnmd].additionSet = +sets[1];
+                                }
                             }
                         }
-
                         const hitSample = (parts.length > 10 ? parts[10] : '0:0:0:0:').split(':');
                         hit.hitSample = {
                             normalSet: +hitSample[0],
@@ -268,7 +270,7 @@ export default class Osu {
         this.tracks.sort((a, b) => a.oldStar - b.oldStar);
     }
     load_mp3(tIndex) {
-        this.zip.getChildByName(this.tracks[tIndex].general.AudioFilename).getUint8Array().then((e => this.audio = new OsuAudio(e, this.onready)));
+        return this.zip.getChildByName(this.tracks[tIndex].general.AudioFilename).getUint8Array().then((e => this.audio = new OsuAudio(e, this.onready)));
     }
     requestStar() {
         fetch('https://api.sayobot.cn/v2/beatmapinfo?0=' + this.tracks[0].metadata.BeatmapSetID).then(r => r.json()).then(e => {

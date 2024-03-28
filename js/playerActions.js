@@ -91,6 +91,7 @@ export default class PlayerActions {
             window.addEventListener('keydown', this.keydownCallback);
             window.addEventListener('keyup', this.keyupCallback);
         }
+        game.down = false;
     }
     mouse(t) {
         let i = 0;
@@ -141,7 +142,6 @@ export default class PlayerActions {
     }
     update(time) {
         let cur = this.curObj;
-        if (cur && cur.time > time + this.playback.approachTime) cur = null;
         if (game.down && cur) {
             if (cur.type === 'circle' || time > cur.endTime) {
                 if (cur.type !== 'spinner') {

@@ -70,7 +70,7 @@ function newTexture(colors, SliderTrackOverride, SliderBorder) {
     return PIXI.Texture.fromBuffer(buff, width, colors.length);
 }
 
-const DIVIDES = 28;
+const DIVIDES = 36;
 function curveGeometry(curve, length, radius) {
     const vert = [], index = [], first = curve.pointAt(0), res = Math.ceil(length / (length > 45000 ? length / 8000 : 4.5));
     vert.push(first.x, first.y, 0, 0);
@@ -96,7 +96,7 @@ function curveGeometry(curve, length, radius) {
         const vrt = vert[4 * c], nextVrt = vert[4 * c + 1], theta1 = Math.atan2(vert[4 * p1 + 1] - nextVrt, vert[4 * p1] - vrt);
         let theta2 = Math.atan2(vert[4 * p2 + 1] - nextVrt, vert[4 * p2] - vrt);
         if (theta1 > theta2) theta2 += twoPi;
-        let theta = theta2 - theta1, divs = Math.ceil(DIVIDES * Math.abs(theta) / twoPi);
+        let theta = theta2 - theta1, divs = Math.floor(DIVIDES * Math.abs(theta) / twoPi);
         theta /= divs;
 
         let last = p1;
@@ -128,11 +128,11 @@ function circleGeometry(radius) {
     return new PIXI.Geometry().addAttribute('pos', vert, 4).addIndex(index);
 }
 export default class SliderMesh extends PIXI.Container {
-    constructor(hit, radius, tintid) {
+    constructor(hit, tintid) {
         super();
 
         this.curve = hit.curve;
-        this.geometry = curveGeometry(hit.curve, hit.pixelLength, radius);
+        this.geometry = curveGeometry(hit.curve, hit.pixelLength, this.radius);
         this.alpha = 1;
         this.tintid = tintid;
         this.startt = 0;
@@ -241,6 +241,7 @@ export default class SliderMesh extends PIXI.Container {
         this.uniforms.oy = oy0;
     }
     initialize(colors, radius, transform, SliderTrackOverride, SliderBorder) {
+        this.radius = radius;
         this.ncolors = colors.length;
         this.uSampler2 = newTexture(colors, SliderTrackOverride, SliderBorder);
         this.circle = circleGeometry(radius);

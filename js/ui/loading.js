@@ -21,15 +21,21 @@ export default class LoadingMenu extends PIXI.Container {
         super.addChild(this.loading);
 
         const allFont = {
-            fontFamily: 'Venera', fontSize: 14, fill: 0xffffff
+            fontFamily: 'Venera', fontSize: 14, fill: 0xffffff, trim: true
         };
         this.titletext = new PIXI.Text(track.metadata.Title || '-', {
-            fontFamily: 'Venera', fontSize: 24, fill: 0xffffff
+            fontFamily: 'Venera', fontSize: 24, fill: 0xffffff, trim: true
         });
         this.artisttext = new PIXI.Text(track.metadata.Artist || '-', allFont);
         this.versiontext = new PIXI.Text(track.metadata.Version || '-', allFont);
         this.sourcetext = new PIXI.Text('Source: ' + (track.metadata.Source || '-'), allFont);
         this.mappertext = new PIXI.Text('Mapper: ' + (track.metadata.Creator || '-'), allFont);
+
+        this.titletext.roundPixels = true;
+        this.artisttext.roundPixels = true;
+        this.versiontext.roundPixels = true;
+        this.sourcetext.roundPixels = true;
+        this.mappertext.roundPixels = true;
         
         this.titletext.anchor.set(.5);
         this.artisttext.anchor.set(.5);
