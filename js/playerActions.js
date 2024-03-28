@@ -141,7 +141,8 @@ export default class PlayerActions {
     }
     update(time) {
         let cur = this.curObj;
-        if (game.down && cur) {
+        if (cur && cur.time > time + this.playback.approachTime) cur = null;
+        else if (game.down) {
             if (cur.type === 'circle' || time > cur.endTime) {
                 if (cur.type !== 'spinner') {
                     game.mouseX = (cur.ball || cur).x;
@@ -183,7 +184,7 @@ export default class PlayerActions {
                 game.down = true;
                 this.triggerTap(this.playback);
 
-                if (!cur || cur.type === 'circle') {
+                if (!cur || hit.type !== 'circle') {
                     cur = hit;
                     this.curObj = hit;
                 }

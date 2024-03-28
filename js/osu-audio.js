@@ -33,7 +33,7 @@ export const sounds = {
 };
 
 const actx = new AudioContext;
-function makeSound(source, loadHandler, shouldLoadSound, failHandler) {
+function makeSound(source, loadHandler, shouldLoad, failHandler) {
     const o = {
         volumeNode: new GainNode(actx),
         get volume() {
@@ -92,7 +92,7 @@ function makeSound(source, loadHandler, shouldLoadSound, failHandler) {
         },
         fadeOut: durationInSeconds => o.fade(0, durationInSeconds)
     };
-    if (shouldLoadSound) fetch(source).then(response => response.arrayBuffer()).then(buf => actx.decodeAudioData(buf, buffer => {
+    if (shouldLoad) fetch(source).then(response => response.arrayBuffer()).then(buf => actx.decodeAudioData(buf, buffer => {
         o.buffer = buffer;
         o.hasLoaded = true;
         if (loadHandler) loadHandler(o.source);

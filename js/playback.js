@@ -60,33 +60,22 @@ export default class Playback {
         this.track = track;
         this.ready = true;
         this.started = false;
-
         this.newHits = [];
-        this.hits = track.hitObjects.map(a => {
-            const hit = {...a};
-            if (game.hardrock) {
-                hit.y = -(hit.y - 192) + 192;
-                if (hit.type === 'slider') for (const k of hit.keyframes) k.y = -(k.y - 192) + 192;
-            }
-            if (hit.type === 'slider') {
-                if (hit.sliderType === 'P' && hit.keyframes.length === 2) hit.curve = ArcPath(hit);
-                else hit.curve = new LinearBezier(hit, hit.keyframes.length === 1);
-            }
-            return hit;
-        });
 
         this.currentHitIndex = 0;
         this.approachScale = 3;
 
         this.speed = game.nightcore ? 1.5 : game.daycore ? .75 : 1;
         this.audioReady = false;
-        this.endTime = this.hits.at(-1).endTime + 1500;
-        this.wait = Math.max(0, 1500 - this.hits[0].time);
-        this.skipTime = this.hits[0].time - 3000;
         this.skipped = false;
         this.ended = false;
 
         osu.onready = () => {
+            app.stage.addChild(this.scoreOverlay);
+            app.stage.addChild(this.errorMeter);
+            app.stage.addChild(this.progressOverlay);
+            app.stage.addChild(this.breakOverlay);
+
             this.loadingMenu.hide();
             this.audioReady = true;
             this.start();
@@ -114,11 +103,50 @@ export default class Playback {
             width: window.innerWidth,
             height: window.innerHeight
         });
+
+        this.createBackground();
+        const convertcolor = color => (+color[0] << 16) | (+color[1] << 8) | (+color[2] << 0);
+        this.combos = new Uint32Array(track.colors.length);
+        for (let i = 0; i < track.colors.length; ++i) this.combos[i] = convertcolor(track.colors[i]);
+
+        let SliderTrackOverride, SliderBorder;
+        if (track.colors.SliderTrackOverride) SliderTrackOverride = convertcolor(track.colors.SliderTrackOverride);
+        if (track.colors.SliderBorder) SliderBorder = convertcolor(track.colors.SliderBorder);
+
+        app.stage.addChild(this.gamefield);
+        app.stage.addChild(this.loadingMenu);
+        app.stage.addChild(this.volumeMenu);
+
+        this.hits = track.hitObjects.map(a => {
+            const hit = structuredClone(a);
+            if (game.hardrock) {
+                hit.y = -(hit.y - 192) + 192;
+                if (hit.type === 'slider') for (const k of hit.keyframes) k.y = -(k.y - 192) + 192;
+            }
+            if (hit.type === 'slider') {
+                if (hit.pixelLength <= 0) hit.type = 'circle';
+                else {
+                    if (hit.sliderType === 'P') {
+                        hit.curve = ArcPath(hit);
+                        if (isNaN(hit.curve.pointAt(0).x)) {
+                            hit.sliderType === 'L';
+                            hit.curve = new LinearBezier(hit, true);
+                        }
+                    }
+                    else hit.curve = new LinearBezier(hit, hit.sliderType === 'L');
+                }
+            }
+            return hit;
+        });
+
+        this.endTime = this.hits.at(-1).endTime + 1500;
+        this.wait = Math.max(0, 1500 - this.hits[0].time);
+        this.skipTime = this.hits[0].time - 3000;
+
         this.progressOverlay = new ProgressOverlay({
             width: window.innerWidth,
             height: window.innerHeight
         }, this.hits[0].time, this.hits.at(-1).endTime);
-
         window.onresize = () => {
             app.renderer.resize(window.innerWidth, window.innerHeight);
             this.calcSize();
@@ -200,7 +228,7 @@ export default class Playback {
             height: window.innerHeight
         }, this.GreatTime, this.GoodTime, this.MehTime);
 
-        this.approachTime = this.AR < 5 ? 1800 - 120 * this.AR : 1950 - 150 * this.AR;
+        this.approachTime = this.AR <= 5 ? 1800 - 120 * this.AR : 1950 - 150 * this.AR;
         this.approachFadeInTime = Math.min(800, this.approachTime);
 
         const STACK_LENIENCE = 3;
@@ -252,7 +280,7 @@ export default class Playback {
                     k.y += ofs;
                 }
                 if (hit.sliderType === 'P') hit.curve = ArcPath(hit);
-                else hit.curve = new LinearBezier(hit, hit.keyframes.length === 1);
+                else hit.curve = new LinearBezier(hit, hit.sliderType === 'L');
             }
         }
 
@@ -323,23 +351,6 @@ export default class Playback {
         window.addEventListener('blur', this.blurCallback);
         window.addEventListener('keydown', this.skipCallback);
         window.addEventListener('keyup', this.pauseCallback);
-
-        this.createBackground();
-        const convertcolor = color => (+color[0] << 16) | (+color[1] << 8) | (+color[2] << 0);
-        this.combos = new Uint32Array(track.colors.length);
-        for (let i = 0; i < track.colors.length; ++i) this.combos[i] = convertcolor(track.colors[i]);
-
-        let SliderTrackOverride, SliderBorder;
-        if (track.colors.SliderTrackOverride) SliderTrackOverride = convertcolor(track.colors.SliderTrackOverride);
-        if (track.colors.SliderBorder) SliderBorder = convertcolor(track.colors.SliderBorder);
-
-        app.stage.addChild(this.gamefield);
-        app.stage.addChild(this.scoreOverlay);
-        app.stage.addChild(this.errorMeter);
-        app.stage.addChild(this.progressOverlay);
-        app.stage.addChild(this.breakOverlay);
-        app.stage.addChild(this.volumeMenu);
-        app.stage.addChild(this.loadingMenu);
 
         SliderMesh.prototype.initialize(this.combos, this.circleRadius, {
             dx: 2 * this.gfx.width / window.innerWidth / 512,
@@ -566,7 +577,7 @@ export default class Playback {
     createSlider(hit) {
         hit.nextRepeat = 1;
         hit.nexttick = 0;
-        hit.body = new SliderMesh(hit, this.circleRadius, hit.combo % this.combos.length);
+        hit.body = new SliderMesh(hit, this.circleRadius * .98, hit.combo % this.combos.length);
         hit.body.alpha = 0;
         hit.body.depth = 5 - .000001 * hit.hitIndex;
         hit.objects.push(hit.body);
@@ -582,9 +593,7 @@ export default class Playback {
             hit.objects.push(sprite);
             return sprite;
         };
-
-        hit.ticks = [];
-        const tickDuration = hit.timing.truebeatMs / this.track.difficulty.SliderTickRate, nticks = Math.floor(hit.sliderTimeTotal / tickDuration) + 1;
+        const tickDuration = hit.timing.beatMs / this.track.difficulty.SliderTickRate, nticks = Math.ceil(hit.sliderTimeTotal / tickDuration);
 
         if (!hit.timing.isNaN) for (let i = 0; i < nticks; ++i) {
             const t = hit.time + i * tickDuration, pos = repeatclamp(i * tickDuration / hit.sliderTime);
@@ -616,13 +625,6 @@ export default class Playback {
         hit.ball = newSprite('sliderb.png', hit.x, hit.y, .5);
         hit.ball.visible = false;
         this.createHitCircle(hit);
-
-        hit.repeats = new Array(hit.repeat);
-        for (let i = 1; i < hit.repeat; ++i) hit.repeats[i - 1] = {
-            get time() {
-                return hit.time + i * hit.sliderTime
-            }
-        };
 
         const v = hit.repeat % 2 === 1 ? hit.curve.pointAt(1) : hit;
         hit.judgements.push(this.createJudgement(v.x, v.y, 4, hit.time + hit.sliderTimeTotal + this.GoodTime));

@@ -41,8 +41,7 @@ class Track {
                 case '[Events]':
                     parts = line.split(',');
                     if (+parts[0] === 2) this.breaks.push({
-                        startTime: +parts[1],
-                        endTime: +parts[2]
+                        startTime: +parts[1], endTime: +parts[2]
                     });
                     else this.events.push(parts);
                     break;
@@ -65,7 +64,6 @@ class Track {
                         uninherit: +parts[6],
                         kiaiMode: +parts[7]
                     };
-                    if (t.beatMs < 0) t.uninherit = 0;
                     this.timing.push(t);
                     break;
 
@@ -79,8 +77,7 @@ class Track {
                 case '[HitObjects]':
                     parts = line.split(',');
                     const hit = {
-                        x: +parts[0],
-                        y: +parts[1],
+                        x: +parts[0], y: +parts[1],
                         time: +parts[2],
                         type: +parts[3],
                         hitSound: +parts[4]
@@ -114,8 +111,7 @@ class Track {
                         for (let j = 1; j < sliderKeys.length; ++j) {
                             const p = sliderKeys[j].split(':');
                             hit.keyframes.push({
-                                x: +p[0],
-                                y: +p[1]
+                                x: +p[0], y: +p[1]
                             });
                         }
                         hit.repeat = +parts[6];
@@ -129,8 +125,7 @@ class Track {
 
                         hit.edgeSets = new Array(hit.repeat + 1);
                         for (let wdnmd = 0; wdnmd < hit.repeat + 1; ++wdnmd) hit.edgeSets[wdnmd] = {
-                            normalSet: 0,
-                            additionSet: 0
+                            normalSet: 0, additionSet: 0
                         };
                         if (parts.length > 9) {
                             const additions = parts[9].split('|');
@@ -186,18 +181,16 @@ class Track {
         let last = this.timing[0];
         for (const point of this.timing) {
             if (point.uninherit === 0) {
-                point.uninherit = 1;
-                point.beatMs *= -.01 * last.beatMs;
-                point.truebeatMs = last.truebeatMs;
-
                 if (isNaN(point.beatMs)) {
                     point.isNaN = true;
-                    point.beatMs = last.beatMs;
+                    point.velocity = 1;
                 }
+                else point.velocity = Math.max(-100 / point.beatMs, .1);
+                point.beatMs = last.beatMs;
             }
             else {
                 last = point;
-                point.truebeatMs = point.beatMs;
+                point.velocity = 1;
             }
         }
 
@@ -208,9 +201,17 @@ class Track {
 
             if (hit.type === 'circle') hit.endTime = hit.time;
             else if (hit.type === 'slider') {
-                hit.sliderTime = hit.timing.beatMs * (hit.pixelLength / this.difficulty.SliderMultiplier) / 100;
+                hit.ticks = [];
+                hit.sliderTime = hit.pixelLength / (this.difficulty.SliderMultiplier * 100 * hit.timing.velocity) * hit.timing.beatMs;
                 hit.sliderTimeTotal = hit.sliderTime * hit.repeat;
                 hit.endTime = hit.time + hit.sliderTimeTotal;
+
+                hit.repeats = new Array(hit.repeat);
+                for (let i = 1; i < hit.repeat; ++i) hit.repeats[i - 1] = {
+                    get time() {
+                        return hit.time + i * hit.sliderTime
+                    }
+                };
             }
         }
         this.length = (this.hitObjects.at(-1).endTime - this.hitObjects[0].time) / 1000;
