@@ -36,7 +36,7 @@ export default class LoadingMenu extends PIXI.Container {
         this.versiontext.roundPixels = true;
         this.sourcetext.roundPixels = true;
         this.mappertext.roundPixels = true;
-        
+
         this.titletext.anchor.set(.5);
         this.artisttext.anchor.set(.5);
         this.versiontext.anchor.set(.5);

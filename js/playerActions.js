@@ -170,7 +170,7 @@ export default class PlayerActions {
         for (; this.curid < this.playback.hits.length; ++this.curid) {
             const hit = this.playback.hits[this.curid];
             if (hit.time > time) break;
-            
+
             if (hit.score < 0) {
                 let targX = hit.x, targY = hit.y;
                 if (hit.type === 'spinner') {
@@ -180,7 +180,7 @@ export default class PlayerActions {
                 }
                 game.mouseX = targX;
                 game.mouseY = targY;
-                
+
                 game.down = true;
                 this.triggerTap(this.playback);
 

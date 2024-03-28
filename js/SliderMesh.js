@@ -72,7 +72,7 @@ function newTexture(colors, SliderTrackOverride, SliderBorder) {
 
 const DIVIDES = 36;
 function curveGeometry(curve, length, radius) {
-    const vert = [], index = [], first = curve.pointAt(0), res = Math.ceil(length / (length > 45000 ? length / 8000 : 4.5));
+    const vert = [], index = [], first = curve.pointAt(0), res = Math.ceil(length / (length > 24000 ? length / 8000 : 4.5));
     vert.push(first.x, first.y, 0, 0);
 
     for (let i = 1; i < res; ++i) {

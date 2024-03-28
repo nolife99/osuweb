@@ -209,7 +209,7 @@ export default class Playback {
                 }
                 if (!game.hideFollow && i > 0 && hit.type !== 'spinner' && hit.type !== 'spinner' && hit.combo === this.hits[i - 1].combo) this.createFollowPoint(this.hits[i - 1], hit);
             }
-            
+
             app.stage.addChild(this.scoreOverlay);
             app.stage.addChild(this.errorMeter);
             app.stage.addChild(this.progressOverlay);
@@ -219,7 +219,7 @@ export default class Playback {
             this.audioReady = true;
             this.start();
         };
-        
+
         const convertcolor = color => (+color[0] << 16) | (+color[1] << 8) | (+color[2] << 0);
         this.combos = new Uint32Array(track.colors.length);
         for (let i = 0; i < track.colors.length; ++i) this.combos[i] = convertcolor(track.colors[i]);

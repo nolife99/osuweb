@@ -51,12 +51,7 @@ export default class LinearBezier {
         let length = 0, i = 0;
         while (i < this.preLens.length - 1 && this.preLens[i].total < target) length = this.preLens[i++].total;
 
-        try {
-            var curve = this.splines[i], preLen = this.preLens[i].lengths;
-        }
-        catch {
-            console.log(this.splines);
-        }
+        const curve = this.splines[i], preLen = this.preLens[i].lengths;
         for (let j = 0; j < curve.length - 1; ++j) {
             const partLen = preLen[j];
             if (length + partLen >= target) {

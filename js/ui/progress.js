@@ -26,7 +26,7 @@ export default class ProgressOverlay extends PIXI.Container {
         this.remaining.roundPixels = true;
         this.remaining.anchor.set(1);
         super.addChild(this.remaining);
-        
+
         this.past = new PIXI.Text(null, font);
         this.past.roundPixels = true;
         this.past.anchor.set(0, 1);
