@@ -94,7 +94,7 @@ export default class PlayerActions {
     }
     mouse(t) {
         let i = 0;
-        const first = this.cursorData[0]
+        const first = this.cursorData[0];
         while (i < this.cursorData.length - 1 && first.t - this.cursorData[i].t < 40 && t - this.cursorData[i].t < 100) ++i;
 
         const now = this.cursorData[i], velocity = i === 0 ? {
@@ -111,7 +111,7 @@ export default class PlayerActions {
     triggerTap() {
         const click = {
             x: game.mouseX, y: game.mouseY,
-            time: this.playback.osu.audio ? this.playback.osu.audio.pos * 1000 + game.globalOffset : 0
+            time: this.playback.osu.audio ? this.playback.osu.audio.pos * 1000 : 0
         };
         let hit = this.playback.newHits.find(inUpcoming(click, this.playback));
         if (!hit && !game.autoplay) {
@@ -142,7 +142,7 @@ export default class PlayerActions {
     update(time) {
         let cur = this.curObj;
         if (cur && cur.time > time + this.playback.approachTime) cur = null;
-        else if (game.down) {
+        if (game.down && cur) {
             if (cur.type === 'circle' || time > cur.endTime) {
                 if (cur.type !== 'spinner') {
                     game.mouseX = (cur.ball || cur).x;

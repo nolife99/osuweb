@@ -110,10 +110,10 @@ export default class OsuAudio {
         this.gain.connect(actx.destination);
         this.speed = 1;
 
-        actx.decodeAudioData(buffer.buffer, decoded => {
+        actx.resume().then(() => actx.decodeAudioData(buffer.buffer, decoded => {
             this.decoded = decoded;
             if (callback) callback(this);
-        });
+        }));
     }
     get pos() {
         return this.playing ? this.position + (actx.currentTime - this.started) * this.speed : this.position;
