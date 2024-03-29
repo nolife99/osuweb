@@ -3,15 +3,14 @@ export const sounds = {
     loaded: 0,
     audioExtensions: ['mp3', 'ogg', 'wav', 'webm'],
     whenLoaded: () => { },
-    onProgress: () => { },
     onFailed: (source, _e) => {
         throw new Error('Audio could not be loaded: ' + source);
     },
     load: (sources, onLoad) => {
         sounds.toLoad = sources.length;
         for (const source of sources) {
-            const extension = source.split('.').pop();
-            if (sounds.audioExtensions.indexOf(extension) !== -1) {
+            const extension = source.split('.').at(-1);
+            if (sounds.audioExtensions.includes(extension)) {
                 sounds.whenLoaded = onLoad;
                 const soundSprite = makeSound(source, sounds.loadHandler, true, sounds.onFailed);
                 soundSprite.name = source;
@@ -19,11 +18,8 @@ export const sounds = {
             }
         }
     },
-    loadHandler: source => {
+    loadHandler: () => {
         ++sounds.loaded;
-        sounds.onProgress(100 * sounds.loaded / sounds.toLoad, {
-            url: source
-        });
         if (sounds.toLoad === sounds.loaded) {
             sounds.toLoad = 0;
             sounds.loaded = 0;
@@ -95,7 +91,7 @@ function makeSound(source, loadHandler, shouldLoad, failHandler) {
     if (shouldLoad) fetch(source).then(response => response.arrayBuffer()).then(buf => actx.decodeAudioData(buf, buffer => {
         o.buffer = buffer;
         o.hasLoaded = true;
-        if (loadHandler) loadHandler(o.source);
+        loadHandler();
     }, e => {
         if (failHandler) failHandler(o.source, e);
     }));

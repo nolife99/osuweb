@@ -1,6 +1,8 @@
 import OsuAudio from './osu-audio.js';
 
-const typeCirc = 1, typeSlider = 2, typeNC = 4, typeSpin = 8, clamp = (num, min, max) => Math.min(Math.max(num, min), max);
+const typeCirc = 1, typeSlider = 2, typeNC = 4, typeSpin = 8, clamp = (num, min, max) => Math.min(Math.max(num, min), max),
+    convertcolor = color => (+color[0] << 16) | (+color[1] << 8) | (+color[2] << 0);
+
 class Track {
     constructor(zip, track) {
         this.track = track;
@@ -68,10 +70,10 @@ class Track {
                     break;
 
                 case '[Colours]':
-                    parts = line.split(':'), key = parts[0], value = parts[1];
-                    if (key === 'SliderTrackOverride') this.colors.SliderTrackOverride = value.split(',');
-                    else if (key === 'SliderBorder') this.colors.SliderBorder = value.split(',');
-                    else this.colors.push(value.split(','));
+                    parts = line.split(':'), key = parts[0], value = parts[1].split(',');
+                    if (key === 'SliderTrackOverride') this.colors.SliderTrackOverride = convertcolor(value);
+                    else if (key === 'SliderBorder') this.colors.SliderBorder = convertcolor(value);
+                    else this.colors.push(convertcolor(value));
                     break;
 
                 case '[HitObjects]':
@@ -117,13 +119,10 @@ class Track {
                             hit.type = 'slider';
                             hit.sliderType = sliderKeys[0];
                             hit.repeat = +parts[6];
-                            hit.pixelLength = Math.abs(+parts[7]);
+                            hit.pixelLength = +parts[7];
 
                             if (parts.length > 8) hit.edgeHitsounds = parts[8].split('|').map(Number);
-                            else {
-                                hit.edgeHitsounds = new Uint8Array(hit.repeat + 1);
-                                for (let wdnmd = 0; wdnmd < hit.repeat + 1; ++wdnmd) hit.edgeHitsounds[wdnmd] = 0;
-                            }
+                            else hit.edgeHitsounds = new Uint8Array(hit.repeat + 1);
 
                             hit.edgeSets = new Array(hit.repeat + 1);
                             for (let wdnmd = 0; wdnmd < hit.repeat + 1; ++wdnmd) hit.edgeSets[wdnmd] = {
@@ -172,13 +171,7 @@ class Track {
 
         this.general.PreviewTime /= 10;
         if (this.general.PreviewTime > this.hitObjects[0].time) this.general.PreviewTime = 0;
-
-        if (this.colors.length === 0) this.colors = [
-            [96, 159, 159],
-            [192, 192, 192],
-            [128, 255, 255],
-            [139, 191, 222]
-        ];
+        if (this.colors.length === 0) this.colors = [0x609f9f, 0xc0c0c0, 0x80ffff, 0x8bbfde];
 
         let last = this.timing[0];
         for (const point of this.timing) {

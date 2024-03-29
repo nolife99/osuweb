@@ -250,7 +250,7 @@ export default class Playback {
 
         const loadTask = Promise.all(track.hitObjects.map(a => new Promise(resolve => window.setTimeout(() => {
             const hit = structuredClone(a);
-            if (game.hidden && i++ > 0) {
+            if (game.hidden && hit.hitIndex > 0) {
                 hit.objectFadeInTime = .4 * this.approachTime;
                 hit.objectFadeOutOffset = -.6 * this.approachTime;
                 hit.circleFadeOutTime = .3 * this.approachTime;
@@ -324,21 +324,13 @@ export default class Playback {
                 }
             }
             this.hits = hits;
-
-            const convertcolor = color => (+color[0] << 16) | (+color[1] << 8) | (+color[2] << 0);
-            this.combos = new Uint32Array(track.colors.length);
-            for (let i = 0; i < track.colors.length; ++i) this.combos[i] = convertcolor(track.colors[i]);
-
-            let SliderTrackOverride, SliderBorder;
-            if (track.colors.SliderTrackOverride) SliderTrackOverride = convertcolor(track.colors.SliderTrackOverride);
-            if (track.colors.SliderBorder) SliderBorder = convertcolor(track.colors.SliderBorder);
             
-            SliderMesh.prototype.initialize(this.combos, this.circleRadius / 2.1, {
+            SliderMesh.prototype.initialize(track.colors, this.circleRadius / 2.1, {
                 dx: 2 * this.gfx.width / window.innerWidth / 512,
                 ox: -1 + 2 * this.gfx.xoffset / window.innerWidth,
                 dy: -2 * this.gfx.height / window.innerHeight / 384,
                 oy: 1 - 2 * this.gfx.yoffset / window.innerHeight
-            }, SliderTrackOverride, SliderBorder);
+            }, track.colors.SliderTrackOverride, track.colors.SliderBorder);
             
             let prev;
             return Promise.all(hits.map(hit => new Promise(resolve => window.setTimeout(() => {
@@ -496,18 +488,21 @@ export default class Playback {
         const index = hit.index + 1, basedep = 5 - .000001 * hit.hitIndex;
 
         hit.base = newHitSprite('disc.png', basedep, .5);
-        hit.base.tint = this.combos[hit.combo % this.combos.length];
+        hit.base.tint = this.track.colors[hit.combo % this.track.colors.length];
         hit.circle = newHitSprite('hitcircleoverlay.png', basedep, .5);
+        
         hit.glow = newHitSprite('ring-glow.png', basedep + 2, .46);
-        hit.glow.tint = this.combos[hit.combo % this.combos.length];
+        hit.glow.tint = this.track.colors[hit.combo % this.track.colors.length];
         hit.glow.blendMode = PIXI.BLEND_MODES.ADD;
+        
         hit.burst = newHitSprite('hitburst.png', 8.1 + .000001 * hit.hitIndex);
         hit.burst.visible = false;
+        
         hit.approach = newHitSprite('approachcircle.png', 8 + .000001 * hit.hitIndex);
-        hit.approach.tint = this.combos[hit.combo % this.combos.length];
+        hit.approach.tint = this.track.colors[hit.combo % this.track.colors.length];
         if (!hit.enableflash) hit.approach.visible = false;
+        
         hit.judgements.push(this.createJudgement(hit.x, hit.y, 4, hit.time + this.MehTime));
-
         hit.numbers = [];
         if (!game.hideNumbers) {
             if (index < 10) hit.numbers.push(newHitSprite('score-'.concat(index, '.png'), basedep, .4, .5, .47));
@@ -574,7 +569,7 @@ export default class Playback {
     createSlider(hit) {
         hit.nextRepeat = 1;
         hit.nexttick = 0;
-        hit.body = new SliderMesh(hit.curve, hit.combo % this.combos.length);
+        hit.body = new SliderMesh(hit.curve, hit.combo % this.track.colors.length);
         hit.body.alpha = 0;
         hit.body.depth = 5 - .00000100001 * hit.hitIndex;
         hit.objects.push(hit.body);

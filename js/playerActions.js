@@ -156,8 +156,8 @@ export default class PlayerActions {
                 this.lastTime = time;
             }
             else if (cur.type === 'slider') {
-                game.mouseX = cur.ball.x || cur.x;
-                game.mouseY = cur.ball.y || cur.y;
+                game.mouseX = cur.ball.x;
+                game.mouseY = cur.ball.y;
             }
             else if (!game.paused) {
                 const ang = Math.atan2(game.mouseY - cur.y, game.mouseX - cur.x) + .75;

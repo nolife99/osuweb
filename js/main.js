@@ -80,8 +80,8 @@ export let skin;
 const sheetUrl = 'asset/skin/sprites.json';
 
 PIXI.Loader.shared.add(sheetUrl).load((_, resources) => {
-    progresses[1].classList.add('finished');
     skin = resources[sheetUrl].textures;
+    progresses[1].classList.add('finished');
 });
 
 const sample = [
@@ -193,8 +193,8 @@ class BeatmapController {
 
             app.ticker.stop();
             playback = new Playback(this.osu, this.osu.tracks[trackid]);
-            this.osu.onready();
             app.ticker.start();
+            this.osu.onready();
         };
         app.ticker.add(t => {
             playback.render(t, app.ticker.lastTime);
