@@ -277,8 +277,11 @@ export default class Playback {
             }
             if (hit.type === 'slider') {
                 if (hit.sliderType === 'P') {
-                    hit.curve = ArcPath(hit);
-                    if (isNaN(hit.curve.pointAt(0).x)) {
+                    try {
+                        hit.curve = ArcPath(hit);
+                    }
+                    catch {
+                        a.sliderType === 'L';
                         hit.sliderType === 'L';
                         hit.curve = new LinearBezier(hit, true);
                     }
@@ -287,7 +290,7 @@ export default class Playback {
             }
             resolve(hit);
         })))).then(hits => {
-            const STACK_LENIENCE = 3, stackOfs = (1 - .7 * ((this.CS - 5) / 5)) * -3.2;
+            const lazyStack = 3, stackOfs = (1 - .7 * ((this.CS - 5) / 5)) * -3.2;
             for (let i = hits.length - 1; i > 0; --i) {
                 let n = i;
                 let objectI = hits[i];
@@ -299,12 +302,12 @@ export default class Playback {
                         if (objectN.type === 'spinner') continue;
                         if (objectI.time - this.approachTime * track.general.StackLeniency > objectN.endTime) break;
 
-                        if (objectN.type === 'slider' && getdist(objectN, objectI, true) < STACK_LENIENCE) {
+                        if (objectN.type === 'slider' && getdist(objectN, objectI, true) < lazyStack) {
                             const offset = objectI.chain - objectN.chain + 1;
-                            for (let j = n + 1; j <= i; ++j) if (getdist(objectN, hits[j], true) < STACK_LENIENCE) hits[j].chain -= offset;
+                            for (let j = n + 1; j <= i; ++j) if (getdist(objectN, hits[j], true) < lazyStack) hits[j].chain -= offset;
                             break;
                         }
-                        if (getdist(objectN, objectI) < STACK_LENIENCE) {
+                        if (getdist(objectN, objectI) < lazyStack) {
                             objectN.chain = objectI.chain + 1;
                             objectI = objectN;
                         }
@@ -316,7 +319,7 @@ export default class Playback {
                         if (objectN.type === 'spinner') continue;
 
                         if (objectI.time - (this.approachTime * track.general.StackLeniency) > objectN.time) break;
-                        if (getdist(objectN, objectI, objectN.type === 'slider') < STACK_LENIENCE) {
+                        if (getdist(objectN, objectI, objectN.type === 'slider') < lazyStack) {
                             objectN.chain = objectI.chain + 1;
                             objectI = objectN;
                         }

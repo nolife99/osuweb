@@ -16,6 +16,8 @@ export default function ArcPath(hit) {
     }, dA = vecsub(a, center), dC = vecsub(c, center);
 
     const radius = Math.hypot(dA.x, dA.y), thetaStart = Math.atan2(dA.y, dA.x);
+    if (!isFinite(radius)) throw new RangeError();
+    
     let thetaEnd = Math.atan2(dC.y, dC.x);
     while (thetaEnd < thetaStart) thetaEnd += twoPi;
 
