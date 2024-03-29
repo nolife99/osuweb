@@ -20,7 +20,7 @@ export default class ProgressOverlay extends PIXI.Container {
         this.endtime = endtime;
 
         const font = {
-            fontFamily: 'Venera', fontSize: 16, fill: 0xddffff, trim: true
+            fontFamily: 'Venera', fontSize: 16, fill: 0xddffff
         };
         this.remaining = new PIXI.Text(null, font);
         this.remaining.roundPixels = true;

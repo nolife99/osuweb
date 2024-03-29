@@ -35,7 +35,7 @@ export default class BreakOverlay extends PIXI.Container {
         super.addChild(this.barright);
 
         this.number = new PIXI.Text(null, {
-            fontFamily: 'Venera', fontSize: 40, fill: 0xffffff, trim: true
+            fontFamily: 'Venera', fontSize: 40, fill: 0xffffff
         });
         this.number.roundPixels = true;
         this.number.anchor.set(.5);

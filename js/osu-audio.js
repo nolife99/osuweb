@@ -123,13 +123,13 @@ export default class OsuAudio {
         this.source.playbackRate.value = this.speed;
         this.source.buffer = this.decoded;
         this.source.connect(this.gain);
-        this.started = actx.currentTime;
 
         if (wait > 0) {
             this.position = -wait / 1000;
-            window.setTimeout(() => this.source.start(Math.max(0, this.pos), 0), wait / this.speed);
+            window.setTimeout(() => this.source.start(Math.max(0, this.position), 0), wait / this.speed);
         }
         else this.source.start(0, this.position);
+        this.started = actx.currentTime;
         this.playing = true;
     }
     pause() {

@@ -196,10 +196,11 @@ class Track {
             }
         }
 
-        let j = 0;
+        let j = 0, curIdx = 0;
         for (const hit of this.hitObjects) {
             while (j + 1 < this.timing.length && this.timing[j + 1].offset <= hit.time) ++j;
             hit.timing = this.timing[j];
+            hit.hitIndex = curIdx++;
 
             if (hit.type === 'circle') hit.endTime = hit.time;
             else if (hit.type === 'slider') {
@@ -260,19 +261,16 @@ export default class Osu {
         }
         img.src = 'asset/skin/defaultbg.jpg';
     }
-    sortTracks() {
-        this.tracks = this.tracks.filter(t => t.general.Mode !== 3);
-        this.tracks.sort((a, b) => a.oldStar - b.oldStar);
-    }
     load_mp3(tIndex) {
         return this.zip.getChildByName(this.tracks[tIndex].general.AudioFilename).getUint8Array().then((e => this.audio = new OsuAudio(e, this.onready)));
     }
-    requestStar() {
+    sortTracks() {
+        this.tracks = this.tracks.filter(t => t.general.Mode !== 3);
         fetch('https://api.sayobot.cn/v2/beatmapinfo?0=' + this.tracks[0].metadata.BeatmapSetID).then(r => r.json()).then(e => {
             if (e.status === 0) for (const data of e.data.bid_data) for (const track of this.tracks) if (track.metadata.BeatmapID == data.bid) {
                 track.difficulty.star = data.star;
                 track.length = data.length;
             }
-        });
+        }).then(() => this.tracks.sort((a, b) => a.difficulty.star - b.difficulty.star));
     }
 };

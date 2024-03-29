@@ -154,6 +154,7 @@ class BeatmapController {
             cursor.anchor.x = cursor.anchor.y = .5;
             cursor.scale.x = cursor.scale.y = .3 * game.cursorSize;
         }
+        this.osu.load_mp3(trackid);
 
         const pGameArea = document.getElementsByClassName('game-area')[0], pMainPage = document.getElementsByClassName('main-page')[0];
         pGameArea.appendChild(app.view);
@@ -174,8 +175,6 @@ class BeatmapController {
         pGameArea.hidden = false;
 
         let playback = new Playback(this.osu, this.osu.tracks[trackid]);
-        this.osu.load_mp3(trackid);
-
         stopGame = restart => {
             if (!restart) {
                 pGameArea.hidden = true;
@@ -194,7 +193,8 @@ class BeatmapController {
 
             app.ticker.stop();
             playback = new Playback(this.osu, this.osu.tracks[trackid]);
-            this.osu.onready.then(() => app.ticker.start());
+            this.osu.onready();
+            app.ticker.start();
         };
         app.ticker.add(t => {
             playback.render(t, app.ticker.lastTime);
@@ -296,9 +296,7 @@ const defaultHint = 'Drag and drop a beatmap (.osz) file here',
 function addbeatmap(osz, f) {
     const map = new BeatmapController(osz), osu = map.osu;
     osu.ondecoded = () => {
-        osu.requestStar();
         osu.sortTracks();
-
         if (!osu.tracks.some(t => t.general.Mode !== 3)) {
             pDragboxHint.innerText = modeErrHint;
             return;

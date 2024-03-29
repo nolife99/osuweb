@@ -9,10 +9,10 @@ export default class VolumeMenu extends PIXI.Container {
         this.t0 = 0;
 
         this.mastertext = new PIXI.Text('MASTER', {
-            fontFamily: 'Venera', fontSize: 20, fill: 0xffffff, trim: true
+            fontFamily: 'Venera', fontSize: 20, fill: 0xffffff
         });
         this.volumetext = new PIXI.Text(null, {
-            fontFamily: 'Venera', fontSize: 40, fill: 0xffffff, trim: true
+            fontFamily: 'Venera', fontSize: 40, fill: 0xffffff
         });
         this.mastertext.roundPixels = true;
         this.volumetext.roundPixels = true;
