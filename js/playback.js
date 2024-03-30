@@ -37,18 +37,42 @@ function fadeOutEasing(t) {
 }
 
 export default class Playback {
+    ready = true;
+    started = false;
+    newHits = [];
+    approachScale = 3;
+    audioReady = false;
+    skipped = false;
+    ended = false;
+    volumeMenu = new VolumeMenu({
+        width: window.innerWidth,
+        height: window.innerHeight
+    });
+    gfx = {};
+    gamefield = new PIXI.Container;
+    destroyHit = o => {
+        const opt = {
+            children: true
+        }
+        this.gamefield.removeChild(o);
+        o.destroy(opt);
+    };
+    glowFadeOutTime = 350;
+    glowMaxOpacity = .5;
+    flashFadeInTime = 40;
+    followZoomInTime = 100;
+    ballFadeOutTime = 100;
+    backgroundFadeTime = 800;
+    spinnerZoomInTime = 300;
+    curtimingid = 0;
+    current = 0;
+    waitinghitid = 0;
+    breakIndex = 0;
+    
     constructor(osu, track) {
         this.osu = osu;
         this.track = track;
-        this.ready = true;
-        this.started = false;
-        this.newHits = [];
-
-        this.approachScale = 3;
         this.speed = game.nightcore ? 1.5 : game.daycore ? .75 : 1;
-        this.audioReady = false;
-        this.skipped = false;
-        this.ended = false;
 
         game.mouseX = 256;
         game.mouseY = 192;
@@ -57,19 +81,6 @@ export default class Playback {
             width: window.innerWidth,
             height: window.innerHeight
         }, track);
-        this.volumeMenu = new VolumeMenu({
-            width: window.innerWidth,
-            height: window.innerHeight
-        });
-        this.gfx = {};
-        this.gamefield = new PIXI.Container;
-        this.destroyHit = o => {
-            const opt = {
-                children: true
-            }
-            this.gamefield.removeChild(o);
-            o.destroy(opt);
-        }
         this.calcSize();
 
         this.createBackground();
@@ -186,21 +197,7 @@ export default class Playback {
 
         this.approachTime = this.AR <= 5 ? 1800 - 120 * this.AR : 1950 - 150 * this.AR;
         this.approachFadeInTime = Math.min(800, this.approachTime);
-
-        this.glowFadeOutTime = 350;
-        this.glowMaxOpacity = .5;
-        this.flashFadeInTime = 40;
-        this.flashFadeOutTime = 120;
-        this.flashMaxOpacity = .8;
-        this.scoreFadeOutTime = 500;
-        this.followZoomInTime = 100;
-        this.followFadeOutTime = 100;
-        this.ballFadeOutTime = 100;
-        this.objectDespawnTime = 1500;
-        this.backgroundFadeTime = 800;
         this.spinnerAppearTime = this.approachTime;
-        this.spinnerZoomInTime = 300;
-        this.spinnerFadeOutTime = 150;
 
         this.player = new PlayerActions(this);
         game.paused = false;
@@ -253,7 +250,7 @@ export default class Playback {
                     hit.fadeOutDuration = 300;
                 }
             }
-            return new Promise(resolve => window.requestIdleCallback(() => {
+            return new Promise(resolve => window.setTimeout(() => {
                 if (game.hardrock) {
                     hit.y = -(hit.y - 192) + 192;
                     if (hit.type === 'slider') for (const k of hit.keyframes) k.y = -(k.y - 192) + 192;
@@ -315,7 +312,7 @@ export default class Playback {
             }, track.colors.SliderTrackOverride, track.colors.SliderBorder);
 
             let prev;
-            return Promise.all(hits.map(hit => new Promise(resolve => window.requestIdleCallback(() => {
+            return Promise.all(hits.map(hit => new Promise(resolve => window.setTimeout(() => {
                 if (hit.chain !== 0) {
                     const ofs = stackOfs * hit.chain;
                     hit.x += ofs;
@@ -330,6 +327,7 @@ export default class Playback {
                         else hit.curve = new LinearBezier(hit, hit.sliderType === 'L');
                     }
                 }
+                hit.ticks = [];
                 hit.objects = [];
                 hit.judgements = [];
                 hit.score = -1;
@@ -345,12 +343,7 @@ export default class Playback {
                 resolve();
             }))));
         });
-
-        this.curtimingid = 0;
-        this.current = 0;
-        this.waitinghitid = 0;
         this.futuremost = track.hitObjects[0].time;
-        this.breakIndex = 0;
     }
     calcSize() {
         this.gfx.width = window.innerWidth;
@@ -530,14 +523,10 @@ export default class Playback {
                 this.background.y = window.innerHeight / 2;
                 this.background.scale.set(Math.max(window.innerWidth / txt.width, window.innerHeight / txt.height));
                 app.stage.addChildAt(this.background, 0);
-            }
-
-            const txt = PIXI.Loader.shared.resources[key];
+            }, txt = PIXI.Loader.shared.resources[key];
             if (txt) consumeImage(txt.texture);
             else PIXI.Loader.shared.add({
-                key: key.toString(),
-                url: uri ? await uri() : defaultBg,
-                loadType: PIXI.LoaderResource.LOAD_TYPE.IMAGE
+                key: key.toString(), url: uri ? await uri() : defaultBg, loadType: PIXI.LoaderResource.LOAD_TYPE.IMAGE
             }).load((_, resources) => consumeImage(resources[key].texture));
         }
         if (this.track.events.length > 0) {
@@ -560,7 +549,7 @@ export default class Playback {
         hit.nexttick = 0;
         hit.body = new SliderMesh(hit.curve, hit.combo % this.track.colors.length);
         hit.body.alpha = 0;
-        hit.body.depth = 5 - .00000100001 * hit.hitIndex;
+        hit.body.depth = 5 - .000001 * hit.hitIndex;
         hit.objects.push(hit.body);
 
         const newSprite = (spritename, x, y, scalemul = 1, isReverse) => {
@@ -764,7 +753,7 @@ export default class Playback {
         }
         for (let i = 0; i < this.newHits.length; ++i) {
             const hit = this.newHits[i];
-            let despawn = -this.objectDespawnTime;
+            let despawn = -1500;
             if (hit.type === 'slider') despawn -= hit.sliderTimeTotal;
             else if (hit.type === 'spinner') despawn -= hit.endTime - hit.time;
 
@@ -820,7 +809,7 @@ export default class Playback {
 
             hit.burst.scale.set(newscale * hit.burst.initialscale);
             hit.glow.scale.set(newscale * hit.glow.initialscale);
-            hit.burst.alpha = this.flashMaxOpacity * clamp01(timeAfter < this.flashFadeInTime ? timeAfter / this.flashFadeInTime : 1 - (timeAfter - this.flashFadeInTime) / this.flashFadeOutTime);
+            hit.burst.alpha = .8 * clamp01(timeAfter < this.flashFadeInTime ? timeAfter / this.flashFadeInTime : 1 - (timeAfter - this.flashFadeInTime) / 120);
             hit.glow.alpha = clamp01(1 - timeAfter / this.glowFadeOutTime) * this.glowMaxOpacity;
 
             if (hit.base.visible) {
@@ -1024,7 +1013,7 @@ export default class Playback {
         let alpha = 0;
         if (time >= hit.time - this.spinnerZoomInTime - this.spinnerAppearTime) {
             if (time <= hit.endTime) alpha = 1;
-            else alpha = clamp01(1 - (time - hit.endTime) / this.spinnerFadeOutTime);
+            else alpha = clamp01(1 - (time - hit.endTime) / 150);
         }
         hit.top.alpha = alpha;
         hit.progress.alpha = alpha;

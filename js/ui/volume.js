@@ -1,19 +1,19 @@
 const volumeRange = document.getElementById('mastervolume-range');
 
 export default class VolumeMenu extends PIXI.Container {
+    fadetime = 1000;
+    visible = false;
+    t0 = 0;
+    mastertext = new PIXI.Text('MASTER', {
+        fontFamily: 'Venera', fontSize: 20, fill: 0xffffff
+    });
+    volumetext = new PIXI.Text(null, {
+        fontFamily: 'Venera', fontSize: 40, fill: 0xffffff
+    });
+    
     constructor(windowfield) {
         super();
 
-        this.fadetime = 1000;
-        this.visible = false;
-        this.t0 = 0;
-
-        this.mastertext = new PIXI.Text('MASTER', {
-            fontFamily: 'Venera', fontSize: 20, fill: 0xffffff
-        });
-        this.volumetext = new PIXI.Text(null, {
-            fontFamily: 'Venera', fontSize: 40, fill: 0xffffff
-        });
         this.mastertext.roundPixels = true;
         this.volumetext.roundPixels = true;
         this.mastertext.anchor.set(.5);
@@ -48,7 +48,7 @@ export default class VolumeMenu extends PIXI.Container {
 
         const dt = timestamp - this.t0;
         if (dt > this.fadetime) this.visible = false;
-        else super.alpha = 1 - Math.pow(dt / this.fadetime, 5);
+        else this.alpha = 1 - Math.pow(dt / this.fadetime, 5);
     }
     destroy(opt) {
         super.destroy(opt);

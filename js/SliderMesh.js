@@ -128,14 +128,15 @@ function circleGeometry(radius) {
     return new PIXI.Geometry().addAttribute('pos', vert, 4).addIndex(index);
 }
 export default class SliderMesh extends PIXI.Container {
+    startt = 0;
+    endt = 1;
+    
     constructor(curve, tintid) {
         super();
 
         this.curve = curve;
         this.geometry = curveGeometry(curve, curve.pointLength, this.radius);
         this.tintid = tintid;
-        this.startt = 0;
-        this.endt = 1;
     }
     _render(renderer) {
         const shader = this.shader;

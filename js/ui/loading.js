@@ -1,15 +1,19 @@
-import { skin } from '../main.js'
+import { skin } from '../main.js';
 
+const allFont = {
+    fontFamily: 'Venera', fontSize: 14, fill: 0xffffff
+};
 export default class LoadingMenu extends PIXI.Container {
+    fadetime = 200;
+    alpha = 1;
+    hidden = false;
+    
+    bg = new PIXI.Sprite(skin['hpbarright.png']);
+    loading = new PIXI.Sprite(skin['dot.png']);
+    
     constructor(windowfield, track) {
         super();
 
-        this.fadetime = 200;
-        this.alpha = 1;
-        this.hidden = false;
-
-        this.bg = new PIXI.Sprite(skin['hpbarright.png']);
-        this.loading = new PIXI.Sprite(skin['dot.png']);
         this.bg.rotation = Math.PI / 2;
         this.bg.anchor.set(.5);
         this.bg.scale.set(.6, 500);
@@ -20,9 +24,6 @@ export default class LoadingMenu extends PIXI.Container {
         super.addChild(this.bg);
         super.addChild(this.loading);
 
-        const allFont = {
-            fontFamily: 'Venera', fontSize: 14, fill: 0xffffff
-        };
         this.titletext = new PIXI.Text(track.metadata.Title || '-', {
             fontFamily: 'Venera', fontSize: 24, fill: 0xffffff
         });

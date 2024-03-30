@@ -149,13 +149,13 @@ class BeatmapController {
         document.body.classList.add('gaming');
 
         settings.loadToGame(game);
+        this.osu.load_mp3(trackid);
+        
         if (!game.showhwmouse || game.autoplay) {
             var cursor = new PIXI.Sprite(skin['cursor.png']);
             cursor.anchor.x = cursor.anchor.y = .5;
             cursor.scale.x = cursor.scale.y = .3 * game.cursorSize;
         }
-        this.osu.load_mp3(trackid);
-
         const pGameArea = document.getElementsByClassName('game-area')[0], pMainPage = document.getElementsByClassName('main-page')[0];
         pGameArea.appendChild(app.view);
 

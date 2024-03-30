@@ -12,22 +12,24 @@ function timeformat(ms) {
     }
     return prefix.concat(m, ':', (s % 60).toFixed(0).padStart(2, '0'));
 }
+const font = {
+    fontFamily: 'Venera', fontSize: 16, fill: 0xddffff
+};
+
 export default class ProgressOverlay extends PIXI.Container {
+    remaining = new PIXI.Text(null, font);
+    past = new PIXI.Text(null, font);
+    
     constructor(windowfield, starttime, endtime) {
         super();
 
         this.starttime = starttime;
         this.endtime = endtime;
 
-        const font = {
-            fontFamily: 'Venera', fontSize: 16, fill: 0xddffff
-        };
-        this.remaining = new PIXI.Text(null, font);
         this.remaining.roundPixels = true;
         this.remaining.anchor.set(1);
         super.addChild(this.remaining);
 
-        this.past = new PIXI.Text(null, font);
         this.past.roundPixels = true;
         this.past.anchor.set(0, 1);
         super.addChild(this.past);

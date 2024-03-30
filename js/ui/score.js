@@ -2,10 +2,10 @@ import { game, skin } from '../main.js';
 
 const charSpacing = 10;
 class LazyNumber {
+    lasttime = -1000000;
     constructor(value) {
         this.value = value;
         this.target = value;
-        this.lasttime = -1000000;
     }
     update(time) {
         this.value += (this.target - this.value) * (1 - Math.exp((this.lasttime - time) / 150));
@@ -83,7 +83,22 @@ function setSpriteArrayPos(arr, x, y) {
         curx += s.knownwidth;
     }
 }
-export default class ScoreOverlay extends PIXI.Container {
+export default class ScoreOverlay extends PIXI.Container {score = 0;
+    combo = 0;
+    maxcombo = 0;
+    fullcombo = 0;
+    judgeTotal = 0;
+    maxJudgeTotal = 0;
+    HP = 1;
+    judgecnt = {
+        great: 0, good: 0, meh: 0, miss: 0
+    };
+
+    scoreDisplay = new LazyNumber(0);
+    comboDisplay = new LazyNumber(0);
+    accuracyDisplay = new LazyNumber(100);
+    HPDisplay = new LazyNumber(1);
+                                                          
     constructor(windowfield, HPdrain, scoreMultiplier) {
         super();
 
@@ -92,27 +107,11 @@ export default class ScoreOverlay extends PIXI.Container {
         this.scaleMul = windowfield.height / 800;
         this.scoreMultiplier = scoreMultiplier;
 
-        this.score = 0;
-        this.combo = 0;
-        this.maxcombo = 0;
-        this.fullcombo = 0;
-        this.judgeTotal = 0;
-        this.maxJudgeTotal = 0;
-        this.HP = 1;
-        this.judgecnt = {
-            great: 0, good: 0, meh: 0, miss: 0
-        };
-
-        this.score4display = new LazyNumber(0);
-        this.combo4display = new LazyNumber(0);
-        this.accuracy4display = new LazyNumber(100);
-        this.HP4display = new LazyNumber(1);
-
         this.scoreDigits = this.newSpriteArray(10, .4, 0xddffff);
         this.comboDigits = this.newSpriteArray(6, .2, 0xddffff);
         this.accuracyDigits = this.newSpriteArray(7, .2, 0xddffff);
-
         this.HPbar = this.newSpriteArray(3, .5);
+        
         this.HPbar[0].texture = skin['hpbarleft.png'];
         this.HPbar[1].texture = skin['hpbarright.png'];
         this.HPbar[2].texture = skin['hpbarmid.png'];
@@ -186,20 +185,20 @@ export default class ScoreOverlay extends PIXI.Container {
             game.sampleComboBreak.play();
         }
 
-        this.score4display.set(time, this.score);
-        this.combo4display.set(time, this.combo);
-        this.accuracy4display.set(time, this.judgeTotal / this.maxJudgeTotal * 100);
-        this.HP4display.set(time, this.HP);
+        this.scoreDisplay.set(time, this.score);
+        this.comboDisplay.set(time, this.combo);
+        this.accuracyDisplay.set(time, this.judgeTotal / this.maxJudgeTotal * 100);
+        this.HPDisplay.set(time, this.HP);
     }
     update(time) {
-        const HPpos = this.HP4display.valueAt(time) * this.field.width;
+        const HPpos = this.HPDisplay.valueAt(time) * this.field.width;
         this.HPbar[0].x = HPpos;
         this.HPbar[1].x = HPpos;
         this.HPbar[2].x = HPpos;
 
-        setSpriteArrayText(this.scoreDigits, this.score4display.valueAt(time).toFixed(0).padStart(6, '0'));
-        setSpriteArrayText(this.comboDigits, this.combo4display.valueAt(time).toFixed(0) + 'x');
-        setSpriteArrayText(this.accuracyDigits, this.accuracy4display.valueAt(time).toFixed(2) + '%');
+        setSpriteArrayText(this.scoreDigits, this.scoreDisplay.valueAt(time).toFixed(0).padStart(6, '0'));
+        setSpriteArrayText(this.comboDigits, this.comboDisplay.valueAt(time).toFixed(0) + 'x');
+        setSpriteArrayText(this.accuracyDigits, this.accuracyDisplay.valueAt(time).toFixed(2) + '%');
 
         const basex = this.field.width * .5, basey = this.field.height * .017, unit = Math.min(this.field.width / 640, this.field.height / 480);
         setSpriteArrayPos(this.scoreDigits, basex - this.scoreDigits.width / 2, basey);

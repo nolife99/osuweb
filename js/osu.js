@@ -4,18 +4,19 @@ const typeCirc = 1, typeSlider = 2, typeNC = 4, typeSpin = 8, clamp = (num, min,
     convertcolor = color => (+color[0] << 16) | (+color[1] << 8) | (+color[2] << 0);
 
 class Track {
+    general = {};
+    metadata = {};
+    difficulty = {};
+    colors = [];
+    breaks = [];
+    events = [];
+    timing = [];
+    hitObjects = [];
+    ondecoded = () => { };
+    
     constructor(zip, track) {
         this.track = track;
         this.zip = zip;
-        this.general = {};
-        this.metadata = {};
-        this.difficulty = {};
-        this.colors = [];
-        this.breaks = [];
-        this.events = [];
-        this.timing = [];
-        this.hitObjects = [];
-        this.ondecoded = () => { };
     }
     decode() {
         let section, combo = 0, index = 0, forceNewCombo = false, key, value, parts;
@@ -194,7 +195,6 @@ class Track {
 
             if (hit.type === 'circle') hit.endTime = hit.time;
             else if (hit.type === 'slider') {
-                hit.ticks = [];
                 hit.sliderTime = hit.pixelLength / (this.difficulty.SliderMultiplier * 100 * hit.timing.velocity) * hit.timing.beatMs;
                 hit.sliderTimeTotal = hit.sliderTime * hit.repeat;
                 hit.endTime = hit.time + hit.sliderTimeTotal;
@@ -211,13 +211,13 @@ class Track {
     }
 }
 export default class Osu {
+    tracks = [];
+    count = 0;
+    onready = () => { };
+    ondecoded = () => { };
+    
     constructor(zip) {
         this.zip = zip;
-        this.tracks = [];
-        this.count = 0;
-
-        this.onready = () => { };
-        this.ondecoded = () => { };
     }
     load() {
         const rawTracks = this.zip.children.filter(c => c.name.indexOf('.osu') === c.name.length - 4);

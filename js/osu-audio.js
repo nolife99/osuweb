@@ -98,14 +98,13 @@ function makeSound(source, loadHandler, shouldLoad, failHandler) {
     return o;
 }
 export default class OsuAudio {
+    started = 0;
+    position = 0;
+    speed = 1;
+    gain = new GainNode(actx);
+    
     constructor(buffer, callback) {
-        this.started = 0;
-        this.position = 0;
-
-        this.gain = new GainNode(actx);
         this.gain.connect(actx.destination);
-        this.speed = 1;
-
         actx.resume().then(() => actx.decodeAudioData(buffer.buffer, decoded => {
             this.decoded = decoded;
             callback();

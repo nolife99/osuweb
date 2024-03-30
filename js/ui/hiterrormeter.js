@@ -2,6 +2,8 @@ import { skin } from '../main.js';
 
 const barheight = 220, color300 = 0x66ccff, color100 = 0x88b300, color50 = 0xffcc22;
 class ErrorMeter extends PIXI.Container {
+    avgmarker = new PIXI.Sprite(skin['reversearrow.png']);
+
     constructor(r300, r100, r50) {
         super();
 
@@ -29,7 +31,6 @@ class ErrorMeter extends PIXI.Container {
         centerline.y = 0;
         super.addChild(centerline);
 
-        this.avgmarker = new PIXI.Sprite(skin['reversearrow.png']);
         this.avgmarker.scale.set(.08);
         this.avgmarker.anchor.set(.5);
         this.avgmarker.x = -8;
@@ -66,6 +67,8 @@ class ErrorMeter extends PIXI.Container {
     }
 }
 export default class ErrorMeterOverlay extends PIXI.Container {
+    record = [];
+
     constructor(windowfield, r300, r100, r50) {
         super();
 
@@ -76,7 +79,6 @@ export default class ErrorMeterOverlay extends PIXI.Container {
         super.addChild(this.barr);
 
         this.resize(windowfield);
-        this.record = [];
     }
     resize(windowfield) {
         this.barl.x = 27;

@@ -1,24 +1,28 @@
 import { skin } from '../main.js';
 
 export default class BreakOverlay extends PIXI.Container {
+    fadetime = 200;
+    appearthreshold = 3000;
+    visible = false;
+    
+    barmid = new PIXI.Sprite(skin['bar.png']);
+    barleft = new PIXI.Sprite(skin['barend.png']);
+    barright = new PIXI.Sprite(skin['barend.png']);
+    number = new PIXI.Text(null, {
+        fontFamily: 'Venera', fontSize: 40, fill: 0xffffff
+    });
+    
     constructor(windowfield) {
         super();
 
-        this.fadetime = 200;
-        this.appearthreshold = 3000;
-        this.visible = false;
-
-        this.barmid = new PIXI.Sprite(skin['bar.png']);
         this.barmid.anchor.set(.5);
         this.barmid.x = 0;
         this.barmid.y = 0;
-
-        this.barleft = new PIXI.Sprite(skin['barend.png']);
+        
         this.barleft.anchor.set(.1, .5);
         this.barleft.rotation = Math.PI;
         this.barleft.y = 0;
 
-        this.barright = new PIXI.Sprite(skin['barend.png']);
         this.barright.anchor.set(.1, .5);
         this.barright.y = 0;
 
@@ -34,14 +38,12 @@ export default class BreakOverlay extends PIXI.Container {
         super.addChild(this.barleft);
         super.addChild(this.barright);
 
-        this.number = new PIXI.Text(null, {
-            fontFamily: 'Venera', fontSize: 40, fill: 0xffffff
-        });
         this.number.roundPixels = true;
         this.number.anchor.set(.5);
         this.number.x = 0;
         this.number.y = -40;
         super.addChild(this.number);
+        
         this.resize(windowfield);
     }
     resize(windowfield) {
