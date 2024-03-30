@@ -36,7 +36,7 @@ class ErrorMeter extends PIXI.Container {
         this.avgmarker.y = 0;
         super.addChild(this.avgmarker);
 
-        this.ticks = new Array(20);
+        this.ticks = Array(20);
         for (let i = 0; i < this.ticks.length; ++i) {
             const tick = new PIXI.Sprite(skin['errormeterindicator.png']);
             tick.scale.set(.2);

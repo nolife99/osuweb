@@ -205,7 +205,7 @@ export default class PlayerActions {
                 targX += spinRadius * Math.cos(ang);
                 targY += spinRadius * Math.sin(ang);
             }
-            const t = 1 - Math.pow(1 - Math.max(0, Math.min(1, (time - this.lastTime) / (cur.time - this.lastTime))), 2);
+            const t = Math.sin(((time - this.lastTime) / (cur.time - this.lastTime) * Math.PI) / 2);
             game.mouseX = t * targX + (1 - t) * this.lastX;
             game.mouseY = t * targY + (1 - t) * this.lastY;
         }

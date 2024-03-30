@@ -50,7 +50,7 @@ if (beatmapFileList.length > 0) {
     const counter = progresses[3].childNodes;
     counter[3].innerText = beatmapFileList.length;
 
-    const tempbox = new Array(beatmapFileList.length);
+    const tempbox = Array(beatmapFileList.length);
     for (let i = 0; i < beatmapFileList.length; ++i) {
         const box = document.createElement('div');
         box.className = 'beatmapbox';
@@ -175,6 +175,16 @@ class BeatmapController {
         pGameArea.hidden = false;
 
         let playback = new Playback(this.osu, this.osu.tracks[trackid]);
+        app.ticker.add(t => {
+            playback.render(t, app.ticker.lastTime);
+            if (cursor) {
+                cursor.x = game.mouseX / 512 * playback.gfx.width + playback.gfx.xoffset;
+                cursor.y = game.mouseY / 384 * playback.gfx.height + playback.gfx.yoffset;
+                app.stage.addChild(cursor);
+            }
+            app.renderer.render(app.stage);
+        }).start();
+
         stopGame = restart => {
             if (!restart) {
                 pGameArea.hidden = true;
@@ -196,15 +206,6 @@ class BeatmapController {
             app.ticker.start();
             this.osu.onready();
         };
-        app.ticker.add(t => {
-            playback.render(t, app.ticker.lastTime);
-            if (cursor) {
-                cursor.x = game.mouseX / 512 * playback.gfx.width + playback.gfx.xoffset;
-                cursor.y = game.mouseY / 384 * playback.gfx.height + playback.gfx.yoffset;
-                app.stage.addChild(cursor);
-            }
-            app.renderer.render(app.stage);
-        }).start();
     }
     createBeatmapBox() {
         const pBeatmapBox = document.createElement('div'), pBeatmapCover = document.createElement('img'),
@@ -296,17 +297,11 @@ const defaultHint = 'Drag and drop a beatmap (.osz) file here',
 function addbeatmap(osz, f) {
     const map = new BeatmapController(osz), osu = map.osu;
     osu.ondecoded = () => {
-        osu.sortTracks();
         if (!osu.tracks.some(t => t.general.Mode !== 3)) {
             pDragboxHint.innerText = modeErrHint;
             return;
         }
         f(map.createBeatmapBox());
-
-        if (!beatmapFileList.includes(map.filename)) {
-            beatmapFileList.push(map.filename);
-            localStorage.setItem('beatmapfilelist', JSON.stringify(beatmapFileList));
-        }
     };
     osu.onerror = e => console.warn('Error loading .osu:', e);
     osu.load();
@@ -331,6 +326,10 @@ function handleDragDrop(e) {
                     pDragboxHint.innerText = defaultHint;
                 });
                 localforage.setItem(blob.name, zipFs.exportUint8Array()).catch(err => console.warn('Error saving beatmap:', zipFs.name, err));
+                if (!beatmapFileList.includes(zipFs.name)) {
+                    beatmapFileList.push(zipFs.name);
+                    localStorage.setItem('beatmapfilelist', JSON.stringify(beatmapFileList));
+                }
             }).catch(ex => {
                 console.warn('Error during file transfer:', zipFs.name, ex);
                 pDragboxHint.innerText = nonValidHint;

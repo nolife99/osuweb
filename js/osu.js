@@ -18,16 +18,14 @@ class Track {
         this.ondecoded = () => { };
     }
     decode() {
-        let section, combo = 0, index = 0, forceNewCombo = false;
-        for (const l of this.track.replace('\r', '').split('\n')) {
+        let section, combo = 0, index = 0, forceNewCombo = false, key, value, parts;
+        for (const l of this.track.split('\n')) {
             const line = l.trim();
             if (line === '' || line.indexOf('//') === 0) continue;
             if (line.indexOf('[') === 0) {
                 section = line;
                 continue;
             }
-
-            let key, value, parts;
             switch (section) {
                 case '[General]':
                     key = line.slice(0, line.indexOf(':')), value = line.slice(line.indexOf(':') + 1);
@@ -51,7 +49,7 @@ class Track {
                 case '[Difficulty]':
                     parts = line.split(':'), value = parts[1];
                     if (isNaN(value)) this.difficulty[parts[0]] = value;
-                    else this.difficulty[parts[0]] = (+value);
+                    else this.difficulty[parts[0]] = +value;
                     break;
 
                 case '[TimingPoints]':
@@ -84,7 +82,6 @@ class Track {
                         type: +parts[3],
                         hitSound: +parts[4]
                     };
-                    hit.chain = 0;
                     if ((hit.type & typeNC) > 0 || forceNewCombo) {
                         ++combo;
                         combo += (hit.type >> 4) & 7;
@@ -124,7 +121,7 @@ class Track {
                             if (parts.length > 8) hit.edgeHitsounds = parts[8].split('|').map(Number);
                             else hit.edgeHitsounds = new Uint8Array(hit.repeat + 1);
 
-                            hit.edgeSets = new Array(hit.repeat + 1);
+                            hit.edgeSets = Array(hit.repeat + 1);
                             for (let wdnmd = 0; wdnmd < hit.repeat + 1; ++wdnmd) hit.edgeSets[wdnmd] = {
                                 normalSet: 0, additionSet: 0
                             };
@@ -147,7 +144,6 @@ class Track {
                         };
                     }
                     else if ((hit.type & typeSpin) > 0) {
-                        hit.chain = 0;
                         if (hit.type & typeNC) --combo;
                         hit.combo = combo - ((hit.type >> 4) & 7);
                         forceNewCombo = true;
@@ -194,6 +190,7 @@ class Track {
             while (j + 1 < this.timing.length && this.timing[j + 1].offset <= hit.time) ++j;
             hit.timing = this.timing[j];
             hit.hitIndex = curIdx++;
+            hit.chain = 0;
 
             if (hit.type === 'circle') hit.endTime = hit.time;
             else if (hit.type === 'slider') {
@@ -202,7 +199,7 @@ class Track {
                 hit.sliderTimeTotal = hit.sliderTime * hit.repeat;
                 hit.endTime = hit.time + hit.sliderTimeTotal;
 
-                hit.repeats = new Array(hit.repeat - 1);
+                hit.repeats = Array(hit.repeat - 1);
                 for (let i = 1; i < hit.repeat; ++i) hit.repeats[i - 1] = {
                     time: hit.time + i * hit.sliderTime
                 };
@@ -228,7 +225,7 @@ export default class Osu {
             const track = new Track(this.zip, text);
             this.tracks.push(track);
             track.ondecoded = () => {
-                if (++this.count === rawTracks.length) this.ondecoded(this);
+                if (++this.count === rawTracks.length) this.sortTracks().then(() => this.ondecoded());
             };
             track.decode();
         });
@@ -243,9 +240,7 @@ export default class Osu {
                 entry.getData64URI().then(b => {
                     img.src = b;
                     if (!PIXI.Loader.shared.resources[id]) PIXI.Loader.shared.add({
-                        key: id.toString(),
-                        url: b,
-                        loadType: PIXI.LoaderResource.LOAD_TYPE.IMAGE
+                        key: id.toString(), url: b, loadType: PIXI.LoaderResource.LOAD_TYPE.IMAGE
                     });
                 }).catch(e => console.log("Couldn't cache background:", e.message));
                 return;
@@ -259,7 +254,9 @@ export default class Osu {
     }
     sortTracks() {
         this.tracks = this.tracks.filter(t => t.general.Mode !== 3);
-        fetch('https://api.sayobot.cn/v2/beatmapinfo?0=' + this.tracks[0].metadata.BeatmapSetID).then(r => r.json()).then(e => {
+        return fetch('https://api.sayobot.cn/v2/beatmapinfo?0=' + this.tracks[0].metadata.BeatmapSetID, {
+            signal: AbortSignal.timeout(5000)
+        }).then(r => r.json(), () => this.tracks.sort((a, b) => a.oldStar - b.oldStar)).then(e => {
             if (e.status === 0) for (const data of e.data.bid_data) for (const track of this.tracks) if (track.metadata.BeatmapID == data.bid) {
                 track.difficulty.star = data.star;
                 track.length = data.length;
