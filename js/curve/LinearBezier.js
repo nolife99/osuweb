@@ -2,11 +2,11 @@ const lerp = (a, b, t) => a + (b - a) * t;
 export default class LinearBezier {
     paths = [];
     pointLength = 0;
-    
+
     constructor(hit, line) {
         this.definedLength = hit.pixelLength;
         const points = [];
-        
+
         for (let i = -1, lastPt; i < hit.keyframes.length; ++i) {
             const pt = i !== -1 ? hit.keyframes[i] : {
                 x: hit.x, y: hit.y
@@ -73,7 +73,7 @@ function FlattenBezier(pts) {
     while (toFlatten.length > 0) {
         const parent = toFlatten.pop();
         let isFlat = true;
-        
+
         for (let i = 1; i < parent.length - 1; ++i) {
             const last = parent[i - 1], cur = parent[i], next = parent[i + 1];
             if ((last.x - 2 * cur.x + next.x) ** 2 + (last.y - 2 * cur.y + next.y) ** 2 > .3) {
@@ -118,7 +118,7 @@ function FlattenBezier(pts) {
             }
         }
         for (let i = 0; i < pts.length; ++i) parent[i] = l[i];
-        
+
         toFlatten.push(r);
         toFlatten.push(parent);
     }

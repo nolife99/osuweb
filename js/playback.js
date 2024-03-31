@@ -68,7 +68,7 @@ export default class Playback {
     current = 0;
     waitinghitid = 0;
     breakIndex = 0;
-    
+
     constructor(osu, track) {
         this.osu = osu;
         this.track = track;
@@ -257,10 +257,8 @@ export default class Playback {
                 }
                 if (hit.type === 'slider') {
                     if (hit.sliderType === 'P') {
-                        try {
-                            hit.curve = ArcPath(hit);
-                        }
-                        catch {
+                        hit.curve = ArcPath(hit);
+                        if (!hit.curve) {
                             a.sliderType === 'L';
                             hit.sliderType === 'L';
                             hit.curve = new LinearBezier(hit, true);

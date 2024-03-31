@@ -72,7 +72,7 @@ function newTexture(colors, SliderTrackOverride, SliderBorder) {
 
 const DIVIDES = 36;
 function curveGeometry(curve, length, radius) {
-    const vert = [], index = [], first = curve.pointAt(0), res = Math.ceil(length / (length > 24000 ? length / 8000 : 4.5));
+    const vert = [], index = [], first = curve.pointAt(0), res = Math.max(DIVIDES, Math.floor(length / (length > 24000 ? length / 8000 : 4.5)));
     vert.push(first.x, first.y, 0, 0);
 
     for (let i = 1; i < res; ++i) {
@@ -111,9 +111,9 @@ function curveGeometry(curve, length, radius) {
     addArc(5 * res - 5, 5 * res - 6, 5 * res - 7, 1);
 
     for (let i = 1; i < res - 1; ++i) {
-        const c = curve.pointAt((i + 1) / res), b = curve.pointAt(i / res), n = curve.pointAt((i + 2) / res);
-        if ((c.x - b.x) * (n.y - c.y) > (n.x - c.x) * (c.y - b.y)) addArc(5 * i, 5 * i - 1, 5 * i + 2);
-        else addArc(5 * i, 5 * i + 1, 5 * i - 2);
+        const c = curve.pointAt((i + 1) / res), b = curve.pointAt(i / res), n = curve.pointAt((i + 2) / res), p = i * 5;
+        if ((c.x - b.x) * (n.y - c.y) > (n.x - c.x) * (c.y - b.y)) addArc(p, p - 1, p + 2);
+        else addArc(p, p + 1, p - 2);
     }
     return new PIXI.Geometry().addAttribute('pos', vert, 4).addIndex(index);
 }
@@ -130,7 +130,7 @@ function circleGeometry(radius) {
 export default class SliderMesh extends PIXI.Container {
     startt = 0;
     endt = 1;
-    
+
     constructor(curve, tintid) {
         super();
 

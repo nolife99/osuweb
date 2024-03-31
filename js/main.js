@@ -44,14 +44,14 @@ export const game = {
     pDragboxHint = document.getElementsByClassName('dragbox-hint')[0],
     pBeatmapList = document.getElementsByClassName('beatmap-list')[0];
 
-const beatmapFileList = JSON.parse(localStorage.getItem('beatmapfilelist')) ?? [];
-if (beatmapFileList.length > 0) {
+const beatmapFileList = JSON.parse(localStorage.getItem('beatmapfilelist')) ?? [], fileCount = beatmapFileList.length;
+if (fileCount > 0) {
     console.log('Local beatmaps:', beatmapFileList);
     const counter = progresses[3].childNodes;
-    counter[3].innerText = beatmapFileList.length;
+    counter[3].innerText = fileCount;
 
-    const tempbox = Array(beatmapFileList.length);
-    for (let i = 0; i < beatmapFileList.length; ++i) {
+    const tempbox = Array(fileCount);
+    for (let i = 0; i < fileCount; ++i) {
         const box = document.createElement('div');
         box.className = 'beatmapbox';
         pBeatmapList.insertBefore(box, pDragbox);
@@ -60,7 +60,7 @@ if (beatmapFileList.length > 0) {
     const loadingCounter = counter[1];
 
     let loadedCount = 0;
-    for (let i = 0; i < beatmapFileList.length; ++i) localforage.getItem(beatmapFileList[i]).then(blob => {
+    for (let i = 0; i < fileCount; ++i) localforage.getItem(beatmapFileList[i]).then(blob => {
         const zipFs = new fs.FS;
         zipFs.name = beatmapFileList[i];
         zipFs.importUint8Array(blob).then(() => {
@@ -150,7 +150,7 @@ class BeatmapController {
 
         settings.loadToGame(game);
         this.osu.load_mp3(trackid);
-        
+
         if (!game.showhwmouse || game.autoplay) {
             var cursor = new PIXI.Sprite(skin['cursor.png']);
             cursor.anchor.x = cursor.anchor.y = .5;
@@ -202,7 +202,7 @@ class BeatmapController {
             }
 
             app.ticker.stop();
-            playback = new Playback(this.osu, this.osu.tracks[trackid]);
+            playback = new Playback(this.osu, playback.track);
             app.ticker.start();
             this.osu.onready();
         };

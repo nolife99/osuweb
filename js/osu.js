@@ -13,7 +13,7 @@ class Track {
     timing = [];
     hitObjects = [];
     ondecoded = () => { };
-    
+
     constructor(zip, track) {
         this.track = track;
         this.zip = zip;
@@ -215,7 +215,7 @@ export default class Osu {
     count = 0;
     onready = () => { };
     ondecoded = () => { };
-    
+
     constructor(zip) {
         this.zip = zip;
     }

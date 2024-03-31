@@ -7,10 +7,10 @@ export default class LoadingMenu extends PIXI.Container {
     fadetime = 200;
     alpha = 1;
     hidden = false;
-    
+
     bg = new PIXI.Sprite(skin['hpbarright.png']);
     loading = new PIXI.Sprite(skin['dot.png']);
-    
+
     constructor(windowfield, track) {
         super();
 

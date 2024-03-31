@@ -10,29 +10,25 @@ export default function ArcPath(hit) {
     }, b = hit.keyframes[0], c = hit.keyframes[1],
         d = 2 * (a.x * vecsub(b, c).y + b.x * vecsub(c, a).y + c.x * vecsub(a, b).y);
 
+    if (d === 0) return null;
     const aSq = dotlen(a), bSq = dotlen(b), cSq = dotlen(c), center = {
         x: (aSq * vecsub(b, c).y + bSq * vecsub(c, a).y + cSq * vecsub(a, b).y) / d,
         y: (aSq * vecsub(c, b).x + bSq * vecsub(a, c).x + cSq * vecsub(b, a).x) / d
-    }, dA = vecsub(a, center), dC = vecsub(c, center);
+    }, dA = vecsub(a, center), dC = vecsub(c, center), radius = Math.hypot(dA.x, dA.y), thetaStart = Math.atan2(dA.y, dA.x);
 
-    const radius = Math.hypot(dA.x, dA.y), thetaStart = Math.atan2(dA.y, dA.x);
-    if (!isFinite(radius)) throw new RangeError();
-    
     let thetaEnd = Math.atan2(dC.y, dC.x);
     while (thetaEnd < thetaStart) thetaEnd += twoPi;
 
-    let direct = 1, arcRange = thetaEnd - thetaStart, orthoAtoC = vecsub(c, a);
-    orthoAtoC = {
-        x: orthoAtoC.y, y: -orthoAtoC.x
-    };
-    if (vecdot(orthoAtoC, vecsub(b, a)) < 0) {
+    let direct = 1, arcRange = thetaEnd - thetaStart;
+    if (vecdot({
+        x: c.y - a.y, y: -(c.x - a.x)
+    }, vecsub(b, a)) < 0) {
         direct = -1;
         arcRange = twoPi - arcRange;
     }
     const expectRange = direct * hit.pixelLength / radius;
     return {
-        pointLength: arcRange * radius,
-        pointAt: t => {
+        pointLength: arcRange * radius, pointAt: t => {
             const ang = thetaStart + t * expectRange;
             return {
                 x: Math.cos(ang) * radius + center.x, y: Math.sin(ang) * radius + center.y, t: t

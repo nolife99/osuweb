@@ -76,11 +76,10 @@ function setSpriteArrayText(arr, str) {
     for (let i = str.length; i < arr.length; ++i) arr[i].visible = false;
 }
 function setSpriteArrayPos(arr, x, y) {
-    let curx = x;
     for (const s of arr) {
-        s.x = curx + s.scale.x * charSpacing / 2;
+        s.x = x + s.scale.x * charSpacing / 2;
         s.y = y;
-        curx += s.knownwidth;
+        x += s.knownwidth;
     }
 }
 export default class ScoreOverlay extends PIXI.Container {score = 0;
@@ -206,7 +205,7 @@ export default class ScoreOverlay extends PIXI.Container {score = 0;
         setSpriteArrayPos(this.comboDigits, basex + this.scoreDigits.width / 2 + 16 * unit, basey + 3 * unit);
     }
     showSummary(metadata, a, playback) {
-        const acc = this.judgeTotal / this.maxJudgeTotal, rank = grade(acc), grading = newdiv(null, 'grading');
+        const acc = this.judgeTotal / this.maxJudgeTotal * 100, rank = grade(acc), grading = newdiv(null, 'grading');
         grading.classList.add('transparent');
         document.body.appendChild(grading);
 
@@ -221,7 +220,7 @@ export default class ScoreOverlay extends PIXI.Container {score = 0;
 
         const left = newdiv(grading, 'left');
         newdiv(left, 'block score', this.score.toFixed(0));
-        newdiv(left, 'block acc', (acc * 100).toFixed(2) + '%');
+        newdiv(left, 'block acc', acc.toFixed(2) + '%');
         newdiv(left, 'block err', errortext(a));
         newdiv(left, 'block great', this.judgecnt.great.toString());
         newdiv(left, 'block good', this.judgecnt.good.toString());

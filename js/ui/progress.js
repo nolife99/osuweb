@@ -19,7 +19,7 @@ const font = {
 export default class ProgressOverlay extends PIXI.Container {
     remaining = new PIXI.Text(null, font);
     past = new PIXI.Text(null, font);
-    
+
     constructor(windowfield, starttime, endtime) {
         super();
 
