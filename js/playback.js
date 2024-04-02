@@ -14,32 +14,23 @@ const clamp01 = num => Math.min(Math.max(num, 0), 1), lerp = (a, b, t) => a + (b
     defaultBg = 'asset/skin/defaultbg.jpg', colorLerp = (rgb1, rgb2, t) => lerp(rgb1 >> 16, rgb2 >> 16, t) << 16 |
         lerp((rgb1 >> 8) & 255, (rgb2 >> 8) & 255, t) << 8 | lerp(rgb1 & 255, rgb2 & 255, t);
 
-function getdist(A, B, useEnd) {
-    let x = A.x, y = A.y;
-    if (useEnd) {
-        const pt = A.curve.pointAt(1);
-        x = pt.x;
-        y = pt.y;
-    }
-    return Math.hypot(x - B.x, y - B.y);
-}
 function repeatclamp(a) {
     a %= 2;
     return a > 1 ? 2 - a : a;
 }
-function fadeOutEasing(t) {
-    if (t <= 0) return 1;
-    if (t > 1) return 0;
-    return 1 - Math.sin(t * Math.PI / 2);
+function findindex(i, gamefield) {
+    let l = 0, r = gamefield.children.length;
+    while (l + 1 < r) {
+        const m = Math.floor((l + r) / 2) - 1;
+        if ((gamefield.children[m].depth || 0) < i) l = m + 1;
+        else r = m + 1;
+    }
+    return l;
 }
 
 export default class Playback {
     ready = true;
-    started = false;
     newHits = [];
-    audioReady = false;
-    skipped = false;
-    ended = false;
     volumeMenu = new VolumeMenu({
         width: window.innerWidth,
         height: window.innerHeight
@@ -112,8 +103,8 @@ export default class Playback {
                 app.stage.addChild(this.breakOverlay);
 
                 this.loadingMenu.hide();
-                this.audioReady = true;
                 this.start();
+                this.audioReady = true;
             });
         };
         window.onresize = () => {
@@ -262,7 +253,17 @@ export default class Playback {
                 resolve(hit);
             }));
         })).then(hits => {
+            function getdist(A, B, useEnd) {
+                let x = A.x, y = A.y;
+                if (useEnd) {
+                    const pt = A.curve.pointAt(1);
+                    x = pt.x;
+                    y = pt.y;
+                }
+                return Math.hypot(x - B.x, y - B.y);
+            }
             const lazyStack = 3, stackOfs = (1 - .7 * ((this.CS - 5) / 5)) * -3.2;
+            
             for (let i = hits.length - 1; i > 0; --i) {
                 let n = i, objectI = hits[i];
                 if (objectI.chain != 0 || objectI.type === 'spinner') continue;
@@ -350,9 +351,9 @@ export default class Playback {
         this.gamefield.scale.set(this.gfx.width / 512);
     }
     resume() {
-        game.paused = false;
         document.getElementsByClassName('pause-menu')[0].hidden = true;
         this.osu.audio.play();
+        game.paused = false;
     }
     pause() {
         if (this.osu.audio.pause()) {
@@ -368,18 +369,18 @@ export default class Playback {
                 quit.onclick = null;
             };
             retry.onclick = () => {
-                game.paused = false;
                 menu.hidden = true;
                 this.retry();
+                game.paused = false;
             };
             quit.onclick = () => {
-                game.paused = false;
                 menu.hidden = true;
                 this.quit();
+                game.paused = false;
             };
         }
     }
-    createJudgement(x, y, depth, finalTime) {
+    createJudgement(x, y, finalTime) {
         const judge = new PIXI.Text(null, {
             fontFamily: 'Venera', fontSize: 20, fill: 0xffffff
         });
@@ -389,7 +390,7 @@ export default class Playback {
         judge.visible = false;
         judge.x = x;
         judge.y = y;
-        judge.depth = depth;
+        judge.depth = 4;
         judge.points = -1;
         judge.finalTime = finalTime;
         judge.defaultScore = 0;
@@ -464,18 +465,18 @@ export default class Playback {
         hit.base.tint = this.track.colors[hit.combo % this.track.colors.length];
         hit.circle = newHitSprite('hitcircleoverlay.png', basedep, .5);
 
-        hit.glow = newHitSprite('ring-glow.png', basedep + 2, .46);
+        hit.glow = newHitSprite('ring-glow.png', 7, .46);
         hit.glow.tint = this.track.colors[hit.combo % this.track.colors.length];
         hit.glow.blendMode = PIXI.BLEND_MODES.ADD;
 
-        hit.burst = newHitSprite('hitburst.png', 8.1 + .000001 * hit.hitIndex);
+        hit.burst = newHitSprite('hitburst.png', 8);
         hit.burst.visible = false;
 
-        hit.approach = newHitSprite('approachcircle.png', 8 + .000001 * hit.hitIndex);
+        hit.approach = newHitSprite('approachcircle.png', 8);
         hit.approach.tint = this.track.colors[hit.combo % this.track.colors.length];
         if (!hit.enableflash) hit.approach.visible = false;
 
-        hit.judgements.push(this.createJudgement(hit.x, hit.y, 4, hit.time + this.MehTime));
+        hit.judgements.push(this.createJudgement(hit.x, hit.y, hit.time + this.MehTime));
         hit.numbers = [];
         if (!game.hideNumbers) {
             if (index < 10) hit.numbers.push(newHitSprite('score-'.concat(index, '.png'), basedep, .4, .5, .47));
@@ -543,13 +544,13 @@ export default class Playback {
         hit.body.depth = 5 - .000001 * hit.hitIndex;
         hit.objects.push(hit.body);
 
-        const newSprite = (spritename, x, y, scalemul = 1, isReverse) => {
+        const newSprite = (spritename, x, y, scalemul = 1) => {
             const sprite = new PIXI.Sprite(skin[spritename]);
             sprite.scale.set(this.hitSpriteScale * scalemul);
             sprite.anchor.set(.5);
             sprite.x = x;
             sprite.y = y;
-            sprite.depth = (isReverse ? 7 : 5) - .000001 * hit.hitIndex;
+            sprite.depth = 5 - .000001 * hit.hitIndex;
             sprite.alpha = 0;
             hit.objects.push(sprite);
             return sprite;
@@ -562,17 +563,17 @@ export default class Playback {
             const at = hit.curve.pointAt(pos);
 
             const lastTick = hit.ticks[hit.ticks.push(newSprite('sliderscorepoint.png', at.x, at.y)) - 1];
-            lastTick.appeartime = hit.time + i * tickDuration / 2;
+            lastTick.appeartime = hit.time + i * tickDuration / 1.5;
             lastTick.time = t;
         }
         if (hit.repeat > 1) {
             const p = hit.curve.pointAt(1), p2 = hit.curve.pointAt(.999999);
-            hit.reverse = newSprite('reversearrow.png', p.x, p.y, .36, true);
+            hit.reverse = newSprite('reversearrow.png', p.x, p.y, .36);
             hit.reverse.rotation = Math.atan2(p2.y - p.y, p2.x - p.x);
         }
         if (hit.repeat > 2) {
             const p2 = hit.curve.pointAt(.000001);
-            hit.reverse_b = newSprite('reversearrow.png', hit.x, hit.y, .36, true);
+            hit.reverse_b = newSprite('reversearrow.png', hit.x, hit.y, .36);
             hit.reverse_b.rotation = Math.atan2(p2.y - hit.y, p2.x - hit.x);
             hit.reverse_b.visible = false;
         }
@@ -587,7 +588,7 @@ export default class Playback {
         this.createHitCircle(hit);
 
         const v = hit.repeat % 2 === 1 ? hit.curve.pointAt(1) : hit;
-        hit.judgements.push(this.createJudgement(v.x, v.y, 4, hit.time + hit.sliderTimeTotal + this.GoodTime));
+        hit.judgements.push(this.createJudgement(v.x, v.y, hit.time + hit.sliderTimeTotal + this.GoodTime));
     }
     createSpinner(hit) {
         hit.approachTime = this.spinnerAppearTime + this.spinnerZoomInTime;
@@ -597,14 +598,14 @@ export default class Playback {
         hit.rotationProgress = 0;
         hit.clicked = false;
         hit.clearRotations = (1.5 * this.OD < 5 ? 3 + .4 * this.OD : 2.5 + .5 * this.OD) / this.speed * Math.PI * (hit.endTime - hit.time) / 1000;
-        hit.rotationProgress = hit.clearRotations < Math.PI * 2 ? Number.MAX_SAFE_INTEGER : 0;
+        hit.rotationProgress = hit.clearRotations < Math.PI ? Number.MAX_SAFE_INTEGER : 0;
 
         function newsprite(spritename) {
             const sprite = new PIXI.Sprite(skin[spritename]);
             sprite.anchor.set(.5);
             sprite.x = hit.x;
             sprite.y = hit.y;
-            sprite.depth = 5 - .000001 * (hit.hitIndex || 1);
+            sprite.depth = 4 - .000001 * hit.hitIndex;
             sprite.alpha = 0;
             hit.objects.push(sprite);
             return sprite;
@@ -616,7 +617,7 @@ export default class Playback {
             hit.progress.visible = false;
             hit.base.visible = false;
         }
-        hit.judgements.push(this.createJudgement(hit.x, hit.y, 4, hit.endTime + 233));
+        hit.judgements.push(this.createJudgement(hit.x, hit.y, hit.endTime + 233));
     }
     createFollowPoint(prevHit, hit) {
         let x1 = prevHit.x, y1 = prevHit.y, t1 = prevHit.time;
@@ -719,24 +720,15 @@ export default class Playback {
     }
     updateUpcoming(time) {
         while (this.waitinghitid < this.hits.length && this.hits[this.waitinghitid].endTime < time) ++this.waitinghitid;
-        const findindex = i => {
-            let l = 0, r = this.gamefield.children.length;
-            while (l + 1 < r) {
-                const m = Math.floor((l + r) / 2) - 1;
-                if ((this.gamefield.children[m].depth || 0) < i) l = m + 1;
-                else r = m + 1;
-            }
-            return l;
-        };
         while (this.current < this.hits.length && this.futuremost < time + 3000) {
             const hit = this.hits[this.current++];
             for (let i = hit.judgements.length - 1; i >= 0; --i) {
                 const judge = hit.judgements[i];
-                this.gamefield.addChildAt(judge, findindex(judge.depth || 0));
+                this.gamefield.addChildAt(judge, findindex(judge.depth || 0, this.gamefield));
             }
             for (let i = hit.objects.length - 1; i >= 0; --i) {
                 const obj = hit.objects[i];
-                this.gamefield.addChildAt(obj, findindex(obj.depth || 0));
+                this.gamefield.addChildAt(obj, findindex(obj.depth || 0, this.gamefield));
             }
             this.newHits.push(hit);
             if (hit.time > this.futuremost) this.futuremost = hit.time;
@@ -942,7 +934,7 @@ export default class Playback {
                 resizeFollow(hit, time, -1 / this.followZoomInTime);
                 hit.follow.scale.x = hit.follow.scale.y = hit.followSize * .45 * this.hitSpriteScale;
                 hit.follow.alpha = hit.followSize - 1;
-                hit.ball.alpha = fadeOutEasing(timeAfter / this.ballFadeOutTime);
+                hit.ball.alpha = 1 - timeAfter / this.ballFadeOutTime;
                 hit.ball.scale.x = hit.ball.scale.y = (1 + .15 * timeAfter / this.ballFadeOutTime) * .5 * this.hitSpriteScale;
             }
             if (hit.repeat > 1) {
@@ -1127,11 +1119,11 @@ export default class Playback {
         if (!game.autoplay) this.player.cleanup();
     }
     start() {
-        this.started = true;
         this.skipped = false;
         this.osu.audio.gain.gain.value = game.musicVolume * game.masterVolume;
         this.osu.audio.speed = this.speed;
         this.osu.audio.play(this.backgroundFadeTime + this.wait);
+        this.started = true;
     }
     retry() {
         if (!game.paused) {

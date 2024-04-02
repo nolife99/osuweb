@@ -8,7 +8,7 @@ class LazyNumber {
         this.target = value;
     }
     update(time) {
-        this.value += (this.target - this.value) * (1 - Math.exp((this.lasttime - time) / 150));
+        this.value += (this.target - this.value) * (1 - Math.exp((this.lasttime - time) / 180));
         this.lasttime = time;
     }
     set(time, value) {
@@ -34,11 +34,8 @@ function errortext(a) {
 
     const avg = sum / a.length;
     let sumsqerr = 0;
-
-    for (const i of a) {
-        const base = i - avg;
-        sumsqerr += base * base;
-    }
+    for (const i of a) sumsqerr += (i - avg) * 2;
+    
     let sgnavg = avg.toFixed(0);
     if (sgnavg[0] !== '-') sgnavg = '+' + sgnavg;
     return sgnavg.concat('±', Math.sqrt(sumsqerr / a.length).toFixed(0), 'ms');
@@ -82,7 +79,8 @@ function setSpriteArrayPos(arr, x, y) {
         x += s.knownwidth;
     }
 }
-export default class ScoreOverlay extends PIXI.Container {score = 0;
+export default class ScoreOverlay extends PIXI.Container {
+    score = 0;
     combo = 0;
     maxcombo = 0;
     fullcombo = 0;

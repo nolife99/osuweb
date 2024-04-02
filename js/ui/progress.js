@@ -7,10 +7,10 @@ function timeformat(ms) {
 
     let m = Math.floor(s / 60);
     if (m >= 60) {
-        prefix += Math.floor(m / 60) + ':';
+        prefix = prefix.concat(Math.floor(m / 60), ':');
         m %= 60;
     }
-    return prefix.concat(m, ':', (s % 60).toFixed(0).padStart(2, '0'));
+    return prefix.concat(m, ':', Math.floor(s % 60).toString().padStart(2, '0'));
 }
 const font = {
     fontFamily: 'Venera', fontSize: 16, fill: 0xddffff
