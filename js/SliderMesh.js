@@ -1,4 +1,4 @@
-const twoPi = 2 * Math.PI, vertexSrc = `
+const tau = 2 * Math.PI, vertexSrc = `
     precision lowp float;
     attribute vec4 pos;
     varying float dist;
@@ -7,20 +7,20 @@ const twoPi = 2 * Math.PI, vertexSrc = `
         dist = pos.w;
         gl_Position = vec4(pos.xy, pos.w + 2.0 * float(pos.z * dt > ot), 1.0);
         gl_Position.xy = gl_Position.xy * vec2(dx, dy) + vec2(ox, oy);
-    }`, fragmentSrc = `
+    }`, fragSrc = `
     precision lowp float;
     varying float dist;
-    uniform sampler2D uSampler2;
+    uniform sampler2D tex;
     uniform float alpha;
-    uniform float texturepos;
+    uniform float texPtr;
     void main() {
-        gl_FragColor = alpha * texture2D(uSampler2, vec2(dist, texturepos));
-    }`, borderwidth = .13, innerPortion = 1 - borderwidth, edgeFade = .5, centerFade = .3, blurrate = .017, width = 200;
+        gl_FragColor = alpha * texture2D(tex, vec2(dist, texPtr));
+    }`, innerPart = .87, blurrate = .017, width = 120;
 
 function newTexture(colors, SliderTrackOverride, SliderBorder) {
     const buff = new Uint8Array(colors.length * width * 4);
     for (let k = 0; k < colors.length; ++k) {
-        const tint = SliderTrackOverride ? SliderTrackOverride : colors[k], bordertint = SliderBorder ? SliderBorder : 0xffffff,
+        const tint = SliderTrackOverride || colors[k], bordertint = SliderBorder || 0xffffff,
             borderR = bordertint >> 16, borderG = (bordertint >> 8) & 255, borderB = bordertint & 255, borderA = 1,
             innerR = tint >> 16, innerG = (tint >> 8) & 255, innerB = tint & 255, innerA = 1;
 
@@ -28,7 +28,7 @@ function newTexture(colors, SliderTrackOverride, SliderBorder) {
             const position = i / width;
             let R, G, B, A;
 
-            if (position >= innerPortion) {
+            if (position >= innerPart) {
                 R = borderR;
                 G = borderG;
                 B = borderB;
@@ -38,7 +38,7 @@ function newTexture(colors, SliderTrackOverride, SliderBorder) {
                 R = innerR;
                 G = innerG;
                 B = innerB;
-                A = innerA * (edgeFade * position / innerPortion + centerFade);
+                A = innerA * (.5 * position / innerPart + .3);
             }
             R *= A;
             G *= A;
@@ -52,8 +52,8 @@ function newTexture(colors, SliderTrackOverride, SliderBorder) {
                 B *= blur;
                 A *= blur;
             }
-            if (innerPortion - position > 0 && innerPortion - position < blurrate) {
-                const mu = (innerPortion - position) / blurrate, ea = (1 - mu) * borderA;
+            if (innerPart > position && innerPart - position < blurrate) {
+                const mu = (innerPart - position) / blurrate, ea = (1 - mu) * borderA;
                 R = mu * R + ea * borderR;
                 G = mu * G + ea * borderG;
                 B = mu * B + ea * borderB;
@@ -72,7 +72,7 @@ function newTexture(colors, SliderTrackOverride, SliderBorder) {
 
 const DIVIDES = 36;
 function curveGeometry(curve, length, radius) {
-    const vert = [], index = [], first = curve.pointAt(0), res = Math.max(DIVIDES, Math.floor(length / (length > 24000 ? length / 8000 : 4.5)));
+    const vert = [], ptrs = [], first = curve.pointAt(0), res = Math.max(DIVIDES, Math.ceil(length / (length > 24000 ? length / 8000 : 4.5)));
     vert.push(first.x, first.y, 0, 0);
 
     for (let i = 1; i < res; ++i) {
@@ -89,43 +89,45 @@ function curveGeometry(curve, length, radius) {
         vert.push(x, y, t, 0);
 
         const n = 5 * i + 1;
-        index.push(n - 6, n - 5, n - 1, n - 5, n - 1, n - 3);
-        index.push(n - 6, n - 4, n - 1, n - 4, n - 1, n - 2);
+        ptrs.push(n - 6, n - 5, n - 1, n - 5, n - 1, n - 3);
+        ptrs.push(n - 6, n - 4, n - 1, n - 4, n - 1, n - 2);
     }
     function addArc(c, p1, p2, t) {
-        const vrt = vert[4 * c], nextVrt = vert[4 * c + 1], theta1 = Math.atan2(vert[4 * p1 + 1] - nextVrt, vert[4 * p1] - vrt);
-        let theta2 = Math.atan2(vert[4 * p2 + 1] - nextVrt, vert[4 * p2] - vrt);
-        if (theta1 > theta2) theta2 += twoPi;
-        let theta = theta2 - theta1, divs = Math.floor(DIVIDES * Math.abs(theta) / twoPi);
+        const v = vert[4 * c], nextV = vert[4 * c + 1], theta1 = Math.atan2(vert[4 * p1 + 1] - nextV, vert[4 * p1] - v);
+        let theta2 = Math.atan2(vert[4 * p2 + 1] - nextV, vert[4 * p2] - v);
+        if (theta1 > theta2) theta2 += tau;
+        let theta = theta2 - theta1, divs = Math.floor(DIVIDES * Math.abs(theta) / tau);
         theta /= divs;
 
         let last = p1;
         for (let i = 1; i < divs; ++i) {
-            const newv = vert.push(vrt + radius * Math.cos(theta1 + i * theta), nextVrt + radius * Math.sin(theta1 + i * theta), t, 1) / 4 - 1;
-            index.push(c, last, newv);
+            const a = theta1 + i * theta, newv = vert.push(v + radius * Math.cos(a), nextV + radius * Math.sin(a), t, 1) / 4 - 1;
+            ptrs.push(c, last, newv);
             last = newv;
         }
-        index.push(c, last, p2);
+        ptrs.push(c, last, p2);
     }
     addArc(0, 1, 2, 0);
-    addArc(5 * res - 5, 5 * res - 6, 5 * res - 7, 1);
+
+    const resP = res * 5;
+    addArc(resP - 5, resP - 6, resP - 7, 1);
 
     for (let i = 1; i < res - 1; ++i) {
         const c = curve.pointAt((i + 1) / res), b = curve.pointAt(i / res), n = curve.pointAt((i + 2) / res), p = i * 5;
         if ((c.x - b.x) * (n.y - c.y) > (n.x - c.x) * (c.y - b.y)) addArc(p, p - 1, p + 2);
         else addArc(p, p + 1, p - 2);
     }
-    return new PIXI.Geometry().addAttribute('pos', vert, 4).addIndex(index);
+    return new PIXI.Geometry().addAttribute('pos', vert, 4).addIndex(ptrs);
 }
 function circleGeometry(radius) {
-    const vert = [], index = [];
+    const vert = [], ptrs = [];
     vert.push(0, 0, 0, 0);
     for (let i = 0; i < DIVIDES; ++i) {
-        const theta = twoPi / DIVIDES * i;
+        const theta = tau / DIVIDES * i;
         vert.push(radius * Math.cos(theta), radius * Math.sin(theta), 0, 1);
-        index.push(0, i + 1, (i + 1) % DIVIDES + 1);
+        ptrs.push(0, i + 1, (i + 1) % DIVIDES + 1);
     }
-    return new PIXI.Geometry().addAttribute('pos', vert, 4).addIndex(index);
+    return new PIXI.Geometry().addAttribute('pos', vert, 4).addIndex(ptrs);
 }
 export default class SliderMesh extends PIXI.Container {
     startt = 0;
@@ -136,99 +138,86 @@ export default class SliderMesh extends PIXI.Container {
 
         this.curve = curve;
         this.geometry = curveGeometry(curve, curve.pointLength, this.radius);
-        this.tintid = tintid;
+        this.texPtr = tintid / this.ncolors;
     }
     _render(renderer) {
-        const shader = this.shader;
-        shader.alpha = this.worldAlpha;
-        if (shader.update) shader.update();
         renderer.batch.flush();
-
+        this.uniforms.texPtr = this.texPtr;
         this.uniforms.alpha = this.alpha;
-        this.uniforms.texturepos = this.tintid / this.ncolors;
         this.uniforms.dt = 0;
         this.uniforms.ot = .5;
-
+        
         const ox0 = this.uniforms.ox, oy0 = this.uniforms.oy, gl = renderer.gl;
-        let glType, indexLength;
-
         gl.clearDepth(1);
         gl.clear(gl.DEPTH_BUFFER_BIT);
         gl.colorMask(false, false, false, false);
+        
         renderer.state.set(null);
         renderer.state.setDepthTest(true);
 
-        function bind(geometry) {
-            renderer.shader.bind(shader);
-            renderer.geometry.bind(geometry, shader);
-            const data = geometry.indexBuffer.data;
-            glType = data.BYTES_PER_ELEMENT === 2 ? gl.UNSIGNED_SHORT : gl.UNSIGNED_INT;
-            indexLength = data.length;
-        }
+        const bind = (geometry, draw = true) => {
+            renderer.shader.bind(this.shader);
+            renderer.geometry.bind(geometry, this.shader);
+            if (draw) renderer.geometry.draw(PIXI.DRAW_MODES.TRIANGLES);
+        };
         if (this.startt === 0 && this.endt === 1) {
             this.uniforms.dt = 0;
             this.uniforms.ot = 1;
             bind(this.geometry);
-            gl.drawElements(gl.TRIANGLES, indexLength, glType, 0);
         }
         else if (this.endt === 1) {
             if (this.startt !== 1) {
                 this.uniforms.dt = -1;
                 this.uniforms.ot = -this.startt;
                 bind(this.geometry);
-                gl.drawElements(gl.TRIANGLES, indexLength, glType, 0);
             }
             this.uniforms.dt = 0;
             this.uniforms.ot = 1;
+
             const p = this.curve.pointAt(this.startt);
             this.uniforms.ox += p.x * this.uniforms.dx;
             this.uniforms.oy += p.y * this.uniforms.dy;
-
             bind(this.circle);
-            gl.drawElements(gl.TRIANGLES, indexLength, glType, 0);
         }
         else if (this.startt === 0) {
             if (this.endt !== 0) {
                 this.uniforms.dt = 1;
                 this.uniforms.ot = this.endt;
                 bind(this.geometry);
-                gl.drawElements(gl.TRIANGLES, indexLength, glType, 0);
             }
             this.uniforms.dt = 0;
             this.uniforms.ot = 1;
+
             const p = this.curve.pointAt(this.endt);
             this.uniforms.ox += p.x * this.uniforms.dx;
             this.uniforms.oy += p.y * this.uniforms.dy;
-
             bind(this.circle);
-            gl.drawElements(gl.TRIANGLES, indexLength, glType, 0);
         }
-
         gl.depthFunc(gl.EQUAL);
         gl.colorMask(true, true, true, true);
 
-        if (this.startt === 0 && this.endt === 1) gl.drawElements(gl.TRIANGLES, indexLength, glType, 0);
+        if (this.startt === 0 && this.endt === 1) renderer.geometry.draw(PIXI.DRAW_MODES.TRIANGLES);
         else if (this.endt === 1) {
             if (this.startt !== 1) {
-                gl.drawElements(gl.TRIANGLES, indexLength, glType, 0);
+                renderer.geometry.draw(PIXI.DRAW_MODES.TRIANGLES);
                 this.uniforms.ox = ox0;
                 this.uniforms.oy = oy0;
                 this.uniforms.dt = -1;
                 this.uniforms.ot = -this.startt;
-                bind(this.geometry);
+                bind(this.geometry, false);
             }
-            gl.drawElements(gl.TRIANGLES, indexLength, glType, 0);
+            renderer.geometry.draw(PIXI.DRAW_MODES.TRIANGLES);
         }
         else if (this.startt === 0) {
             if (this.endt !== 0) {
-                gl.drawElements(gl.TRIANGLES, indexLength, glType, 0);
+                renderer.geometry.draw(PIXI.DRAW_MODES.TRIANGLES);
                 this.uniforms.ox = ox0;
                 this.uniforms.oy = oy0;
                 this.uniforms.dt = 1;
                 this.uniforms.ot = this.endt;
-                bind(this.geometry);
+                bind(this.geometry, false);
             }
-            gl.drawElements(gl.TRIANGLES, indexLength, glType, 0);
+            renderer.geometry.draw(PIXI.DRAW_MODES.TRIANGLES);
         }
         gl.depthFunc(gl.LESS);
         renderer.state.setDepthTest(false);
@@ -241,17 +230,17 @@ export default class SliderMesh extends PIXI.Container {
         this.ncolors = colors.length;
         this.circle = circleGeometry(radius);
         this.uniforms = {
-            uSampler2: newTexture(colors, SliderTrackOverride, SliderBorder), alpha: 1,
+            tex: newTexture(colors, SliderTrackOverride, SliderBorder), alpha: 1,
             dx: transform.dx, dy: transform.dy, ox: transform.ox, oy: transform.oy,
-            texturepos: 0
+            texPtr: 0
         };
-        this.shader = PIXI.Shader.from(vertexSrc, fragmentSrc, this.uniforms);
+        this.shader = PIXI.Shader.from(vertexSrc, fragSrc, this.uniforms);
     }
-    resetTransform(transform) {
-        this.uniforms.dx = transform.dx;
-        this.uniforms.dy = transform.dy;
-        this.uniforms.ox = transform.ox;
-        this.uniforms.oy = transform.oy;
+    resetTransform(dx, dy, ox, oy) {
+        this.uniforms.dx = dx;
+        this.uniforms.dy = dy;
+        this.uniforms.ox = ox;
+        this.uniforms.oy = oy;
     }
     destroy(opt) {
         super.destroy(opt);
@@ -261,7 +250,7 @@ export default class SliderMesh extends PIXI.Container {
         const opt = {
             children: true, texture: true, baseTexture: true
         };
-        this.uniforms.uSampler2.destroy(opt);
+        this.uniforms.tex.destroy(opt);
         this.circle.destroy(opt);
         this.shader.destroy(opt);
     }

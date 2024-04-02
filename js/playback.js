@@ -10,13 +10,10 @@ import ErrorMeterOverlay from './ui/hiterrormeter.js';
 import ArcPath from './curve/ArcPath.js';
 import LinearBezier from './curve/LinearBezier.js';
 
-const clamp01 = num => Math.min(Math.max(num, 0), 1), defaultBg = 'asset/skin/defaultbg.jpg';
-function colorLerp(rgb1, rgb2, t) {
-    const ease = 1 - t;
-    return (ease * (rgb1 >> 16) + t * (rgb2 >> 16)) << 16 |
-        (ease * ((rgb1 >> 8) & 255) + t * ((rgb2 >> 8) & 255)) << 8 |
-        (ease * (rgb1 & 255) + t * (rgb2 & 255));
-}
+const clamp01 = num => Math.min(Math.max(num, 0), 1), lerp = (a, b, t) => a + (b - a) * t,
+    defaultBg = 'asset/skin/defaultbg.jpg', colorLerp = (rgb1, rgb2, t) => lerp(rgb1 >> 16, rgb2 >> 16, t) << 16 |
+        lerp((rgb1 >> 8) & 255, (rgb2 >> 8) & 255, t) << 8 | lerp(rgb1 & 255, rgb2 & 255, t);
+
 function getdist(A, B, useEnd) {
     let x = A.x, y = A.y;
     if (useEnd) {
@@ -40,7 +37,6 @@ export default class Playback {
     ready = true;
     started = false;
     newHits = [];
-    approachScale = 3;
     audioReady = false;
     skipped = false;
     ended = false;
@@ -85,8 +81,8 @@ export default class Playback {
 
         this.createBackground();
         app.stage.addChild(this.gamefield);
-        app.stage.addChild(this.loadingMenu);
         app.stage.addChild(this.volumeMenu);
+        app.stage.addChild(this.loadingMenu);
 
         this.endTime = track.hitObjects.at(-1).endTime + 1500;
         this.wait = Math.max(0, 1500 - track.hitObjects[0].time);
@@ -155,12 +151,9 @@ export default class Playback {
                 this.background.y = window.innerHeight / 2;
                 this.background.scale.set(Math.max(window.innerWidth / this.background.texture.width, window.innerHeight / this.background.texture.height));
             }
-            SliderMesh.prototype.resetTransform({
-                dx: 2 * this.gfx.width / window.innerWidth / 512,
-                ox: -1 + 2 * this.gfx.xoffset / window.innerWidth,
-                dy: -2 * this.gfx.height / window.innerHeight / 384,
-                oy: 1 - 2 * this.gfx.yoffset / window.innerHeight,
-            });
+            SliderMesh.prototype.resetTransform(
+                2 * this.gfx.width / window.innerWidth / 512, -2 * this.gfx.height / window.innerHeight / 384,
+                -1 + 2 * this.gfx.xoffset / window.innerWidth, 1 - 2 * this.gfx.yoffset / window.innerHeight);
         };
 
         this.OD = track.difficulty.OverallDifficulty;
@@ -316,7 +309,7 @@ export default class Playback {
                     hit.x += ofs;
                     hit.y += ofs;
 
-                    if (hit.type == "slider") {
+                    if (hit.type === "slider") {
                         for (const k of hit.keyframes) {
                             k.x += ofs;
                             k.y += ofs;
@@ -771,14 +764,14 @@ export default class Playback {
             relpos *= 2 - relpos;
             o.x = startx + ((f.x1 + o.fraction * f.dx) - startx) * relpos;
             o.y = starty + ((f.y1 + o.fraction * f.dy) - starty) * relpos;
-            o.alpha = .5 * (time < fadeOutTime ? clamp01((time - fadeInTime) / hitFadeIn) : 1 - clamp01((time - fadeOutTime) / hitFadeIn));
+            o.alpha = (time < fadeOutTime ? clamp01((time - fadeInTime) / hitFadeIn) : 1 - clamp01((time - fadeOutTime) / hitFadeIn)) / 2;
         }
     }
     updateHitCircle(hit, time) {
         if (hit.followPoints) this.updateFollowPoints(hit.followPoints, time);
         const diff = hit.time - time, opaque = this.approachTime - this.approachFadeInTime;
 
-        if (diff <= this.approachTime && diff > 0) hit.approach.scale.set(.5 * this.hitSpriteScale * (diff / this.approachTime * this.approachScale + 1));
+        if (diff <= this.approachTime && diff > 0) hit.approach.scale.set(.5 * this.hitSpriteScale * (diff / this.approachTime * 4 + 1));
         else hit.approach.scale.set(.5 * this.hitSpriteScale);
 
         if (diff <= this.approachTime && diff > opaque) hit.approach.alpha = (this.approachTime - diff) / this.approachFadeInTime;

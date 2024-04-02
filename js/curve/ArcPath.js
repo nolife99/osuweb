@@ -1,4 +1,4 @@
-const twoPi = 2 * Math.PI, dotlen = a => a.x * a.x + a.y * a.y, vecsub = (a, b) => {
+const tau = 2 * Math.PI, dotlen = a => a.x * a.x + a.y * a.y, vecsub = (a, b) => {
     return {
         x: a.x - b.x, y: a.y - b.y
     };
@@ -17,14 +17,14 @@ export default function ArcPath(hit) {
     }, dA = vecsub(a, center), dC = vecsub(c, center), radius = Math.hypot(dA.x, dA.y), thetaStart = Math.atan2(dA.y, dA.x);
 
     let thetaEnd = Math.atan2(dC.y, dC.x);
-    while (thetaEnd < thetaStart) thetaEnd += twoPi;
+    while (thetaEnd < thetaStart) thetaEnd += tau;
 
     let direct = 1, arcRange = thetaEnd - thetaStart;
     if (vecdot({
         x: c.y - a.y, y: -(c.x - a.x)
     }, vecsub(b, a)) < 0) {
         direct = -1;
-        arcRange = twoPi - arcRange;
+        arcRange = tau - arcRange;
     }
     const expectRange = direct * hit.pixelLength / radius;
     return {

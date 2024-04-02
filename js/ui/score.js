@@ -199,7 +199,7 @@ export default class ScoreOverlay extends PIXI.Container {score = 0;
         setSpriteArrayText(this.comboDigits, this.comboDisplay.valueAt(time).toFixed(0) + 'x');
         setSpriteArrayText(this.accuracyDigits, this.accuracyDisplay.valueAt(time).toFixed(2) + '%');
 
-        const basex = this.field.width * .5, basey = this.field.height * .017, unit = Math.min(this.field.width / 640, this.field.height / 480);
+        const basex = this.field.width / 2, basey = this.field.height * .017, unit = Math.min(this.field.width / 640, this.field.height / 480);
         setSpriteArrayPos(this.scoreDigits, basex - this.scoreDigits.width / 2, basey);
         setSpriteArrayPos(this.accuracyDigits, basex - this.scoreDigits.width / 2 - this.accuracyDigits.width - 16 * unit, basey + 3 * unit);
         setSpriteArrayPos(this.comboDigits, basex + this.scoreDigits.width / 2 + 16 * unit, basey + 3 * unit);
@@ -226,7 +226,6 @@ export default class ScoreOverlay extends PIXI.Container {score = 0;
         newdiv(left, 'block good', this.judgecnt.good.toString());
         newdiv(left, 'block meh', this.judgecnt.meh.toString());
         newdiv(left, 'block miss', this.judgecnt.miss.toString());
-        newdiv(left, 'block placeholder');
         newdiv(left, 'block combo', this.maxcombo.toString().concat('/', this.fullcombo.toString(), 'x'));
 
         const b1 = newdiv(grading, 'btn retry'), b2 = newdiv(grading, 'btn quit');
