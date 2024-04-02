@@ -3,16 +3,13 @@ export const sounds = {
     loaded: 0,
     audioExtensions: ['mp3', 'ogg', 'wav', 'webm'],
     whenLoaded: () => { },
-    onFailed: (source, _e) => {
-        throw new Error('Audio could not be loaded: ' + source);
-    },
     load: (sources, onLoad) => {
         sounds.toLoad = sources.length;
         for (const source of sources) {
             const extension = source.split('.').at(-1);
             if (sounds.audioExtensions.includes(extension)) {
                 sounds.whenLoaded = onLoad;
-                const soundSprite = makeSound(source, sounds.loadHandler, true, sounds.onFailed);
+                const soundSprite = makeSound(source, sounds.loadHandler, true);
                 soundSprite.name = source;
                 sounds[soundSprite.name] = soundSprite;
             }
@@ -29,7 +26,7 @@ export const sounds = {
 };
 
 const actx = new AudioContext;
-function makeSound(source, loadHandler, shouldLoad, failHandler) {
+function makeSound(source, loadHandler, shouldLoad) {
     const o = {
         volumeNode: new GainNode(actx),
         get volume() {
@@ -41,59 +38,21 @@ function makeSound(source, loadHandler, shouldLoad, failHandler) {
         },
         volumeValue: 1,
         source: source,
-        loop: false,
-        playing: false,
-        startTime: 0,
-        startOffset: 0,
-        speed: 1,
         play: () => {
             o.startTime = actx.currentTime;
             o.soundNode = new AudioBufferSourceNode(actx);
             o.soundNode.buffer = o.buffer;
-            o.soundNode.playbackRate.value = o.speed;
             o.soundNode.connect(o.volumeNode);
             o.volumeNode.connect(actx.destination);
 
             o.soundNode.loop = o.loop;
-            o.soundNode.start(0, o.startOffset % o.buffer.duration);
-            o.playing = true;
-        },
-        pause: () => {
-            if (o.playing) {
-                o.soundNode.stop(0);
-                o.startOffset += actx.currentTime - o.startTime;
-                o.playing = false;
-            }
-        },
-        getPos: () => actx.currentTime - o.startTime + o.startOffset,
-        restart: () => {
-            if (o.playing) o.soundNode.stop(0);
-            o.startOffset = 0;
-            o.play();
-        },
-        playFrom: value => {
-            if (o.playing) o.soundNode.stop(0);
-            o.startOffset = value;
-            o.play();
-        },
-        fade: (endValue, durationInSeconds) => {
-            if (o.playing) {
-                o.volumeNode.gain.linearRampToValueAtTime(o.volumeNode.gain.value, actx.currentTime);
-                o.volumeNode.gain.linearRampToValueAtTime(endValue, actx.currentTime + durationInSeconds);
-            }
-        },
-        fadeIn: durationInSeconds => {
-            o.volumeNode.gain.value = 0;
-            o.fade(1, durationInSeconds);
-        },
-        fadeOut: durationInSeconds => o.fade(0, durationInSeconds)
+            o.soundNode.start();
+        }
     };
     if (shouldLoad) fetch(source).then(response => response.arrayBuffer()).then(buf => actx.decodeAudioData(buf, buffer => {
         o.buffer = buffer;
         o.hasLoaded = true;
         loadHandler();
-    }, e => {
-        if (failHandler) failHandler(o.source, e);
     }));
     return o;
 }

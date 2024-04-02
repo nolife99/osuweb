@@ -61,7 +61,7 @@ class Track {
                         // meter: +parts[2],
                         sampleSet: +parts[3],
                         // sampleIndex: +parts[4],
-                        volume: +parts[5],
+                        volume: +parts[5] / 100,
                         uninherit: +parts[6],
                         // kiaiMode: +parts[7]
                     };

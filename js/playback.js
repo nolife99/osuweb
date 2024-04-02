@@ -562,9 +562,8 @@ export default class Playback {
             const at = hit.curve.pointAt(pos);
 
             const lastTick = hit.ticks[hit.ticks.push(newSprite('sliderscorepoint.png', at.x, at.y)) - 1];
-            lastTick.appeartime = t - 2 * tickDuration;
+            lastTick.appeartime = hit.time + i * tickDuration / 2;
             lastTick.time = t;
-            lastTick.result = false;
         }
         if (hit.repeat > 1) {
             const p = hit.curve.pointAt(1), p2 = hit.curve.pointAt(.999999);
@@ -662,14 +661,14 @@ export default class Playback {
         while (this.curtimingid + 1 < this.track.timing.length && this.track.timing[this.curtimingid + 1].offset <= time) ++this.curtimingid;
         while (this.curtimingid > 0 && this.track.timing[this.curtimingid].offset > time) --this.curtimingid;
         const timing = this.track.timing[this.curtimingid], defaultSet = hit.hitSample.normalSet || timing.sampleSet || game.sampleSet;
-        game.sample[defaultSet].slidertick.volume = game.masterVolume * game.effectVolume * timing.volume / 100;
+        game.sample[defaultSet].slidertick.volume = game.masterVolume * game.effectVolume * timing.volume;
         game.sample[defaultSet].slidertick.play();
     }
     playHitsound(hit, id, time) {
         while (this.curtimingid + 1 < this.track.timing.length && this.track.timing[this.curtimingid + 1].offset <= time) ++this.curtimingid;
         while (this.curtimingid > 0 && this.track.timing[this.curtimingid].offset > time) --this.curtimingid;
         const timing = this.track.timing[this.curtimingid],
-            volume = game.masterVolume * game.effectVolume * timing.volume / 100,
+            volume = game.masterVolume * game.effectVolume * timing.volume,
             defaultSet = timing.sampleSet || game.sampleSet;
 
         function playHit(bitmask, normalSet, additionSet) {
@@ -771,14 +770,12 @@ export default class Playback {
         if (hit.followPoints) this.updateFollowPoints(hit.followPoints, time);
         const diff = hit.time - time, opaque = this.approachTime - this.approachFadeInTime;
 
-        if (diff <= this.approachTime && diff > 0) hit.approach.scale.set(.5 * this.hitSpriteScale * (diff / this.approachTime * 4 + 1));
-        else hit.approach.scale.set(.5 * this.hitSpriteScale);
+        if (diff < this.approachTime && diff > 0) hit.approach.scale.set(this.hitSpriteScale * (diff / this.approachTime * 3 + 1) / 2);
+        else hit.approach.scale.set(this.hitSpriteScale / 2);
 
-        if (diff <= this.approachTime && diff > opaque) hit.approach.alpha = (this.approachTime - diff) / this.approachFadeInTime;
-        else if (diff <= opaque && hit.score < 0) hit.approach.alpha = 1;
-        const noteFullAppear = this.approachTime - hit.objectFadeInTime;
-
-        const setcircleAlpha = alpha => {
+        if (diff < this.approachTime && diff > opaque) hit.approach.alpha = (this.approachTime - diff) / this.approachFadeInTime;
+        else if (diff < opaque && hit.score < 0) hit.approach.alpha = 1;
+        const noteFullAppear = this.approachTime - hit.objectFadeInTime, setcircleAlpha = alpha => {
             hit.base.alpha = alpha;
             hit.circle.alpha = alpha;
             for (const digit of hit.numbers) digit.alpha = alpha;
@@ -786,7 +783,7 @@ export default class Playback {
         };
 
         if (diff <= this.approachTime && diff > noteFullAppear) setcircleAlpha((this.approachTime - diff) / hit.objectFadeInTime);
-        else if (diff <= noteFullAppear) {
+        else if (diff < noteFullAppear) {
             if (-diff > hit.objectFadeOutOffset) {
                 const timeAfter = -diff - hit.objectFadeOutOffset;
                 setcircleAlpha(clamp01(1 - timeAfter / hit.circleFadeOutTime));
@@ -796,7 +793,7 @@ export default class Playback {
         }
         if (hit.score > 0 && hit.enableflash) {
             hit.burst.visible = true;
-            const timeAfter = time - hit.clickTime, t = timeAfter / this.glowFadeOutTime, newscale = 1 + .5 * t * (2 - t);
+            const timeAfter = time - hit.clickTime, t = timeAfter / this.glowFadeOutTime, newscale = 1 + t / 2 * (2 - t);
 
             hit.burst.scale.set(newscale * hit.burst.initialscale);
             hit.glow.scale.set(newscale * hit.glow.initialscale);
