@@ -10,7 +10,7 @@ import ErrorMeterOverlay from './ui/hiterrormeter.js';
 import ArcPath from './curve/ArcPath.js';
 import LinearBezier from './curve/LinearBezier.js';
 
-const clamp01 = num => Math.min(Math.max(num, 0), 1), lerp = (a, b, t) => a + (b - a) * t,
+const normalize = num => Math.min(Math.max(num, 0), 1), lerp = (a, b, t) => a + (b - a) * t,
     defaultBg = 'asset/skin/defaultbg.jpg', colorLerp = (rgb1, rgb2, t) => lerp(rgb1 >> 16, rgb2 >> 16, t) << 16 |
         lerp((rgb1 >> 8) & 255, (rgb2 >> 8) & 255, t) << 8 | lerp(rgb1 & 255, rgb2 & 255, t);
 
@@ -201,7 +201,7 @@ export default class Playback {
         if (game.allowMouseScroll) {
             this.volumeCallback = e => {
                 if (!osu.audio) return;
-                game.masterVolume = clamp01(game.masterVolume - e.deltaY * .002);
+                game.masterVolume = normalize(game.masterVolume - e.deltaY * .002);
                 osu.audio.gain.gain.value = game.musicVolume * game.masterVolume;
                 this.volumeMenu.setVolume(game.masterVolume * 100);
             };
@@ -263,7 +263,7 @@ export default class Playback {
                 return Math.hypot(x - B.x, y - B.y);
             }
             const lazyStack = 3, stackOfs = (1 - .7 * ((this.CS - 5) / 5)) * -3.2;
-            
+
             for (let i = hits.length - 1; i > 0; --i) {
                 let n = i, objectI = hits[i];
                 if (objectI.chain != 0 || objectI.type === 'spinner') continue;
@@ -735,11 +735,7 @@ export default class Playback {
         }
         for (let i = 0; i < this.newHits.length; ++i) {
             const hit = this.newHits[i];
-            let despawn = -1500;
-            if (hit.type === 'slider') despawn -= hit.sliderTimeTotal;
-            else if (hit.type === 'spinner') despawn -= hit.endTime - hit.time;
-
-            if (hit.time - time < despawn) {
+            if (hit.endTime - time < -1500) {
                 PIXI.utils.removeItems(this.newHits, i--, 1);
                 hit.objects.forEach(this.destroyHit);
                 hit.judgements.forEach(this.destroyHit);
@@ -750,12 +746,12 @@ export default class Playback {
     updateFollowPoints(f, time) {
         for (const o of f.children) {
             const startx = f.x1 + (o.fraction - .1) * f.dx, starty = f.y1 + (o.fraction - .1) * f.dy, fadeOutTime = f.t1 + o.fraction * f.dt, fadeInTime = fadeOutTime - f.preempt, hitFadeIn = f.hit.objectFadeInTime;
-            let relpos = clamp01((time - fadeInTime) / hitFadeIn);
+            let relpos = normalize((time - fadeInTime) / hitFadeIn);
 
             relpos *= 2 - relpos;
             o.x = startx + ((f.x1 + o.fraction * f.dx) - startx) * relpos;
             o.y = starty + ((f.y1 + o.fraction * f.dy) - starty) * relpos;
-            o.alpha = (time < fadeOutTime ? clamp01((time - fadeInTime) / hitFadeIn) : 1 - clamp01((time - fadeOutTime) / hitFadeIn)) / 2;
+            o.alpha = (time < fadeOutTime ? (time - fadeInTime) / hitFadeIn : 1 - (time - fadeOutTime) / hitFadeIn) / 2;
         }
     }
     updateHitCircle(hit, time) {
@@ -778,8 +774,8 @@ export default class Playback {
         else if (diff < noteFullAppear) {
             if (-diff > hit.objectFadeOutOffset) {
                 const timeAfter = -diff - hit.objectFadeOutOffset;
-                setcircleAlpha(clamp01(1 - timeAfter / hit.circleFadeOutTime));
-                hit.approach.alpha = clamp01(1 - timeAfter / 50);
+                setcircleAlpha(1 - timeAfter / hit.circleFadeOutTime);
+                hit.approach.alpha = 1 - timeAfter / 50;
             }
             else setcircleAlpha(1);
         }
@@ -789,8 +785,8 @@ export default class Playback {
 
             hit.burst.scale.set(newscale * hit.burst.initialscale);
             hit.glow.scale.set(newscale * hit.glow.initialscale);
-            hit.burst.alpha = .8 * clamp01(timeAfter < this.flashFadeInTime ? timeAfter / this.flashFadeInTime : 1 - (timeAfter - this.flashFadeInTime) / 120);
-            hit.glow.alpha = clamp01(1 - timeAfter / this.glowFadeOutTime) * this.glowMaxOpacity;
+            hit.burst.alpha = .8 * normalize(timeAfter < this.flashFadeInTime ? timeAfter / this.flashFadeInTime : 1 - (timeAfter - this.flashFadeInTime) / 120);
+            hit.glow.alpha = normalize(1 - timeAfter / this.glowFadeOutTime) * this.glowMaxOpacity;
 
             if (hit.base.visible) {
                 if (timeAfter < this.flashFadeInTime) {
@@ -826,7 +822,7 @@ export default class Playback {
         }
         else if (diff <= noteFullAppear) {
             if (-diff > hit.fadeOutOffset) {
-                const t = clamp01((-diff - hit.fadeOutOffset) / hit.fadeOutDuration);
+                const t = normalize((-diff - hit.fadeOutOffset) / hit.fadeOutDuration);
                 setbodyAlpha(1 - t * (2 - t));
             }
             else {
@@ -837,7 +833,7 @@ export default class Playback {
         }
         if (game.snakein) {
             if (diff > 0) {
-                const t = clamp01((time - hit.time + this.approachTime) / this.approachTime * 3);
+                const t = normalize((time - hit.time + this.approachTime) / this.approachTime * 3);
                 hit.body.endt = t;
                 if (hit.reverse) {
                     const p = hit.curve.pointAt(t);
@@ -955,20 +951,20 @@ export default class Playback {
         for (const tick of hit.ticks) {
             if (time < tick.appeartime) {
                 const dt = (tick.appeartime - time) / 500;
-                tick.alpha *= clamp01(1 - dt);
-                tick.scale.set(this.hitSpriteScale / 2 * (.5 + clamp01((1 - dt) * (1 + dt)) / 2));
+                tick.alpha *= normalize(1 - dt);
+                tick.scale.set(this.hitSpriteScale / 2 * (.5 + normalize((1 - dt) * (1 + dt)) / 2));
             }
             else tick.scale.set(this.hitSpriteScale / 2);
 
             if (time >= tick.time) {
                 const dt = (time - tick.time) / 150;
                 if (tick.result) {
-                    tick.alpha *= clamp01(-((dt - 1) ** 5));
+                    tick.alpha *= normalize(-((dt - 1) ** 5));
                     tick.scale.set(.5 * this.hitSpriteScale * (1 + dt / 2 * (2 - dt)));
                 }
                 else {
-                    tick.alpha *= clamp01(1 - dt);
-                    tick.tint = colorLerp(0xffffff, 0xff0000, clamp01(dt * 2));
+                    tick.alpha *= normalize(1 - dt);
+                    tick.tint = colorLerp(0xffffff, 0xff0000, normalize(dt * 2));
                 }
             }
         }
@@ -993,15 +989,15 @@ export default class Playback {
         let alpha = 0;
         if (time >= hit.time - this.spinnerZoomInTime - this.spinnerAppearTime) {
             if (time <= hit.endTime) alpha = 1;
-            else alpha = clamp01(1 - (time - hit.endTime) / 150);
+            else alpha = 1 - (time - hit.endTime) / 150;
         }
         hit.top.alpha = alpha;
         hit.progress.alpha = alpha;
         hit.base.alpha = alpha;
 
         if (time < hit.endTime) {
-            hit.top.scale.set(.3 * clamp01((time - (hit.time - this.spinnerZoomInTime - this.spinnerAppearTime)) / this.spinnerZoomInTime));
-            hit.base.scale.set(.6 * clamp01((time - (hit.time - this.spinnerZoomInTime)) / this.spinnerZoomInTime));
+            hit.top.scale.set(.3 * normalize((time - (hit.time - this.spinnerZoomInTime - this.spinnerAppearTime)) / this.spinnerZoomInTime));
+            hit.base.scale.set(.6 * normalize((time - (hit.time - this.spinnerZoomInTime)) / this.spinnerZoomInTime));
         }
         if (time < hit.time) {
             const t = (hit.time - time) / (this.spinnerZoomInTime + this.spinnerAppearTime);
@@ -1012,7 +1008,7 @@ export default class Playback {
         if (time > hit.time) {
             hit.base.rotation = hit.rotation / 2;
             hit.top.rotation = hit.rotation / 2;
-            hit.progress.scale.set(.6 * (.13 + .87 * clamp01(progress)));
+            hit.progress.scale.set(.6 * (.13 + .87 * normalize(progress)));
         }
         else hit.progress.scale.set(0);
 

@@ -9,7 +9,7 @@ export const sounds = {
             const extension = source.split('.').at(-1);
             if (sounds.audioExtensions.includes(extension)) {
                 sounds.whenLoaded = onLoad;
-                const soundSprite = makeSound(source, sounds.loadHandler, true);
+                const soundSprite = makeSound(source, sounds.loadHandler);
                 soundSprite.name = source;
                 sounds[soundSprite.name] = soundSprite;
             }
@@ -26,30 +26,24 @@ export const sounds = {
 };
 
 const actx = new AudioContext;
-function makeSound(source, loadHandler, shouldLoad) {
+function makeSound(source, loadHandler) {
     const o = {
         volumeNode: new GainNode(actx),
         get volume() {
-            return o.volumeValue;
+            return o.volumeNode.gain.value;
         },
         set volume(value) {
             o.volumeNode.gain.value = value;
-            o.volumeValue = value;
         },
-        volumeValue: 1,
-        source: source,
         play: () => {
-            o.startTime = actx.currentTime;
             o.soundNode = new AudioBufferSourceNode(actx);
             o.soundNode.buffer = o.buffer;
             o.soundNode.connect(o.volumeNode);
             o.volumeNode.connect(actx.destination);
-
-            o.soundNode.loop = o.loop;
             o.soundNode.start();
         }
     };
-    if (shouldLoad) fetch(source).then(response => response.arrayBuffer()).then(buf => actx.decodeAudioData(buf, buffer => {
+    fetch(source).then(response => response.arrayBuffer()).then(buf => actx.decodeAudioData(buf).then(buffer => {
         o.buffer = buffer;
         o.hasLoaded = true;
         loadHandler();
@@ -64,7 +58,7 @@ export default class OsuAudio {
 
     constructor(buffer, callback) {
         this.gain.connect(actx.destination);
-        actx.resume().then(() => actx.decodeAudioData(buffer.buffer, decoded => {
+        actx.resume().then(() => actx.decodeAudioData(buffer.buffer).then(decoded => {
             this.decoded = decoded;
             callback();
         }));
@@ -89,7 +83,8 @@ export default class OsuAudio {
     pause() {
         if (!this.playing || this.pos <= 0) return false;
         this.position += (actx.currentTime - this.started) * this.speed;
-        this.source.stop();
+        this.source.stop(this.position);
+        this.source.disconnect(this.gain);
         this.playing = false;
         return true;
     }

@@ -146,12 +146,12 @@ export default class SliderMesh extends PIXI.Container {
         this.uniforms.alpha = this.alpha;
         this.uniforms.dt = 0;
         this.uniforms.ot = .5;
-        
+
         const ox0 = this.uniforms.ox, oy0 = this.uniforms.oy, gl = renderer.gl;
         gl.clearDepth(1);
         gl.clear(gl.DEPTH_BUFFER_BIT);
         gl.colorMask(false, false, false, false);
-        
+
         renderer.state.set(null);
         renderer.state.setDepthTest(true);
 
