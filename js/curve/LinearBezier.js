@@ -7,22 +7,22 @@ export default class LinearBezier {
         this.definedLength = hit.pixelLength;
         const points = [];
 
-        for (let i = -1, lastPt; i < hit.keyframes.length; ++i) {
+        for (let i = -1, prev; i < hit.keyframes.length; ++i) {
             const pt = i !== -1 ? hit.keyframes[i] : {
                 x: hit.x, y: hit.y
             };
             if (line) {
-                if (lastPt) {
+                if (prev) {
                     points.push(pt);
                     this.paths.push(points.splice(0));
                 }
             }
-            else if (lastPt && pt.x === lastPt.x && pt.y === lastPt.y) {
+            else if (prev && pt.x === prev.x && pt.y === prev.y) {
                 const pts = points.splice(0);
                 if (pts.length > 1) this.paths.push(FlattenBezier(pts));
             }
             points.push(pt);
-            lastPt = pt;
+            prev = pt;
         }
         if (!line && points.length > 1) this.paths.push(FlattenBezier(points.splice(0)));
 
@@ -67,6 +67,7 @@ export default class LinearBezier {
     }
 };
 function FlattenBezier(pts) {
+    if (pts.length < 3) return pts;
     const deg = pts.length - 1, output = [], toFlatten = [structuredClone(pts)], freeBufs = [],
         subBuf1 = Array(pts.length), subBuf2 = Array(deg * 2 + 1), l = subBuf2;
 

@@ -54,6 +54,7 @@ export default class OsuAudio {
     started = 0;
     position = 0;
     speed = 1;
+    ctx = actx;
     gain = new GainNode(actx);
 
     constructor(buffer, callback) {
@@ -74,14 +75,14 @@ export default class OsuAudio {
 
         if (wait > 0) {
             this.position = -wait / 1000;
-            window.setTimeout(() => this.source.start(Math.max(0, this.position), 0), wait / this.speed);
+            this.source.start(actx.currentTime + wait / 1000 / this.speed);
         }
         else this.source.start(0, this.position);
         this.started = actx.currentTime;
         this.playing = true;
     }
     pause() {
-        if (!this.playing || this.pos <= 0) return false;
+        if (!this.playing || this.pos < 0) return false;
         this.position += (actx.currentTime - this.started) * this.speed;
         this.source.stop(this.position);
         this.source.disconnect(this.gain);

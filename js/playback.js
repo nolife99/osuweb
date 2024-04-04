@@ -187,7 +187,7 @@ export default class Playback {
         game.paused = false;
 
         this.pauseCallback = e => {
-            if (e.code === 'Space') {
+            if (e.code === 'Escape') {
                 if (!game.paused) this.pause();
                 else this.resume();
             }
@@ -196,7 +196,7 @@ export default class Playback {
             if (this.audioReady) this.pause();
         };
         this.skipCallback = e => {
-            if (e.ctrlKey && !game.paused && !this.skipped) this.skip();
+            if (e.code === 'Space' && !game.paused && !this.skipped) this.skip();
         };
         if (game.allowMouseScroll) {
             this.volumeCallback = e => {
@@ -1131,7 +1131,7 @@ export default class Playback {
     }
     quit() {
         if (!game.paused) {
-            this.osu.audio.pause();
+            this.osu.audio.ctx.suspend();
             game.paused = true;
         }
         this.destroy();
