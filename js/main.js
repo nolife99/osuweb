@@ -1,4 +1,4 @@
-import { sounds } from './osu-audio.js';
+import { sounds } from './osuAudio.js';
 import { settings } from './settings.js';
 import Playback from './playback.js';
 import Osu from './osu.js';
@@ -220,7 +220,7 @@ class BeatmapController {
         pBeatmapBox.appendChild(pBeatmapAuthor);
 
         pBeatmapTitle.innerText = this.osu.tracks[0].metadata.Title;
-        pBeatmapAuthor.innerText = this.osu.tracks[0].metadata.Artist.concat('/', this.osu.tracks[0].metadata.Creator);
+        pBeatmapAuthor.innerText = `${this.osu.tracks[0].metadata.Artist}/${this.osu.tracks[0].metadata.Creator}`;
         this.osu.getCoverSrc(pBeatmapCover);
 
         const first = this.osu.tracks[0].length;
@@ -234,7 +234,7 @@ class BeatmapController {
                 text = Math.floor(mins / 60) + ':';
                 mins %= 60;
             }
-            pBeatmapLength.innerText = text.concat(mins, ':', first % 60 < 10 ? '0' : '', (first % 60).toFixed(0));
+            pBeatmapLength.innerText = `${text}${mins}:${first % 60 < 10 ? '0' : ''}${(first % 60).toFixed(0)}`;
         }
         pBeatmapBox.onclick = e => {
             if (!showingDifficultyBox) {

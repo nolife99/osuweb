@@ -2,7 +2,6 @@ import { skin } from '../main.js';
 
 export default class BreakOverlay extends PIXI.Container {
     fadetime = 200;
-    appearthreshold = 3000;
     visible = false;
 
     barmid = new PIXI.Sprite(skin['bar.png']);
@@ -51,7 +50,7 @@ export default class BreakOverlay extends PIXI.Container {
         this.y = windowfield.height / 2;
     }
     countdown(nextapproachtime, time) {
-        if (nextapproachtime - time > this.appearthreshold && !this.visible) {
+        if (!this.visible) {
             this.visible = true;
             this.starttime = time;
             this.nextapproachtime = nextapproachtime;
@@ -67,7 +66,7 @@ export default class BreakOverlay extends PIXI.Container {
         this.barleft.x = -radius;
         this.barright.x = radius;
         this.number.text = Math.ceil(t / 1000).toString();
-        super.alpha = Math.min(t, time - this.starttime - 500) / this.fadetime;
+        super.alpha = Math.min(t, time - this.starttime - 200) / this.fadetime;
     }
     destroy(opt) {
         super.destroy(opt);

@@ -5,19 +5,15 @@ export const sounds = {
     whenLoaded: () => { },
     load: (sources, onLoad) => {
         sounds.toLoad = sources.length;
-        for (const source of sources) {
-            const extension = source.split('.').at(-1);
-            if (sounds.audioExtensions.includes(extension)) {
-                sounds.whenLoaded = onLoad;
-                const soundSprite = makeSound(source, sounds.loadHandler);
-                soundSprite.name = source;
-                sounds[soundSprite.name] = soundSprite;
-            }
+        for (const source of sources) if (sounds.audioExtensions.includes(source.split('.').at(-1))) {
+            sounds.whenLoaded = onLoad;
+            const soundSprite = makeSound(source, sounds.loadHandler);
+            soundSprite.name = source;
+            sounds[soundSprite.name] = soundSprite;
         }
     },
     loadHandler: () => {
-        ++sounds.loaded;
-        if (sounds.toLoad === sounds.loaded) {
+        if (sounds.toLoad === ++sounds.loaded) {
             sounds.toLoad = 0;
             sounds.loaded = 0;
             sounds.whenLoaded();
@@ -38,12 +34,11 @@ function makeSound(source, loadHandler) {
         play: () => {
             o.soundNode = new AudioBufferSourceNode(actx);
             o.soundNode.buffer = o.buffer;
-            o.soundNode.connect(o.volumeNode);
-            o.volumeNode.connect(actx.destination);
+            o.soundNode.connect(o.volumeNode).connect(actx.destination);
             o.soundNode.start();
         }
     };
-    fetch(source).then(response => response.arrayBuffer()).then(buf => actx.decodeAudioData(buf).then(buffer => {
+    fetch(source).then(response => response.arrayBuffer()).then(buf => actx.decodeAudioData(buf, buffer => {
         o.buffer = buffer;
         o.hasLoaded = true;
         loadHandler();
@@ -59,7 +54,7 @@ export default class OsuAudio {
 
     constructor(buffer, callback) {
         this.gain.connect(actx.destination);
-        actx.resume().then(() => actx.decodeAudioData(buffer.buffer).then(decoded => {
+        actx.resume().then(() => actx.decodeAudioData(buffer.buffer, decoded => {
             this.decoded = decoded;
             callback();
         }));

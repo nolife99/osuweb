@@ -1,5 +1,5 @@
 const lerp = (a, b, t) => a + (b - a) * t;
-export default class LinearBezier {
+export default class BezierApproximator {
     paths = [];
     pointLength = 0;
 

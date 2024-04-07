@@ -32,13 +32,12 @@ function errortext(a) {
     let sum = 0;
     for (const i of a) sum += i;
 
-    const avg = sum / a.length;
-    let sumsqerr = 0;
-    for (const i of a) sumsqerr += (i - avg) * 2;
+    const mean = sum / a.length;
+    let devSq = 0;
+    for (const i of a) devSq += (i - mean) * 2;
     
-    let sgnavg = avg.toFixed(0);
-    if (sgnavg[0] !== '-') sgnavg = '+' + sgnavg;
-    return sgnavg.concat('±', Math.sqrt(sumsqerr / a.length).toFixed(0), 'ms');
+    const sgnavg = mean.toFixed(0);
+    return `${sgnavg[0] !== '-' ? '+' + sgnavg : sgnavg}±${Math.sqrt(devSq / a.length).toFixed(0)}ms`;
 }
 function modstext() {
     const l = '+', arr = [];
@@ -65,7 +64,7 @@ function setSpriteArrayText(arr, str) {
     arr.width = 0;
     for (let i = 0; i < str.length; ++i) {
         const digit = arr[i], ch = str[i];
-        digit.texture = skin['score-'.concat(ch === '%' ? 'percent' : ch, '.png')];
+        digit.texture = skin[`score-${ch === '%' ? 'percent' : ch}.png`];
         digit.knownwidth = digit.scale.x * (digit.texture.width + charSpacing);
         digit.visible = true;
         arr.width += digit.knownwidth;
@@ -224,7 +223,7 @@ export default class ScoreOverlay extends PIXI.Container {
         newdiv(left, 'block good', this.judgecnt.good.toString());
         newdiv(left, 'block meh', this.judgecnt.meh.toString());
         newdiv(left, 'block miss', this.judgecnt.miss.toString());
-        newdiv(left, 'block combo', this.maxcombo.toString().concat('/', this.fullcombo.toString(), 'x'));
+        newdiv(left, 'block combo', `${this.maxcombo}/${this.fullcombo}x`);
 
         const b1 = newdiv(grading, 'btn retry'), b2 = newdiv(grading, 'btn quit');
         newdiv(b1, 'inner', 'Retry');

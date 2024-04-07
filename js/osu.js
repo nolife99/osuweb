@@ -1,4 +1,4 @@
-import OsuAudio from './osu-audio.js';
+import OsuAudio from './osuAudio.js';
 
 const typeCirc = 1, typeSlider = 2, typeNC = 4, typeSpin = 8, clamp = (num, min, max) => Math.min(Math.max(num, min), max),
     convertcolor = color => (+color[0] << 16) | (+color[1] << 8) | (+color[2] << 0);

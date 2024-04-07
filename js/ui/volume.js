@@ -44,11 +44,11 @@ export default class VolumeMenu extends PIXI.Container {
             this.t0 = timestamp;
             this.changed = false;
         }
-        if (!this.visible) return;
+        else if (!this.visible) return;
 
         const dt = timestamp - this.t0;
         if (dt > this.fadetime) this.visible = false;
-        else this.alpha = 1 - Math.pow(dt / this.fadetime, 5);
+        else this.alpha = 1 - (dt / this.fadetime) ** 5;
     }
     destroy(opt) {
         super.destroy(opt);

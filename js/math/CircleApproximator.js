@@ -4,7 +4,9 @@ const tau = 2 * Math.PI, dotlen = a => a.x * a.x + a.y * a.y, vecsub = (a, b) =>
     };
 }, vecdot = (a, b) => a.x * b.x + a.y * b.y;
 
-export default function ArcPath(hit) {
+export default function CircleApproximator(hit) {
+    "use strict";
+    
     const a = {
         x: hit.x, y: hit.y
     }, b = hit.keyframes[0], c = hit.keyframes[1],

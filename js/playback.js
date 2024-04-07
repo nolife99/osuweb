@@ -1,16 +1,16 @@
 import PlayerActions from './playerActions.js';
-import SliderMesh from './SliderMesh.js';
+import SliderMesh from './sliderMesh.js';
 import { game, skin, app, stopGame } from './main.js';
 import ScoreOverlay from './ui/score.js';
 import VolumeMenu from './ui/volume.js';
 import LoadingMenu from './ui/loading.js';
 import BreakOverlay from './ui/break.js';
 import ProgressOverlay from './ui/progress.js';
-import ErrorMeterOverlay from './ui/hiterrormeter.js';
-import ArcPath from './curve/ArcPath.js';
-import LinearBezier from './curve/LinearBezier.js';
+import ErrorMeterOverlay from './ui/errorMeter.js';
+import CircleApproximator from './math/CircleApproximator.js';
+import BezierApproximator from './math/BezierApproximator.js';
 
-const normalize = num => Math.min(Math.max(num, 0), 1), lerp = (a, b, t) => a + (b - a) * t,
+const saturate = num => Math.min(Math.max(num, 0), 1), lerp = (a, b, t) => a + (b - a) * t,
     defaultBg = 'asset/skin/defaultbg.jpg', colorLerp = (rgb1, rgb2, t) => lerp(rgb1 >> 16, rgb2 >> 16, t) << 16 |
         lerp((rgb1 >> 8) & 255, (rgb2 >> 8) & 255, t) << 8 | lerp(rgb1 & 255, rgb2 & 255, t);
 
@@ -201,7 +201,7 @@ export default class Playback {
         if (game.allowMouseScroll) {
             this.volumeCallback = e => {
                 if (!osu.audio) return;
-                game.masterVolume = normalize(game.masterVolume - e.deltaY * .002);
+                game.masterVolume = saturate(game.masterVolume - e.deltaY * .002);
                 osu.audio.gain.gain.value = game.musicVolume * game.masterVolume;
                 this.volumeMenu.setVolume(game.masterVolume * 100);
             };
@@ -241,14 +241,14 @@ export default class Playback {
                 }
                 if (hit.type === 'slider') {
                     if (hit.sliderType === 'P') {
-                        hit.curve = ArcPath(hit);
+                        hit.curve = CircleApproximator(hit);
                         if (!hit.curve) {
                             a.sliderType === 'L';
                             hit.sliderType === 'L';
-                            hit.curve = new LinearBezier(hit, true);
+                            hit.curve = new BezierApproximator(hit, true);
                         }
                     }
-                    else hit.curve = new LinearBezier(hit, hit.sliderType === 'L');
+                    else hit.curve = new BezierApproximator(hit, hit.sliderType === 'L');
                 }
                 resolve(hit);
             }));
@@ -315,8 +315,8 @@ export default class Playback {
                             k.x += ofs;
                             k.y += ofs;
                         }
-                        if (hit.sliderType === 'P') hit.curve = ArcPath(hit);
-                        else hit.curve = new LinearBezier(hit, hit.sliderType === 'L');
+                        if (hit.sliderType === 'P') hit.curve = CircleApproximator(hit);
+                        else hit.curve = new BezierApproximator(hit, hit.sliderType === 'L');
                     }
                 }
                 hit.ticks = [];
@@ -479,10 +479,10 @@ export default class Playback {
         hit.judgements.push(this.createJudgement(hit.x, hit.y, hit.time + this.MehTime));
         hit.numbers = [];
         if (!game.hideNumbers) {
-            if (index < 10) hit.numbers.push(newHitSprite('score-'.concat(index, '.png'), basedep, .4, .5, .47));
+            if (index < 10) hit.numbers.push(newHitSprite(`score-${index}.png`, basedep, .4, .5, .47));
             else if (index < 100) {
-                hit.numbers.push(newHitSprite('score-'.concat(index % 10, '.png'), basedep, .35, 0, .47));
-                hit.numbers.push(newHitSprite('score-'.concat((index - index % 10) / 10, '.png'), basedep, .35, 1, .47));
+                hit.numbers.push(newHitSprite(`score-${index % 10}.png`, basedep, .35, 0, .47));
+                hit.numbers.push(newHitSprite(`score-${(index - index % 10) / 10}.png`, basedep, .35, 1, .47));
             }
         }
     }
@@ -746,7 +746,7 @@ export default class Playback {
     updateFollowPoints(f, time) {
         for (const o of f.children) {
             const startx = f.x1 + (o.fraction - .1) * f.dx, starty = f.y1 + (o.fraction - .1) * f.dy, fadeOutTime = f.t1 + o.fraction * f.dt, fadeInTime = fadeOutTime - f.preempt, hitFadeIn = f.hit.objectFadeInTime;
-            let relpos = normalize((time - fadeInTime) / hitFadeIn);
+            let relpos = saturate((time - fadeInTime) / hitFadeIn);
 
             relpos *= 2 - relpos;
             o.x = startx + ((f.x1 + o.fraction * f.dx) - startx) * relpos;
@@ -785,8 +785,8 @@ export default class Playback {
 
             hit.burst.scale.set(newscale * hit.burst.initialscale);
             hit.glow.scale.set(newscale * hit.glow.initialscale);
-            hit.burst.alpha = .8 * normalize(timeAfter < this.flashFadeInTime ? timeAfter / this.flashFadeInTime : 1 - (timeAfter - this.flashFadeInTime) / 120);
-            hit.glow.alpha = normalize(1 - timeAfter / this.glowFadeOutTime) * this.glowMaxOpacity;
+            hit.burst.alpha = .8 * saturate(timeAfter < this.flashFadeInTime ? timeAfter / this.flashFadeInTime : 1 - (timeAfter - this.flashFadeInTime) / 120);
+            hit.glow.alpha = saturate(1 - timeAfter / this.glowFadeOutTime) * this.glowMaxOpacity;
 
             if (hit.base.visible) {
                 if (timeAfter < this.flashFadeInTime) {
@@ -822,7 +822,7 @@ export default class Playback {
         }
         else if (diff <= noteFullAppear) {
             if (-diff > hit.fadeOutOffset) {
-                const t = normalize((-diff - hit.fadeOutOffset) / hit.fadeOutDuration);
+                const t = saturate((-diff - hit.fadeOutOffset) / hit.fadeOutDuration);
                 setbodyAlpha(1 - t * (2 - t));
             }
             else {
@@ -833,7 +833,7 @@ export default class Playback {
         }
         if (game.snakein) {
             if (diff > 0) {
-                const t = normalize((time - hit.time + this.approachTime) / this.approachTime * 3);
+                const t = saturate((time - hit.time + this.approachTime) / this.approachTime * 3);
                 hit.body.endt = t;
                 if (hit.reverse) {
                     const p = hit.curve.pointAt(t);
@@ -951,27 +951,27 @@ export default class Playback {
         for (const tick of hit.ticks) {
             if (time < tick.appeartime) {
                 const dt = (tick.appeartime - time) / 500;
-                tick.alpha *= normalize(1 - dt);
-                tick.scale.set(this.hitSpriteScale / 2 * (.5 + normalize((1 - dt) * (1 + dt)) / 2));
+                tick.alpha *= saturate(1 - dt);
+                tick.scale.set(this.hitSpriteScale / 2 * (.5 + saturate((1 - dt) * (1 + dt)) / 2));
             }
             else tick.scale.set(this.hitSpriteScale / 2);
 
             if (time >= tick.time) {
                 const dt = (time - tick.time) / 150;
                 if (tick.result) {
-                    tick.alpha *= normalize(-((dt - 1) ** 5));
+                    tick.alpha *= saturate(-((dt - 1) ** 5));
                     tick.scale.set(.5 * this.hitSpriteScale * (1 + dt / 2 * (2 - dt)));
                 }
                 else {
-                    tick.alpha *= normalize(1 - dt);
-                    tick.tint = colorLerp(0xffffff, 0xff0000, normalize(dt * 2));
+                    tick.alpha *= saturate(1 - dt);
+                    tick.tint = colorLerp(0xffffff, 0xff0000, saturate(dt * 2));
                 }
             }
         }
         for (const judge of hit.judgements) this.updateJudgement(judge, time);
     }
     updateSpinner(hit, time) {
-        if (time >= hit.time && time <= hit.endTime) {
+        if (time > hit.time && time < hit.endTime) {
             if (game.down && !game.paused) {
                 const mouseAngle = Math.atan2(game.mouseY - hit.y, game.mouseX - hit.x);
                 if (!hit.clicked) hit.clicked = true;
@@ -987,8 +987,8 @@ export default class Playback {
             else hit.clicked = false;
         }
         let alpha = 0;
-        if (time >= hit.time - this.spinnerZoomInTime - this.spinnerAppearTime) {
-            if (time <= hit.endTime) alpha = 1;
+        if (time > hit.time - this.spinnerZoomInTime - this.spinnerAppearTime) {
+            if (time < hit.endTime) alpha = 1;
             else alpha = 1 - (time - hit.endTime) / 150;
         }
         hit.top.alpha = alpha;
@@ -996,23 +996,23 @@ export default class Playback {
         hit.base.alpha = alpha;
 
         if (time < hit.endTime) {
-            hit.top.scale.set(.3 * normalize((time - (hit.time - this.spinnerZoomInTime - this.spinnerAppearTime)) / this.spinnerZoomInTime));
-            hit.base.scale.set(.6 * normalize((time - (hit.time - this.spinnerZoomInTime)) / this.spinnerZoomInTime));
+            hit.top.scale.set(.3 * saturate((time - (hit.time - this.spinnerZoomInTime - this.spinnerAppearTime)) / this.spinnerZoomInTime));
+            hit.base.scale.set(.6 * saturate((time - (hit.time - this.spinnerZoomInTime)) / this.spinnerZoomInTime));
         }
         if (time < hit.time) {
             const t = (hit.time - time) / (this.spinnerZoomInTime + this.spinnerAppearTime);
-            if (t <= 1) hit.top.rotation = -t * t * 10;
+            if (t < 1) hit.top.rotation = -t * t * 10;
         }
 
         const progress = hit.rotationProgress / hit.clearRotations;
         if (time > hit.time) {
             hit.base.rotation = hit.rotation / 2;
-            hit.top.rotation = hit.rotation / 2;
-            hit.progress.scale.set(.6 * (.13 + .87 * normalize(progress)));
+            hit.top.rotation = hit.base.rotation;
+            hit.progress.scale.set(.6 * (.13 + .87 * saturate(progress)));
         }
         else hit.progress.scale.set(0);
 
-        if (time >= hit.endTime) {
+        if (time > hit.endTime) {
             if (hit.score < 0) {
                 if (game.autoplay) this.hitSuccess(hit, 300, hit.endTime);
                 else {
@@ -1052,7 +1052,7 @@ export default class Playback {
 
             for (let i = this.breakIndex; i < this.track.breaks.length; ++i) {
                 const b = this.track.breaks[i];
-                if (time >= b.startTime && time <= b.endTime) {
+                if (time > b.startTime && time < b.endTime) {
                     var breakEnd = b.endTime;
                     this.breakIndex = i;
                     break;
@@ -1070,7 +1070,7 @@ export default class Playback {
             this.progressOverlay.update(time);
             this.errorMeter.update(time);
         }
-        else this.updateBackground(-100000);
+        else this.updateBackground(Number.MIN_SAFE_INTEGER);
 
         this.volumeMenu.update(timestamp);
         this.loadingMenu.update(timestamp);
