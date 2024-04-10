@@ -1,5 +1,6 @@
+'use strict';
+
 import PlayerActions from './playerActions.js';
-import SliderMesh from './sliderMesh.js';
 import { game, skin, app, stopGame } from './main.js';
 import ScoreOverlay from './ui/score.js';
 import VolumeMenu from './ui/volume.js';
@@ -7,10 +8,11 @@ import LoadingMenu from './ui/loading.js';
 import BreakOverlay from './ui/break.js';
 import ProgressOverlay from './ui/progress.js';
 import ErrorMeterOverlay from './ui/errorMeter.js';
+import SliderMesh from './ui/sliderMesh.js';
 import CircleApproximator from './math/CircleApproximator.js';
 import BezierApproximator from './math/BezierApproximator.js';
 
-const saturate = num => Math.min(Math.max(num, 0), 1), lerp = (a, b, t) => a + (b - a) * t,
+const clamp01 = num => Math.min(Math.max(num, 0), 1), lerp = (a, b, t) => a + (b - a) * t,
     defaultBg = 'asset/skin/defaultbg.jpg', colorLerp = (rgb1, rgb2, t) => lerp(rgb1 >> 16, rgb2 >> 16, t) << 16 |
         lerp((rgb1 >> 8) & 255, (rgb2 >> 8) & 255, t) << 8 | lerp(rgb1 & 255, rgb2 & 255, t);
 
@@ -77,14 +79,14 @@ export default class Playback {
 
         this.endTime = track.hitObjects.at(-1).endTime + 1500;
         this.wait = Math.max(0, 1500 - track.hitObjects[0].time);
-        this.skipTime = track.hitObjects[0].time - 3000;
+        this.skipTime = track.hitObjects[0].time - 2000;
 
         osu.onready = () => {
             this.errorMeter = new ErrorMeterOverlay({
                 width: window.innerWidth,
                 height: window.innerHeight
             }, this.GreatTime, this.GoodTime, this.MehTime);
-            this.progressOverlay = new ProgressOverlay({
+            this.progOverlay = new ProgressOverlay({
                 width: window.innerWidth,
                 height: window.innerHeight
             }, track.hitObjects[0].time, track.hitObjects.at(-1).endTime);
@@ -99,7 +101,7 @@ export default class Playback {
             loadTask.then(() => {
                 app.stage.addChild(this.scoreOverlay);
                 app.stage.addChild(this.errorMeter);
-                app.stage.addChild(this.progressOverlay);
+                app.stage.addChild(this.progOverlay);
                 app.stage.addChild(this.breakOverlay);
 
                 this.loadingMenu.hide();
@@ -132,7 +134,7 @@ export default class Playback {
                     width: window.innerWidth,
                     height: window.innerHeight
                 });
-                this.progressOverlay.resize({
+                this.progOverlay.resize({
                     width: window.innerWidth,
                     height: window.innerHeight
                 });
@@ -144,7 +146,7 @@ export default class Playback {
             }
             SliderMesh.prototype.resetTransform(
                 2 * this.gfx.width / window.innerWidth / 512, -2 * this.gfx.height / window.innerHeight / 384,
-                -1 + 2 * this.gfx.xoffset / window.innerWidth, 1 - 2 * this.gfx.yoffset / window.innerHeight);
+                2 * this.gfx.xoffset / window.innerWidth - 1, 1 - 2 * this.gfx.yoffset / window.innerHeight);
         };
 
         this.OD = track.difficulty.OverallDifficulty;
@@ -201,7 +203,7 @@ export default class Playback {
         if (game.allowMouseScroll) {
             this.volumeCallback = e => {
                 if (!osu.audio) return;
-                game.masterVolume = saturate(game.masterVolume - e.deltaY * .002);
+                game.masterVolume = clamp01(game.masterVolume - e.deltaY * .002);
                 osu.audio.gain.gain.value = game.musicVolume * game.masterVolume;
                 this.volumeMenu.setVolume(game.masterVolume * 100);
             };
@@ -236,8 +238,8 @@ export default class Playback {
             }
             return new Promise(resolve => window.setTimeout(() => {
                 if (game.hardrock) {
-                    hit.y = -(hit.y - 192) + 192;
-                    if (hit.type === 'slider') for (const k of hit.keyframes) k.y = -(k.y - 192) + 192;
+                    hit.y = 384 - hit.y;
+                    if (hit.type === 'slider') for (const k of hit.keyframes) k.y = 384 - k.y;
                 }
                 if (hit.type === 'slider') {
                     if (hit.sliderType === 'P') {
@@ -611,10 +613,10 @@ export default class Playback {
             return sprite;
         }
         hit.base = newsprite('spinnerbase.png');
-        hit.progress = newsprite('spinnerprogress.png');
+        hit.prog = newsprite('spinnerprog.png');
         hit.top = newsprite('spinnertop.png');
         if (game.hidden) {
-            hit.progress.visible = false;
+            hit.prog.visible = false;
             hit.base.visible = false;
         }
         hit.judgements.push(this.createJudgement(hit.x, hit.y, hit.endTime + 233));
@@ -746,7 +748,7 @@ export default class Playback {
     updateFollowPoints(f, time) {
         for (const o of f.children) {
             const startx = f.x1 + (o.fraction - .1) * f.dx, starty = f.y1 + (o.fraction - .1) * f.dy, fadeOutTime = f.t1 + o.fraction * f.dt, fadeInTime = fadeOutTime - f.preempt, hitFadeIn = f.hit.objectFadeInTime;
-            let relpos = saturate((time - fadeInTime) / hitFadeIn);
+            let relpos = clamp01((time - fadeInTime) / hitFadeIn);
 
             relpos *= 2 - relpos;
             o.x = startx + ((f.x1 + o.fraction * f.dx) - startx) * relpos;
@@ -785,8 +787,8 @@ export default class Playback {
 
             hit.burst.scale.set(newscale * hit.burst.initialscale);
             hit.glow.scale.set(newscale * hit.glow.initialscale);
-            hit.burst.alpha = .8 * saturate(timeAfter < this.flashFadeInTime ? timeAfter / this.flashFadeInTime : 1 - (timeAfter - this.flashFadeInTime) / 120);
-            hit.glow.alpha = saturate(1 - timeAfter / this.glowFadeOutTime) * this.glowMaxOpacity;
+            hit.burst.alpha = .8 * clamp01(timeAfter < this.flashFadeInTime ? timeAfter / this.flashFadeInTime : 1 - (timeAfter - this.flashFadeInTime) / 120);
+            hit.glow.alpha = clamp01(1 - timeAfter / this.glowFadeOutTime) * this.glowMaxOpacity;
 
             if (hit.base.visible) {
                 if (timeAfter < this.flashFadeInTime) {
@@ -822,7 +824,7 @@ export default class Playback {
         }
         else if (diff <= noteFullAppear) {
             if (-diff > hit.fadeOutOffset) {
-                const t = saturate((-diff - hit.fadeOutOffset) / hit.fadeOutDuration);
+                const t = clamp01((-diff - hit.fadeOutOffset) / hit.fadeOutDuration);
                 setbodyAlpha(1 - t * (2 - t));
             }
             else {
@@ -833,7 +835,7 @@ export default class Playback {
         }
         if (game.snakein) {
             if (diff > 0) {
-                const t = saturate((time - hit.time + this.approachTime) / this.approachTime * 3);
+                const t = clamp01((time - hit.time + this.approachTime) / this.approachTime * 3);
                 hit.body.endt = t;
                 if (hit.reverse) {
                     const p = hit.curve.pointAt(t);
@@ -951,20 +953,20 @@ export default class Playback {
         for (const tick of hit.ticks) {
             if (time < tick.appeartime) {
                 const dt = (tick.appeartime - time) / 500;
-                tick.alpha *= saturate(1 - dt);
-                tick.scale.set(this.hitSpriteScale / 2 * (.5 + saturate((1 - dt) * (1 + dt)) / 2));
+                tick.alpha *= clamp01(1 - dt);
+                tick.scale.set(this.hitSpriteScale / 2 * (.5 + clamp01((1 - dt) * (1 + dt)) / 2));
             }
             else tick.scale.set(this.hitSpriteScale / 2);
 
             if (time >= tick.time) {
                 const dt = (time - tick.time) / 150;
                 if (tick.result) {
-                    tick.alpha *= saturate(-((dt - 1) ** 5));
+                    tick.alpha *= clamp01(-((dt - 1) ** 5));
                     tick.scale.set(.5 * this.hitSpriteScale * (1 + dt / 2 * (2 - dt)));
                 }
                 else {
-                    tick.alpha *= saturate(1 - dt);
-                    tick.tint = colorLerp(0xffffff, 0xff0000, saturate(dt * 2));
+                    tick.alpha *= clamp01(1 - dt);
+                    tick.tint = colorLerp(0xffffff, 0xff0000, clamp01(dt * 2));
                 }
             }
         }
@@ -992,34 +994,34 @@ export default class Playback {
             else alpha = 1 - (time - hit.endTime) / 150;
         }
         hit.top.alpha = alpha;
-        hit.progress.alpha = alpha;
+        hit.prog.alpha = alpha;
         hit.base.alpha = alpha;
 
         if (time < hit.endTime) {
-            hit.top.scale.set(.3 * saturate((time - (hit.time - this.spinnerZoomInTime - this.spinnerAppearTime)) / this.spinnerZoomInTime));
-            hit.base.scale.set(.6 * saturate((time - (hit.time - this.spinnerZoomInTime)) / this.spinnerZoomInTime));
+            hit.top.scale.set(.3 * clamp01((time - (hit.time - this.spinnerZoomInTime - this.spinnerAppearTime)) / this.spinnerZoomInTime));
+            hit.base.scale.set(.6 * clamp01((time - (hit.time - this.spinnerZoomInTime)) / this.spinnerZoomInTime));
         }
         if (time < hit.time) {
             const t = (hit.time - time) / (this.spinnerZoomInTime + this.spinnerAppearTime);
             if (t < 1) hit.top.rotation = -t * t * 10;
         }
 
-        const progress = hit.rotationProgress / hit.clearRotations;
+        const prog = hit.rotationProgress / hit.clearRotations;
         if (time > hit.time) {
             hit.base.rotation = hit.rotation / 2;
             hit.top.rotation = hit.base.rotation;
-            hit.progress.scale.set(.6 * (.13 + .87 * saturate(progress)));
+            hit.prog.scale.set(.6 * (.13 + .87 * clamp01(prog)));
         }
-        else hit.progress.scale.set(0);
+        else hit.prog.scale.set(0);
 
         if (time > hit.endTime) {
             if (hit.score < 0) {
                 if (game.autoplay) this.hitSuccess(hit, 300, hit.endTime);
                 else {
                     let points = 0;
-                    if (progress >= 1) points = 300;
-                    else if (progress >= .9) points = 100;
-                    else if (progress >= .25) points = 50;
+                    if (prog >= 1) points = 300;
+                    else if (prog >= .9) points = 100;
+                    else if (prog >= .25) points = 50;
 
                     this.hitSuccess(hit, points, hit.endTime);
                 }
@@ -1067,7 +1069,7 @@ export default class Playback {
             if (game.autoplay) this.player.update(time);
             this.updateBackground(time);
             this.scoreOverlay.update(time);
-            this.progressOverlay.update(time);
+            this.progOverlay.update(time);
             this.errorMeter.update(time);
         }
         else this.updateBackground(Number.MIN_SAFE_INTEGER);
@@ -1099,11 +1101,9 @@ export default class Playback {
         this.loadingMenu.destroy(opt);
         this.volumeMenu.destroy(opt);
         this.breakOverlay.destroy(opt);
-        this.progressOverlay.destroy(opt);
+        this.progOverlay.destroy(opt);
         this.gamefield.destroy(opt);
-        this.background.destroy({
-            children: true, texture: true, baseTexture: true
-        });
+        this.background.destroy(true);
         SliderMesh.prototype.deallocate();
 
         window.onresize = null;
@@ -1131,9 +1131,10 @@ export default class Playback {
     }
     quit() {
         if (!game.paused) {
-            this.osu.audio.ctx.suspend();
+            this.osu.audio.pause();
             game.paused = true;
         }
+        this.osu.audio.ctx.suspend();
         this.destroy();
         stopGame();
     }

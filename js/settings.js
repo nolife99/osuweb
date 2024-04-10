@@ -1,3 +1,5 @@
+'use strict';
+
 const saveToLocal = () => localStorage.setItem('osugamesettings', JSON.stringify(settings)), defaultsettings = {
     dim: 80, blur: 0,
     cursorsize: 1, showhwmouse: false,

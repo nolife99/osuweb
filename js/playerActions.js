@@ -1,3 +1,5 @@
+'use strict';
+
 import { game } from './main.js';
 
 const inUpcoming = (click, playback) => hit => {

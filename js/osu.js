@@ -1,3 +1,5 @@
+'use strict';
+
 import OsuAudio from './osuAudio.js';
 
 const typeCirc = 1, typeSlider = 2, typeNC = 4, typeSpin = 8, clamp = (num, min, max) => Math.min(Math.max(num, min), max),
@@ -105,15 +107,15 @@ class Track {
                     }
                     else if ((hit.type & typeSlider) > 0) {
                         const sliderKeys = parts[5].split('|');
-                        hit.keyframes = [];
-                        for (let j = 1; j < sliderKeys.length; ++j) {
-                            const p = sliderKeys[j].split(':');
-                            hit.keyframes.push({
-                                x: +p[0], y: +p[1]
-                            });
-                        }
+                        hit.keyframes = new Array(sliderKeys.length - 1);
                         if (hit.keyframes.length === 0) hit.type = 'circle';
                         else {
+                            for (let j = 1; j < sliderKeys.length; ++j) {
+                                const p = sliderKeys[j].split(':');
+                                hit.keyframes[j - 1] = {
+                                    x: +p[0], y: +p[1]
+                                };
+                            }
                             hit.type = 'slider';
                             hit.sliderType = sliderKeys[0];
                             hit.repeat = +parts[6];

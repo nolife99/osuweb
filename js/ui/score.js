@@ -1,3 +1,5 @@
+'use strict';
+
 import { game, skin } from '../main.js';
 
 const charSpacing = 10;
@@ -35,7 +37,7 @@ function errortext(a) {
     const mean = sum / a.length;
     let devSq = 0;
     for (const i of a) devSq += (i - mean) * 2;
-    
+
     const sgnavg = mean.toFixed(0);
     return `${sgnavg[0] !== '-' ? '+' + sgnavg : sgnavg}±${Math.sqrt(devSq / a.length).toFixed(0)}ms`;
 }
@@ -94,7 +96,7 @@ export default class ScoreOverlay extends PIXI.Container {
     comboDisplay = new LazyNumber(0);
     accuracyDisplay = new LazyNumber(100);
     HPDisplay = new LazyNumber(1);
-                                                          
+
     constructor(windowfield, HPdrain, scoreMultiplier) {
         super();
 
@@ -107,7 +109,7 @@ export default class ScoreOverlay extends PIXI.Container {
         this.comboDigits = this.newSpriteArray(6, .2, 0xddffff);
         this.accuracyDigits = this.newSpriteArray(7, .2, 0xddffff);
         this.HPbar = this.newSpriteArray(3, .5);
-        
+
         this.HPbar[0].texture = skin['hpbarleft.png'];
         this.HPbar[1].texture = skin['hpbarright.png'];
         this.HPbar[2].texture = skin['hpbarmid.png'];
