@@ -1,7 +1,7 @@
 'use strict';
 
-import PlayerActions from './playerActions.js';
 import { game, skin, app, stopGame } from './main.js';
+import PlayerActions from './playerActions.js';
 import ScoreOverlay from './ui/score.js';
 import VolumeMenu from './ui/volume.js';
 import LoadingMenu from './ui/loading.js';
@@ -34,8 +34,7 @@ export default class Playback {
     ready = true;
     newHits = [];
     volumeMenu = new VolumeMenu({
-        width: window.innerWidth,
-        height: window.innerHeight
+        width: window.innerWidth, height: window.innerHeight
     });
     gfx = {};
     gamefield = new PIXI.Container;
@@ -67,8 +66,7 @@ export default class Playback {
         game.mouseY = 192;
 
         this.loadingMenu = new LoadingMenu({
-            width: window.innerWidth,
-            height: window.innerHeight
+            width: window.innerWidth, height: window.innerHeight
         }, track);
         this.calcSize();
 
@@ -78,25 +76,21 @@ export default class Playback {
         app.stage.addChild(this.loadingMenu);
 
         this.endTime = track.hitObjects.at(-1).endTime + 1500;
-        this.wait = Math.max(0, 1500 - track.hitObjects[0].time);
+        this.wait = Math.max(0, 1000 - track.hitObjects[0].time);
         this.skipTime = track.hitObjects[0].time - 2000;
 
         osu.onready = () => {
             this.errorMeter = new ErrorMeterOverlay({
-                width: window.innerWidth,
-                height: window.innerHeight
+                width: window.innerWidth, height: window.innerHeight
             }, this.GreatTime, this.GoodTime, this.MehTime);
             this.progOverlay = new ProgressOverlay({
-                width: window.innerWidth,
-                height: window.innerHeight
+                width: window.innerWidth, height: window.innerHeight
             }, track.hitObjects[0].time, track.hitObjects.at(-1).endTime);
             this.breakOverlay = new BreakOverlay({
-                width: window.innerWidth,
-                height: window.innerHeight
+                width: window.innerWidth, height: window.innerHeight
             });
             this.scoreOverlay = new ScoreOverlay({
-                width: window.innerWidth,
-                height: window.innerHeight
+                width: window.innerWidth, height: window.innerHeight
             }, this.HP, scoreMult);
             loadTask.then(() => {
                 app.stage.addChild(this.scoreOverlay);
@@ -114,35 +108,29 @@ export default class Playback {
             this.calcSize();
 
             this.loadingMenu.resize({
-                width: window.innerWidth,
-                height: window.innerHeight
+                width: window.innerWidth, height: window.innerHeight
             });
             this.volumeMenu.resize({
-                width: window.innerWidth,
-                height: window.innerHeight
+                width: window.innerWidth, height: window.innerHeight
             });
             if (this.audioReady) {
                 this.scoreOverlay.resize({
-                    width: window.innerWidth,
-                    height: window.innerHeight
+                    width: window.innerWidth, height: window.innerHeight
                 });
                 this.errorMeter.resize({
-                    width: window.innerWidth,
-                    height: window.innerHeight
+                    width: window.innerWidth, height: window.innerHeight
                 });
                 this.breakOverlay.resize({
-                    width: window.innerWidth,
-                    height: window.innerHeight
+                    width: window.innerWidth, height: window.innerHeight
                 });
                 this.progOverlay.resize({
-                    width: window.innerWidth,
-                    height: window.innerHeight
+                    width: window.innerWidth, height: window.innerHeight
                 });
             }
-            if (this.background && this.background.texture) {
-                this.background.x = window.innerWidth / 2;
-                this.background.y = window.innerHeight / 2;
-                this.background.scale.set(Math.max(window.innerWidth / this.background.texture.width, window.innerHeight / this.background.texture.height));
+            if (this.bg && this.bg.texture) {
+                this.bg.x = window.innerWidth / 2;
+                this.bg.y = window.innerHeight / 2;
+                this.bg.scale.set(Math.max(window.innerWidth / this.bg.texture.width, window.innerHeight / this.bg.texture.height));
             }
             SliderMesh.prototype.resetTransform(
                 2 * this.gfx.width / window.innerWidth / 512, -2 * this.gfx.height / window.innerHeight / 384,
@@ -448,9 +436,9 @@ export default class Playback {
         }
     }
     createHitCircle(hit) {
-        const newHitSprite = (spritename, depth, scalemul = 1, anchorx = .5, anchory = .5) => {
-            const sprite = new PIXI.Sprite(skin[spritename]);
-            sprite.initialscale = this.hitSpriteScale * scalemul;
+        const newHitSprite = (path, depth, scale = 1, anchorx = .5, anchory = .5) => {
+            const sprite = new PIXI.Sprite(skin[path]);
+            sprite.initialscale = this.hitSpriteScale * scale;
             sprite.scale.x = sprite.scale.y = sprite.initialscale;
             sprite.anchor.x = anchorx;
             sprite.anchor.y = anchory;
@@ -511,12 +499,12 @@ export default class Playback {
                 });
                 sprite.destroy();
 
-                this.background = new PIXI.Sprite(texture);
-                this.background.anchor.set(.5);
-                this.background.x = window.innerWidth / 2;
-                this.background.y = window.innerHeight / 2;
-                this.background.scale.set(Math.max(window.innerWidth / txt.width, window.innerHeight / txt.height));
-                app.stage.addChildAt(this.background, 0);
+                this.bg = new PIXI.Sprite(texture);
+                this.bg.anchor.set(.5);
+                this.bg.x = window.innerWidth / 2;
+                this.bg.y = window.innerHeight / 2;
+                this.bg.scale.set(Math.max(window.innerWidth / txt.width, window.innerHeight / txt.height));
+                app.stage.addChildAt(this.bg, 0);
             }, txt = PIXI.Loader.shared.resources[key];
             if (txt) consumeImage(txt.texture);
             else PIXI.Loader.shared.add({
@@ -546,9 +534,9 @@ export default class Playback {
         hit.body.depth = 5 - .000001 * hit.hitIndex;
         hit.objects.push(hit.body);
 
-        const newSprite = (spritename, x, y, scalemul = 1) => {
-            const sprite = new PIXI.Sprite(skin[spritename]);
-            sprite.scale.set(this.hitSpriteScale * scalemul);
+        const newSprite = (path, x, y, scale = 1) => {
+            const sprite = new PIXI.Sprite(skin[path]);
+            sprite.scale.set(this.hitSpriteScale * scale);
             sprite.anchor.set(.5);
             sprite.x = x;
             sprite.y = y;
@@ -602,8 +590,8 @@ export default class Playback {
         hit.clearRotations = (1.5 * this.OD < 5 ? 3 + .4 * this.OD : 2.5 + .5 * this.OD) / this.speed * Math.PI * (hit.endTime - hit.time) / 1000;
         hit.rotationProgress = hit.clearRotations < Math.PI ? Number.MAX_SAFE_INTEGER : 0;
 
-        function newsprite(spritename) {
-            const sprite = new PIXI.Sprite(skin[spritename]);
+        function newsprite(path) {
+            const sprite = new PIXI.Sprite(skin[path]);
             sprite.anchor.set(.5);
             sprite.x = hit.x;
             sprite.y = hit.y;
@@ -613,7 +601,7 @@ export default class Playback {
             return sprite;
         }
         hit.base = newsprite('spinnerbase.png');
-        hit.prog = newsprite('spinnerprog.png');
+        hit.prog = newsprite('spinnerprogress.png');
         hit.top = newsprite('spinnertop.png');
         if (game.hidden) {
             hit.prog.visible = false;
@@ -656,7 +644,7 @@ export default class Playback {
             p.rotation = rotation;
             p.anchor.set(.5);
             p.alpha = 0;
-            p.fraction = frac;
+            p.frac = frac;
             container.addChild(p);
         }
     }
@@ -738,7 +726,7 @@ export default class Playback {
         for (let i = 0; i < this.newHits.length; ++i) {
             const hit = this.newHits[i];
             if (hit.endTime - time < -1500) {
-                PIXI.utils.removeItems(this.newHits, i--, 1);
+                this.newHits.splice(i--, 1);
                 hit.objects.forEach(this.destroyHit);
                 hit.judgements.forEach(this.destroyHit);
                 hit.destroyed = true;
@@ -747,12 +735,12 @@ export default class Playback {
     }
     updateFollowPoints(f, time) {
         for (const o of f.children) {
-            const startx = f.x1 + (o.fraction - .1) * f.dx, starty = f.y1 + (o.fraction - .1) * f.dy, fadeOutTime = f.t1 + o.fraction * f.dt, fadeInTime = fadeOutTime - f.preempt, hitFadeIn = f.hit.objectFadeInTime;
+            const startx = f.x1 + (o.frac - .1) * f.dx, starty = f.y1 + (o.frac - .1) * f.dy, fadeOutTime = f.t1 + o.frac * f.dt, fadeInTime = fadeOutTime - f.preempt, hitFadeIn = f.hit.objectFadeInTime;
             let relpos = clamp01((time - fadeInTime) / hitFadeIn);
 
             relpos *= 2 - relpos;
-            o.x = startx + ((f.x1 + o.fraction * f.dx) - startx) * relpos;
-            o.y = starty + ((f.y1 + o.fraction * f.dy) - starty) * relpos;
+            o.x = startx + ((f.x1 + o.frac * f.dx) - startx) * relpos;
+            o.y = starty + ((f.y1 + o.frac * f.dy) - starty) * relpos;
             o.alpha = (time < fadeOutTime ? (time - fadeInTime) / hitFadeIn : 1 - (time - fadeOutTime) / hitFadeIn) / 2;
         }
     }
@@ -1041,10 +1029,10 @@ export default class Playback {
         }
     }
     updateBackground(time) {
-        if (!this.background) return;
+        if (!this.bg) return;
         let fade = game.backgroundDimRate;
         if (time < -this.wait) fade *= Math.max(0, 1 - (-this.wait - time) / this.backgroundFadeTime);
-        this.background.tint = colorLerp(0xffffff, 0, fade);
+        this.bg.tint = colorLerp(0xffffff, 0, fade);
     }
     render(frame, timestamp) {
         if (this.audioReady) {
@@ -1083,7 +1071,7 @@ export default class Playback {
                 this.scoreOverlay.visible = false;
                 this.scoreOverlay.showSummary(this.track.metadata, this.errorMeter.record, this);
             }
-            this.background.tint = 0xffffff;
+            this.bg.tint = 0xffffff;
         }
     }
     destroy() {
@@ -1103,7 +1091,7 @@ export default class Playback {
         this.breakOverlay.destroy(opt);
         this.progOverlay.destroy(opt);
         this.gamefield.destroy(opt);
-        this.background.destroy(true);
+        this.bg.destroy(true);
         SliderMesh.prototype.deallocate();
 
         window.onresize = null;
