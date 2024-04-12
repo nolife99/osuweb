@@ -56,7 +56,7 @@ export default class BreakOverlay extends PIXI.Container {
             this.nextapproachtime = nextapproachtime;
         }
         if (!this.visible) return;
-        if (time >= this.nextapproachtime) {
+        if (time > this.nextapproachtime) {
             this.visible = false;
             return;
         }

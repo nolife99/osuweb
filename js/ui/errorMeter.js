@@ -40,10 +40,10 @@ class ErrorMeter extends PIXI.Container {
         this.ticks = Array(20);
         for (let i = 0; i < this.ticks.length; ++i) {
             const tick = new PIXI.Sprite(skin['followpoint.png']);
-            tick.scale.set(.27, .2);
+            tick.scale.set(.25, .19);
             tick.anchor.set(0, .5);
             tick.alpha = 0;
-            tick.t0 = -23333;
+            tick.t0 = Number.MIN_SAFE_INTEGER;
             tick.x = 2;
             this.ticks[i] = tick;
             super.addChild(tick);

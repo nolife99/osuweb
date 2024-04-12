@@ -45,7 +45,7 @@ export default class ProgressOverlay extends PIXI.Container {
         this.past.y = windowfield.height - 10;
     }
     update(time) {
-        if (time >= this.endtime) return;
+        if (time > this.endtime) return;
         this.remaining.text = timeformat(this.endtime - time);
         this.past.text = timeformat(time - this.starttime);
     }

@@ -7,46 +7,16 @@ import Osu from './osu.js';
 import { fs } from "https://unpkg.com/@zip.js/zip.js/index.min.js";
 
 export const game = {
-    backgroundDimRate: .7,
-    backgroundBlurRate: 0,
-    cursorSize: 1,
-    showhwmouse: false,
-    snakein: true,
-    snakeout: true,
-    masterVolume: .7,
-    effectVolume: 1,
-    musicVolume: 1,
-    globalOffset: 0,
-    allowMouseButton: false,
-    allowMouseScroll: true,
-    K1keycode: 90,
-    K2keycode: 88,
-    autoplay: false,
-    nightcore: false,
-    daycore: false,
-    hardrock: false,
-    easy: false,
-    hidden: false,
-    hideNumbers: false,
-    hideGreat: false,
-    hideFollow: false,
-    mouse: null,
-    mouseX: 0,
-    mouseY: 0,
-    K1down: false,
-    K2down: false,
-    M1down: false,
-    M2down: false,
-    down: false,
+    mouse: null, mouseX: 0, mouseY: 0,
+    K1down: false, K2down: false, M1down: false, M2down: false, down: false,
     finished: false,
-    sample: [{}, {}, {}, {}],
-    sampleSet: 1
+    sample: [{}, {}, {}, {}], sampleSet: 1
 }, progresses = document.getElementsByClassName('progress'), pDragbox = document.getElementsByClassName('dragbox')[0],
     pDragboxInner = document.getElementsByClassName('dragbox-inner')[0],
     pDragboxHint = document.getElementsByClassName('dragbox-hint')[0],
     pBeatmapList = document.getElementsByClassName('beatmap-list')[0];
 
-const beatmapFileList = JSON.parse(localStorage.getItem('beatmapfilelist')) ?? [], fileCount = beatmapFileList.length;
+const beatmapFileList = JSON.parse(localStorage.getItem('beatmapfilelist')) || [], fileCount = beatmapFileList.length;
 if (fileCount > 0) {
     console.log('Local beatmaps:', beatmapFileList);
     const counter = progresses[3].childNodes;
@@ -81,10 +51,10 @@ if (fileCount > 0) {
 export let skin;
 const sheetUrl = 'asset/skin/sprites.json';
 
-PIXI.Loader.shared.add(sheetUrl).load((_, resources) => {
-    skin = resources[sheetUrl].textures;
+PIXI.Loader.shared.add(sheetUrl, resource => {
+    skin = resource.textures;
     progresses[1].classList.add('finished');
-});
+}).load();
 
 const sample = [
     'asset/hitsound/normal-hitnormal.ogg',

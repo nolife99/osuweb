@@ -379,7 +379,7 @@ export default class Playback {
         judge.scale.set(this.hitSpriteScale);
         judge.visible = false;
         judge.x = x;
-        judge.y = y;
+        judge.baseY = judge.y = y;
         judge.depth = 4;
         judge.points = -1;
         judge.finalTime = finalTime;
@@ -391,7 +391,7 @@ export default class Playback {
         judge.points = points;
         judge.t0 = time;
 
-        switch (judge.points) {
+        switch (points) {
             case 0: judge.text = 'miss'; judge.tint = 0xed1121; break;
             case 50: judge.text = 'meh'; judge.tint = 0xffcc22; break;
             case 100: judge.text = 'good'; judge.tint = 0x88b300; break;
@@ -423,7 +423,7 @@ export default class Playback {
             judge.alpha = t < 100 ? t / 100 : t < 600 ? 1 : 1 - (t - 600) / 200;
             judge.width = 16 * this.hitSpriteScale * judge.text.length;
             const t5 = (t / 800) ** 5;
-            judge.y = judge.basey + 100 * t5 * this.hitSpriteScale;
+            judge.y = judge.baseY + 100 * t5 * this.hitSpriteScale;
             judge.rotation = .7 * t5;
         }
         else {
@@ -639,7 +639,6 @@ export default class Playback {
             p.scale.set(this.hitSpriteScale * .4, this.hitSpriteScale * .3);
             p.x = x1 + container.dx * frac;
             p.y = y1 + container.dy * frac;
-            p.blendMode = PIXI.BLEND_MODES.ADD;
             p.rotation = rotation;
             p.anchor.set(.5);
             p.alpha = 0;
@@ -650,9 +649,9 @@ export default class Playback {
     playTicksound(hit, time) {
         while (this.curtimingid + 1 < this.track.timing.length && this.track.timing[this.curtimingid + 1].offset <= time) ++this.curtimingid;
         while (this.curtimingid > 0 && this.track.timing[this.curtimingid].offset > time) --this.curtimingid;
-        const timing = this.track.timing[this.curtimingid], defaultSet = hit.hitSample.normalSet || timing.sampleSet || game.sampleSet;
-        game.sample[defaultSet].slidertick.volume = game.masterVolume * game.effectVolume * timing.volume;
-        game.sample[defaultSet].slidertick.play();
+        const timing = this.track.timing[this.curtimingid], tickSound = game.sample[hit.hitSample.normalSet || timing.sampleSet || game.sampleSet].slidertick;
+        tickSound.volume = game.masterVolume * game.effectVolume * timing.volume;
+        tickSound.play();
     }
     playHitsound(hit, id, time) {
         while (this.curtimingid + 1 < this.track.timing.length && this.track.timing[this.curtimingid + 1].offset <= time) ++this.curtimingid;
@@ -732,7 +731,7 @@ export default class Playback {
             hit.glow.alpha = alpha * this.glowMaxOpacity;
         };
 
-        if (diff <= this.approachTime && diff > noteFullAppear) setcircleAlpha((this.approachTime - diff) / hit.objectFadeInTime);
+        if (diff < this.approachTime && diff > noteFullAppear) setcircleAlpha((this.approachTime - diff) / hit.objectFadeInTime);
         else if (diff < noteFullAppear) {
             if (-diff > hit.objectFadeOutOffset) {
                 const timeAfter = -diff - hit.objectFadeOutOffset;
@@ -777,12 +776,12 @@ export default class Playback {
             for (const tick of hit.ticks) tick.alpha = alpha;
         }
         const diff = hit.time - time;
-        if (diff <= this.approachTime && diff > noteFullAppear) {
+        if (diff < this.approachTime && diff > noteFullAppear) {
             setbodyAlpha((this.approachTime - diff) / hit.objectFadeInTime);
             if (hit.reverse) hit.reverse.alpha = hit.body.alpha;
             if (hit.reverse_b) hit.reverse_b.alpha = hit.body.alpha;
         }
-        else if (diff <= noteFullAppear) {
+        else if (diff < noteFullAppear) {
             if (-diff > hit.fadeOutOffset) {
                 const t = clamp01((-diff - hit.fadeOutOffset) / hit.fadeOutDuration);
                 setbodyAlpha(1 - t * (2 - t));
@@ -1006,7 +1005,7 @@ export default class Playback {
         }
         for (let i = this.newHits.length - 1; i >= 0; --i) {
             const hit = this.newHits[i];
-            if (hit.endTime - time < -this.approachTime) {
+            if (time - hit.endTime > this.approachTime + 800) {
                 PIXI.utils.removeItems(this.newHits, i, 1);
                 hit.objects.forEach(this.destroyHit);
                 hit.judgements.forEach(this.destroyHit);
