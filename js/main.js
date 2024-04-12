@@ -4,7 +4,7 @@ import { sounds } from './osuAudio.js';
 import { settings } from './settings.js';
 import Playback from './playback.js';
 import Osu from './osu.js';
-import { fs } from "https://unpkg.com/@zip.js/zip.js/index.js";
+import { fs } from "https://unpkg.com/@zip.js/zip.js/index.min.js";
 
 export const game = {
     backgroundDimRate: .7,

@@ -39,8 +39,8 @@ class ErrorMeter extends PIXI.Container {
 
         this.ticks = Array(20);
         for (let i = 0; i < this.ticks.length; ++i) {
-            const tick = new PIXI.Sprite(skin['errormeterindicator.png']);
-            tick.scale.set(.2);
+            const tick = new PIXI.Sprite(skin['followpoint.png']);
+            tick.scale.set(.27, .2);
             tick.anchor.set(0, .5);
             tick.alpha = 0;
             tick.t0 = -23333;

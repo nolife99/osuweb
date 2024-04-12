@@ -585,10 +585,10 @@ export default class Playback {
         hit.x = 256;
         hit.y = 192;
         hit.rotation = 0;
-        hit.rotationProgress = 0;
+        hit.spinProg = 0;
         hit.clicked = false;
-        hit.clearRotations = (1.5 * this.OD < 5 ? 3 + .4 * this.OD : 2.5 + .5 * this.OD) / this.speed * Math.PI * (hit.endTime - hit.time) / 1000;
-        hit.rotationProgress = hit.clearRotations < Math.PI ? Number.MAX_SAFE_INTEGER : 0;
+        hit.clearSpin = (1.5 * this.OD < 5 ? 3 + .4 * this.OD : 2.5 + .5 * this.OD) / this.speed * Math.PI * (hit.endTime - hit.time) / 1000;
+        hit.spinProg = hit.clearSpin < Math.PI ? Number.MAX_SAFE_INTEGER : 0;
 
         function newsprite(path) {
             const sprite = new PIXI.Sprite(skin[path]);
@@ -631,10 +631,9 @@ export default class Playback {
         container.preempt = this.approachTime;
         container.hit = hit;
         hit.objects.push(container);
-        if (!game.hideFollow) hit.followPoints = container;
+        hit.followPoints = container;
 
-        const spacing = 34, rotation = Math.atan2(container.dy, container.dx), distance = Math.floor(Math.hypot(container.dx, container.dy));
-
+        const spacing = 33, rotation = Math.atan2(container.dy, container.dx), distance = Math.hypot(container.dx, container.dy);
         for (let d = spacing * 1.5; d < distance - spacing; d += spacing) {
             const frac = d / distance, p = new PIXI.Sprite(skin['followpoint.png']);
             p.scale.set(this.hitSpriteScale * .4, this.hitSpriteScale * .3);
@@ -708,44 +707,17 @@ export default class Playback {
         hit.clickTime = time;
         this.invokeJudgement(hit.judgements[0], points, time);
     }
-    updateUpcoming(time) {
-        while (this.waitinghitid < this.hits.length && this.hits[this.waitinghitid].endTime < time) ++this.waitinghitid;
-        while (this.current < this.hits.length && this.futuremost < time + 3000) {
-            const hit = this.hits[this.current++];
-            for (let i = hit.judgements.length - 1; i >= 0; --i) {
-                const judge = hit.judgements[i];
-                this.gamefield.addChildAt(judge, findindex(judge.depth || 0, this.gamefield));
-            }
-            for (let i = hit.objects.length - 1; i >= 0; --i) {
-                const obj = hit.objects[i];
-                this.gamefield.addChildAt(obj, findindex(obj.depth || 0, this.gamefield));
-            }
-            this.newHits.push(hit);
-            if (hit.time > this.futuremost) this.futuremost = hit.time;
-        }
-        for (let i = 0; i < this.newHits.length; ++i) {
-            const hit = this.newHits[i];
-            if (hit.endTime - time < -1500) {
-                this.newHits.splice(i--, 1);
-                hit.objects.forEach(this.destroyHit);
-                hit.judgements.forEach(this.destroyHit);
-                hit.destroyed = true;
-            }
-        }
-    }
-    updateFollowPoints(f, time) {
-        for (const o of f.children) {
-            const startx = f.x1 + (o.frac - .1) * f.dx, starty = f.y1 + (o.frac - .1) * f.dy, fadeOutTime = f.t1 + o.frac * f.dt, fadeInTime = fadeOutTime - f.preempt, hitFadeIn = f.hit.objectFadeInTime;
+    updateHitCircle(hit, time) {
+        const f = hit.followPoints;
+        if (f) for (const o of f.children) {
+            const x = f.x1 + (o.frac - .1) * f.dx, y = f.y1 + (o.frac - .1) * f.dy, fadeOutTime = f.t1 + o.frac * f.dt, fadeInTime = fadeOutTime - f.preempt, hitFadeIn = f.hit.objectFadeInTime;
             let relpos = clamp01((time - fadeInTime) / hitFadeIn);
 
             relpos *= 2 - relpos;
-            o.x = startx + ((f.x1 + o.frac * f.dx) - startx) * relpos;
-            o.y = starty + ((f.y1 + o.frac * f.dy) - starty) * relpos;
+            o.x = x + ((f.x1 + o.frac * f.dx) - x) * relpos;
+            o.y = y + ((f.y1 + o.frac * f.dy) - y) * relpos;
             o.alpha = (time < fadeOutTime ? (time - fadeInTime) / hitFadeIn : 1 - (time - fadeOutTime) / hitFadeIn) / 2;
         }
-    }
-    updateHitCircle(hit, time) {
-        if (hit.followPoints) this.updateFollowPoints(hit.followPoints, time);
         const diff = hit.time - time, opaque = this.approachTime - this.approachFadeInTime;
 
         if (diff < this.approachTime && diff > 0) hit.approach.scale.set(this.hitSpriteScale * (diff / this.approachTime * 3 + 1) / 2);
@@ -921,7 +893,7 @@ export default class Playback {
                 hit.follow.scale.x = hit.follow.scale.y = hit.followSize * .45 * this.hitSpriteScale;
                 hit.follow.alpha = hit.followSize - 1;
                 hit.ball.alpha = 1 - timeAfter / this.ballFadeOutTime;
-                hit.ball.scale.x = hit.ball.scale.y = (1 + .15 * timeAfter / this.ballFadeOutTime) * .5 * this.hitSpriteScale;
+                hit.ball.scale.x = hit.ball.scale.y = (1 + .15 * timeAfter / this.ballFadeOutTime) / 2 * this.hitSpriteScale;
             }
             if (hit.repeat > 1) {
                 hit.reverse.visible = hit.currentRepeat < hit.repeat - hit.repeat % 2;
@@ -970,7 +942,7 @@ export default class Playback {
                     if (delta > Math.PI) delta -= Math.PI * 2;
                     if (delta < -Math.PI) delta += Math.PI * 2;
                     hit.rotation += delta;
-                    hit.rotationProgress += Math.abs(delta);
+                    hit.spinProg += Math.abs(delta);
                 }
                 hit.lastAngle = mouseAngle;
             }
@@ -994,7 +966,7 @@ export default class Playback {
             if (t < 1) hit.top.rotation = -t * t * 10;
         }
 
-        const prog = hit.rotationProgress / hit.clearRotations;
+        const prog = hit.spinProg / hit.clearSpin;
         if (time > hit.time) {
             hit.base.rotation = hit.rotation / 2;
             hit.top.rotation = hit.base.rotation;
@@ -1018,10 +990,29 @@ export default class Playback {
         this.updateJudgement(hit.judgements[0], time);
     }
     updateHitObjects(time) {
-        this.updateUpcoming(time);
+        while (this.waitinghitid < this.hits.length && this.hits[this.waitinghitid].endTime < time) ++this.waitinghitid;
+        while (this.current < this.hits.length && this.futuremost < time + 3000) {
+            const hit = this.hits[this.current++];
+            for (let i = hit.judgements.length - 1; i >= 0; --i) {
+                const judge = hit.judgements[i];
+                this.gamefield.addChildAt(judge, findindex(judge.depth || 0, this.gamefield));
+            }
+            for (let i = hit.objects.length - 1; i >= 0; --i) {
+                const obj = hit.objects[i];
+                this.gamefield.addChildAt(obj, findindex(obj.depth || 0, this.gamefield));
+            }
+            this.newHits.push(hit);
+            if (hit.time > this.futuremost) this.futuremost = hit.time;
+        }
         for (let i = this.newHits.length - 1; i >= 0; --i) {
             const hit = this.newHits[i];
-            switch (hit.type) {
+            if (hit.endTime - time < -this.approachTime) {
+                PIXI.utils.removeItems(this.newHits, i, 1);
+                hit.objects.forEach(this.destroyHit);
+                hit.judgements.forEach(this.destroyHit);
+                hit.destroyed = true;
+            }
+            else switch (hit.type) {
                 case 'circle': this.updateHitCircle(hit, time); break;
                 case 'slider': this.updateSlider(hit, time); break;
                 case 'spinner': this.updateSpinner(hit, time); break;

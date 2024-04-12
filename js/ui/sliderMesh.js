@@ -13,16 +13,16 @@ export default class SliderMesh extends PIXI.Container {
             const pt = curve.pointAt((i + 1) / res), prevPt = curve.pointAt(i / res),
                 dx = pt.x - prevPt.x, dy = pt.y - prevPt.y, length = Math.hypot(dx, dy), ox = this.radius * -dy / length, oy = this.radius * dx / length;
 
-            vert.push(prevPt.x + ox, prevPt.y + oy, prevPt.t, 1, 
-                prevPt.x - ox, prevPt.y - oy, prevPt.t, 1, 
-                pt.x + ox, pt.y + oy, pt.t, 1, 
+            vert.push(prevPt.x + ox, prevPt.y + oy, prevPt.t, 1,
+                prevPt.x - ox, prevPt.y - oy, prevPt.t, 1,
+                pt.x + ox, pt.y + oy, pt.t, 1,
                 pt.x - ox, pt.y - oy, pt.t, 1,
                 pt.x, pt.y, pt.t, 0);
 
             const n = 5 * i;
-            ptrs.push(n - 5, n - 4, n, 
+            ptrs.push(n - 5, n - 4, n,
                 n - 4, n, n - 2,
-                n - 5, n - 3, n, 
+                n - 5, n - 3, n,
                 n - 3, n, n - 1);
         }
         const addArc = (c, p1, p2, t) => {
@@ -62,7 +62,6 @@ export default class SliderMesh extends PIXI.Container {
     }
     _render(renderer) {
         renderer.batch.flush();
-        renderer.framebuffer.forceStencil();
         renderer.state.set(this.state);
 
         const uniform = this.shader.uniforms, ox0 = uniform.ox, oy0 = uniform.oy, gl = renderer.gl;
@@ -183,7 +182,7 @@ export default class SliderMesh extends PIXI.Container {
                     B = innerB;
                     A = position / 2 / bodyFrac + .3;
                 }
-                
+
                 buf[col] = R * A;
                 buf[col + 1] = G * A;
                 buf[col + 2] = B * A;
@@ -196,8 +195,7 @@ export default class SliderMesh extends PIXI.Container {
             uniform float dx, dy, dt, ot, ox, oy, texPos;
             void main() {
                 coord = vec2(pos.w, texPos);
-                gl_Position = vec4(pos.xy, pos.w + 2.0 * float(pos.z * dt > ot), 1.0);
-                gl_Position.xy = gl_Position.xy * vec2(dx, dy) + vec2(ox, oy);
+                gl_Position = vec4(pos.xy * vec2(dx, dy) + vec2(ox, oy), pos.w + 2.0 * float(pos.z * dt > ot), 1.0);
             }`, `
             varying vec2 coord;
             uniform sampler2D tex;
