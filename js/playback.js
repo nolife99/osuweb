@@ -52,7 +52,7 @@ export default class Playback {
     ballFadeOutTime = 100;
     backgroundFadeTime = 800;
     spinnerZoomInTime = 300;
-    curtimingid = 0;
+    timingId = 0;
     current = 0;
     waitinghitid = 0;
     breakIndex = 0;
@@ -186,7 +186,7 @@ export default class Playback {
             if (this.audioReady) this.pause();
         };
         this.skipCallback = e => {
-            if (e.code === 'Space' && !game.paused && !this.skipped) this.skip();
+            if (e.code === 'Space' && !game.paused && !this.skipped && this.started && this.osu.audio.seek(this.skipTime / 1000)) this.skipped = true;
         };
         if (game.allowMouseScroll) {
             this.volumeCallback = e => {
@@ -317,10 +317,129 @@ export default class Playback {
 
                 switch (hit.type) {
                     case 'circle': this.createHitCircle(hit); break;
-                    case 'slider': this.createSlider(hit); break;
-                    case 'spinner': this.createSpinner(hit); break;
+                    case 'slider': {
+                        hit.nextRepeat = 1;
+                        hit.nexttick = 0;
+                        hit.body = new SliderMesh(hit.curve, hit.combo % this.track.colors.length);
+                        hit.body.alpha = 0;
+                        hit.body.depth = 5 - .000001 * hit.hitIndex;
+                        hit.objects.push(hit.body);
+                
+                        const newSprite = (path, x, y, scale = 1) => {
+                            const sprite = new PIXI.Sprite(skin[path]);
+                            sprite.scale.set(this.hitSpriteScale * scale);
+                            sprite.anchor.set(.5);
+                            sprite.x = x;
+                            sprite.y = y;
+                            sprite.depth = 5 - .000001 * hit.hitIndex;
+                            sprite.alpha = 0;
+                            hit.objects.push(sprite);
+                            return sprite;
+                        };
+                        const tickDuration = hit.timing.beatMs / this.track.difficulty.SliderTickRate, nticks = Math.ceil(hit.sliderTimeTotal / tickDuration);
+                
+                        if (!hit.timing.isNaN) for (let i = 0; i < nticks; ++i) {
+                            const t = hit.time + i * tickDuration, pos = repeatclamp(i * tickDuration / hit.sliderTime);
+                            if (Math.min(pos, 1 - pos) * hit.sliderTime <= 10) continue;
+                            const at = hit.curve.pointAt(pos);
+                
+                            const lastTick = hit.ticks[hit.ticks.push(newSprite('sliderscorepoint.png', at.x, at.y)) - 1];
+                            lastTick.appeartime = hit.time + i * tickDuration / 1.5;
+                            lastTick.time = t;
+                        }
+                        if (hit.repeat > 1) {
+                            const p = hit.curve.pointAt(1), p2 = hit.curve.pointAt(.999999);
+                            hit.reverse = newSprite('reversearrow.png', p.x, p.y, .36);
+                            hit.reverse.rotation = Math.atan2(p2.y - p.y, p2.x - p.x);
+                        }
+                        if (hit.repeat > 2) {
+                            const p2 = hit.curve.pointAt(.000001);
+                            hit.reverse_b = newSprite('reversearrow.png', hit.x, hit.y, .36);
+                            hit.reverse_b.rotation = Math.atan2(p2.y - hit.y, p2.x - hit.x);
+                            hit.reverse_b.visible = false;
+                        }
+                
+                        hit.follow = newSprite('sliderfollowcircle.png', hit.x, hit.y);
+                        hit.follow.visible = false;
+                        hit.follow.blendMode = PIXI.BLEND_MODES.ADD;
+                        hit.followSize = 1;
+                
+                        hit.ball = newSprite('sliderb.png', hit.x, hit.y, .5);
+                        hit.ball.visible = false;
+                        this.createHitCircle(hit);
+                
+                        const v = hit.repeat % 2 === 1 ? hit.curve.pointAt(1) : hit;
+                        hit.judgements.push(this.createJudgement(v.x, v.y, hit.time + hit.sliderTimeTotal + this.GoodTime));
+                        break;
+                    }
+                    case 'spinner': {
+                        hit.approachTime = this.spinnerAppearTime + this.spinnerZoomInTime;
+                        hit.x = 256;
+                        hit.y = 192;
+                        hit.rotation = 0;
+                        hit.spinProg = 0;
+                        hit.clicked = false;
+                        hit.clearSpin = (1.5 * this.OD < 5 ? 3 + .4 * this.OD : 2.5 + .5 * this.OD) / this.speed * Math.PI * (hit.endTime - hit.time) / 1000;
+                        hit.spinProg = hit.clearSpin < Math.PI ? Number.MAX_SAFE_INTEGER : 0;
+                
+                        function newsprite(path) {
+                            const sprite = new PIXI.Sprite(skin[path]);
+                            sprite.anchor.set(.5);
+                            sprite.x = hit.x;
+                            sprite.y = hit.y;
+                            sprite.depth = 4 - .000001 * hit.hitIndex;
+                            sprite.alpha = 0;
+                            hit.objects.push(sprite);
+                            return sprite;
+                        }
+                        hit.base = newsprite('spinnerbase.png');
+                        hit.prog = newsprite('spinnerprogress.png');
+                        hit.top = newsprite('spinnertop.png');
+                        if (game.hidden) {
+                            hit.prog.visible = false;
+                            hit.base.visible = false;
+                        }
+                        hit.judgements.push(this.createJudgement(hit.x, hit.y, hit.endTime + 233));
+                        break;
+                    }
                 }
-                if (!game.hideFollow && prev && hit.type !== 'spinner' && hit.combo === prev.combo) this.createFollowPoint(prev, hit);
+                if (!game.hideFollow && prev && hit.type !== 'spinner' && hit.combo === prev.combo) {
+                    let x1 = prev.x, y1 = prev.y, t1 = prev.time;
+                    if (prev.type === 'slider') {
+                        t1 += prev.sliderTimeTotal;
+                        if (prev.repeat % 2 === 1) {
+                            const pt = prev.curve.pointAt(1);
+                            x1 = pt.x;
+                            y1 = pt.y;
+                        }
+                    }
+
+                    const container = new PIXI.Container;
+                    container.depth = 3;
+                    container.x1 = x1;
+                    container.y1 = y1;
+                    container.t1 = t1;
+                    container.dx = hit.x - x1;
+                    container.dy = hit.y - y1;
+                    container.dt = hit.time - t1;
+                    container.preempt = this.approachTime;
+                    container.hit = hit;
+                    hit.objects.push(container);
+                    hit.followPoints = container;
+
+                    const spacing = 33, rotation = Math.atan2(container.dy, container.dx), distance = Math.hypot(container.dx, container.dy);
+                    for (let d = spacing * 1.5; d < distance - spacing; d += spacing) {
+                        const frac = d / distance, p = new PIXI.Sprite(skin['followpoint.png']);
+                        p.scale.set(this.hitSpriteScale * .4, this.hitSpriteScale * .3);
+                        p.x = x1 + container.dx * frac;
+                        p.y = y1 + container.dy * frac;
+                        p.rotation = rotation;
+                        p.anchor.set(.5);
+                        p.alpha = 0;
+                        p.frac = frac;
+                        container.addChild(p);
+                    }
+                }
                 prev = hit;
 
                 resolve();
@@ -527,137 +646,10 @@ export default class Playback {
         }
         else loadBackground(defaultBg);
     }
-    createSlider(hit) {
-        hit.nextRepeat = 1;
-        hit.nexttick = 0;
-        hit.body = new SliderMesh(hit.curve, hit.combo % this.track.colors.length);
-        hit.body.alpha = 0;
-        hit.body.depth = 5 - .000001 * hit.hitIndex;
-        hit.objects.push(hit.body);
-
-        const newSprite = (path, x, y, scale = 1) => {
-            const sprite = new PIXI.Sprite(skin[path]);
-            sprite.scale.set(this.hitSpriteScale * scale);
-            sprite.anchor.set(.5);
-            sprite.x = x;
-            sprite.y = y;
-            sprite.depth = 5 - .000001 * hit.hitIndex;
-            sprite.alpha = 0;
-            hit.objects.push(sprite);
-            return sprite;
-        };
-        const tickDuration = hit.timing.beatMs / this.track.difficulty.SliderTickRate, nticks = Math.ceil(hit.sliderTimeTotal / tickDuration);
-
-        if (!hit.timing.isNaN) for (let i = 0; i < nticks; ++i) {
-            const t = hit.time + i * tickDuration, pos = repeatclamp(i * tickDuration / hit.sliderTime);
-            if (Math.min(pos, 1 - pos) * hit.sliderTime <= 10) continue;
-            const at = hit.curve.pointAt(pos);
-
-            const lastTick = hit.ticks[hit.ticks.push(newSprite('sliderscorepoint.png', at.x, at.y)) - 1];
-            lastTick.appeartime = hit.time + i * tickDuration / 1.5;
-            lastTick.time = t;
-        }
-        if (hit.repeat > 1) {
-            const p = hit.curve.pointAt(1), p2 = hit.curve.pointAt(.999999);
-            hit.reverse = newSprite('reversearrow.png', p.x, p.y, .36);
-            hit.reverse.rotation = Math.atan2(p2.y - p.y, p2.x - p.x);
-        }
-        if (hit.repeat > 2) {
-            const p2 = hit.curve.pointAt(.000001);
-            hit.reverse_b = newSprite('reversearrow.png', hit.x, hit.y, .36);
-            hit.reverse_b.rotation = Math.atan2(p2.y - hit.y, p2.x - hit.x);
-            hit.reverse_b.visible = false;
-        }
-
-        hit.follow = newSprite('sliderfollowcircle.png', hit.x, hit.y);
-        hit.follow.visible = false;
-        hit.follow.blendMode = PIXI.BLEND_MODES.ADD;
-        hit.followSize = 1;
-
-        hit.ball = newSprite('sliderb.png', hit.x, hit.y, .5);
-        hit.ball.visible = false;
-        this.createHitCircle(hit);
-
-        const v = hit.repeat % 2 === 1 ? hit.curve.pointAt(1) : hit;
-        hit.judgements.push(this.createJudgement(v.x, v.y, hit.time + hit.sliderTimeTotal + this.GoodTime));
-    }
-    createSpinner(hit) {
-        hit.approachTime = this.spinnerAppearTime + this.spinnerZoomInTime;
-        hit.x = 256;
-        hit.y = 192;
-        hit.rotation = 0;
-        hit.spinProg = 0;
-        hit.clicked = false;
-        hit.clearSpin = (1.5 * this.OD < 5 ? 3 + .4 * this.OD : 2.5 + .5 * this.OD) / this.speed * Math.PI * (hit.endTime - hit.time) / 1000;
-        hit.spinProg = hit.clearSpin < Math.PI ? Number.MAX_SAFE_INTEGER : 0;
-
-        function newsprite(path) {
-            const sprite = new PIXI.Sprite(skin[path]);
-            sprite.anchor.set(.5);
-            sprite.x = hit.x;
-            sprite.y = hit.y;
-            sprite.depth = 4 - .000001 * hit.hitIndex;
-            sprite.alpha = 0;
-            hit.objects.push(sprite);
-            return sprite;
-        }
-        hit.base = newsprite('spinnerbase.png');
-        hit.prog = newsprite('spinnerprogress.png');
-        hit.top = newsprite('spinnertop.png');
-        if (game.hidden) {
-            hit.prog.visible = false;
-            hit.base.visible = false;
-        }
-        hit.judgements.push(this.createJudgement(hit.x, hit.y, hit.endTime + 233));
-    }
-    createFollowPoint(prevHit, hit) {
-        let x1 = prevHit.x, y1 = prevHit.y, t1 = prevHit.time;
-        if (prevHit.type === 'slider') {
-            t1 += prevHit.sliderTimeTotal;
-            if (prevHit.repeat % 2 === 1) {
-                const pt = prevHit.curve.pointAt(1);
-                x1 = pt.x;
-                y1 = pt.y;
-            }
-        }
-
-        const container = new PIXI.Container;
-        container.depth = 3;
-        container.x1 = x1;
-        container.y1 = y1;
-        container.t1 = t1;
-        container.dx = hit.x - x1;
-        container.dy = hit.y - y1;
-        container.dt = hit.time - t1;
-        container.preempt = this.approachTime;
-        container.hit = hit;
-        hit.objects.push(container);
-        hit.followPoints = container;
-
-        const spacing = 33, rotation = Math.atan2(container.dy, container.dx), distance = Math.hypot(container.dx, container.dy);
-        for (let d = spacing * 1.5; d < distance - spacing; d += spacing) {
-            const frac = d / distance, p = new PIXI.Sprite(skin['followpoint.png']);
-            p.scale.set(this.hitSpriteScale * .4, this.hitSpriteScale * .3);
-            p.x = x1 + container.dx * frac;
-            p.y = y1 + container.dy * frac;
-            p.rotation = rotation;
-            p.anchor.set(.5);
-            p.alpha = 0;
-            p.frac = frac;
-            container.addChild(p);
-        }
-    }
-    playTicksound(hit, time) {
-        while (this.curtimingid + 1 < this.track.timing.length && this.track.timing[this.curtimingid + 1].offset <= time) ++this.curtimingid;
-        while (this.curtimingid > 0 && this.track.timing[this.curtimingid].offset > time) --this.curtimingid;
-        const timing = this.track.timing[this.curtimingid], tickSound = game.sample[hit.hitSample.normalSet || timing.sampleSet || game.sampleSet].slidertick;
-        tickSound.volume = game.masterVolume * game.effectVolume * timing.volume;
-        tickSound.play();
-    }
     playHitsound(hit, id, time) {
-        while (this.curtimingid + 1 < this.track.timing.length && this.track.timing[this.curtimingid + 1].offset <= time) ++this.curtimingid;
-        while (this.curtimingid > 0 && this.track.timing[this.curtimingid].offset > time) --this.curtimingid;
-        const timing = this.track.timing[this.curtimingid],
+        while (this.timingId + 1 < this.track.timing.length && this.track.timing[this.timingId + 1].offset <= time) ++this.timingId;
+        while (this.timingId > 0 && this.track.timing[this.timingId].offset > time) --this.timingId;
+        const timing = this.track.timing[this.timingId],
             volume = game.masterVolume * game.effectVolume * timing.volume,
             defaultSet = timing.sampleSet || game.sampleSet;
 
@@ -766,229 +758,6 @@ export default class Playback {
         }
         this.updateJudgement(hit.judgements[0], time);
     }
-    updateSlider(hit, time) {
-        this.updateHitCircle(hit, time);
-        const noteFullAppear = this.approachTime - hit.objectFadeInTime;
-        hit.body.startt = 0;
-        hit.body.endt = 1;
-
-        function setbodyAlpha(alpha) {
-            hit.body.alpha = alpha;
-            for (const tick of hit.ticks) tick.alpha = alpha;
-        }
-        const diff = hit.time - time;
-        if (diff < this.approachTime && diff > noteFullAppear) {
-            setbodyAlpha((this.approachTime - diff) / hit.objectFadeInTime);
-            if (hit.reverse) hit.reverse.alpha = hit.body.alpha;
-            if (hit.reverse_b) hit.reverse_b.alpha = hit.body.alpha;
-        }
-        else if (diff < noteFullAppear) {
-            if (-diff > hit.fadeOutOffset) {
-                const t = clamp01((-diff - hit.fadeOutOffset) / hit.fadeOutDuration);
-                setbodyAlpha(1 - t * (2 - t));
-            }
-            else {
-                setbodyAlpha(1);
-                if (hit.reverse) hit.reverse.alpha = 1;
-                if (hit.reverse_b) hit.reverse_b.alpha = 1;
-            }
-        }
-        if (game.snakein) {
-            if (diff > 0) {
-                const t = clamp01((time - hit.time + this.approachTime) / this.approachTime * 3);
-                hit.body.endt = t;
-                if (hit.reverse) {
-                    const p = hit.curve.pointAt(t);
-                    hit.reverse.x = p.x;
-                    hit.reverse.y = p.y;
-
-                    if (t < .5) {
-                        const p2 = hit.curve.pointAt(t + .000001);
-                        hit.reverse.rotation = Math.atan2(p.y - p2.y, p.x - p2.x);
-                    }
-                    else {
-                        const p2 = hit.curve.pointAt(t - .000001);
-                        hit.reverse.rotation = Math.atan2(p2.y - p.y, p2.x - p.x);
-                    }
-                }
-            }
-        }
-        function resizeFollow(hit, time, dir) {
-            if (!hit.followLasttime) hit.followLasttime = time;
-            if (!hit.followLinearSize) hit.followLinearSize = 1;
-            hit.followLinearSize = Math.max(1, Math.min(2.2, hit.followLinearSize + (time - hit.followLasttime) * dir));
-            hit.followSize = hit.followLinearSize;
-            hit.followLasttime = time;
-        }
-        if (-diff >= 0 && -diff <= hit.fadeOutDuration + hit.sliderTimeTotal) {
-            let t = -diff / hit.sliderTime;
-            const curRep = Math.floor(t);
-            hit.currentRepeat = Math.min(Math.ceil(t), hit.repeat);
-
-            t = repeatclamp(Math.min(t, hit.repeat));
-            const at = hit.curve.pointAt(t);
-
-            hit.follow.x = at.x;
-            hit.follow.y = at.y;
-            hit.ball.x = at.x;
-            hit.ball.y = at.y;
-
-            if (!game.autoplay) {
-                const dx = game.mouseX - at.x, dy = game.mouseY - at.y, followpx = hit.followSize * this.circleRadius / 1.8;
-                var isfollowing = dx * dx + dy * dy <= followpx * followpx;
-
-                if (!isfollowing) {
-                    const predict = this.player.mouse(this.realtime), dx1 = predict.x - at.x, dy1 = predict.y - at.y, laxRad = followpx + predict.r;
-                    isfollowing = dx1 * dx1 + dy1 * dy1 <= laxRad * laxRad;
-                }
-            }
-            const activated = game.autoplay || (game.down && isfollowing);
-
-            for (; hit.nexttick < hit.ticks.length; ++hit.nexttick) {
-                const currentTick = hit.ticks[hit.nexttick];
-                if (currentTick.time > time) break;
-
-                if (!currentTick.result) {
-                    if (activated) {
-                        currentTick.result = true;
-                        this.playTicksound(hit, currentTick.time);
-                        hit.judgements.at(-1).defaultScore = 50;
-                    }
-                    this.scoreOverlay.hit(activated ? 10 : 0, 10, currentTick.time);
-                }
-            }
-            for (let hsPlayed = 0; hit.nextRepeat < hit.repeat; ++hit.nextRepeat) {
-                const currentRep = hit.repeats[hit.nextRepeat - 1];
-                if (currentRep.time > time) break;
-
-                if (!currentRep.result) {
-                    if (activated) {
-                        currentRep.result = true;
-                        if (++hsPlayed < 20) {
-                            this.playHitsound(hit, hit.nextRepeat, currentRep.time);
-                            hit.judgements.at(-1).defaultScore = 50;
-                        }
-                    }
-                    this.scoreOverlay.hit(activated ? 30 : 0, 30, currentRep.time);
-                }
-            }
-            if (curRep === hit.repeat && activated && !hit.scoredSliderEnd) {
-                hit.scoredSliderEnd = hit.time + hit.sliderTimeTotal;
-                this.invokeJudgement(hit.judgements.at(-1), 300, hit.scoredSliderEnd);
-                this.scoreOverlay.hit(300, 300, hit.scoredSliderEnd);
-                this.playHitsound(hit, hit.repeat, hit.scoredSliderEnd);
-            }
-            if (-diff >= 0 && -diff <= hit.sliderTimeTotal) {
-                hit.ball.visible = true;
-                hit.ball.alpha = 1;
-                hit.follow.visible = true;
-                resizeFollow(hit, time, (activated ? 1 : -1) / this.followZoomInTime);
-                hit.follow.scale.x = hit.follow.scale.y = hit.followSize * .45 * this.hitSpriteScale;
-                hit.follow.alpha = hit.followSize - 1;
-            }
-
-            const timeAfter = -diff - hit.sliderTimeTotal;
-            if (timeAfter > 0) {
-                resizeFollow(hit, time, -1 / this.followZoomInTime);
-                hit.follow.scale.x = hit.follow.scale.y = hit.followSize * .45 * this.hitSpriteScale;
-                hit.follow.alpha = hit.followSize - 1;
-                hit.ball.alpha = 1 - timeAfter / this.ballFadeOutTime;
-                hit.ball.scale.x = hit.ball.scale.y = (1 + .15 * timeAfter / this.ballFadeOutTime) / 2 * this.hitSpriteScale;
-            }
-            if (hit.repeat > 1) {
-                hit.reverse.visible = hit.currentRepeat < hit.repeat - hit.repeat % 2;
-                if (hit.reverse_b) hit.reverse_b.visible = hit.currentRepeat < hit.repeat - 1 + hit.repeat % 2;
-            }
-            if (game.snakeout && hit.currentRepeat === hit.repeat) {
-                if (hit.repeat % 2 === 1) {
-                    hit.body.startt = t;
-                    hit.body.endt = 1;
-                }
-                else {
-                    hit.body.startt = 0;
-                    hit.body.endt = t;
-                }
-            }
-        };
-        for (const tick of hit.ticks) {
-            if (time < tick.appeartime) {
-                const dt = (tick.appeartime - time) / 500;
-                tick.alpha *= clamp01(1 - dt);
-                tick.scale.set(this.hitSpriteScale / 2 * (.5 + clamp01((1 - dt) * (1 + dt)) / 2));
-            }
-            else tick.scale.set(this.hitSpriteScale / 2);
-
-            if (time >= tick.time) {
-                const dt = (time - tick.time) / 150;
-                if (tick.result) {
-                    tick.alpha *= clamp01(-((dt - 1) ** 5));
-                    tick.scale.set(.5 * this.hitSpriteScale * (1 + dt / 2 * (2 - dt)));
-                }
-                else {
-                    tick.alpha *= clamp01(1 - dt);
-                    tick.tint = colorLerp(0xffffff, 0xff0000, clamp01(dt * 2));
-                }
-            }
-        }
-        for (const judge of hit.judgements) this.updateJudgement(judge, time);
-    }
-    updateSpinner(hit, time) {
-        if (time > hit.time && time < hit.endTime) {
-            if (game.down && !game.paused) {
-                const mouseAngle = Math.atan2(game.mouseY - hit.y, game.mouseX - hit.x);
-                if (!hit.clicked) hit.clicked = true;
-                else {
-                    let delta = mouseAngle - hit.lastAngle;
-                    if (delta > Math.PI) delta -= Math.PI * 2;
-                    if (delta < -Math.PI) delta += Math.PI * 2;
-                    hit.rotation += delta;
-                    hit.spinProg += Math.abs(delta);
-                }
-                hit.lastAngle = mouseAngle;
-            }
-            else hit.clicked = false;
-        }
-        let alpha = 0;
-        if (time > hit.time - this.spinnerZoomInTime - this.spinnerAppearTime) {
-            if (time < hit.endTime) alpha = 1;
-            else alpha = 1 - (time - hit.endTime) / 150;
-        }
-        hit.top.alpha = alpha;
-        hit.prog.alpha = alpha;
-        hit.base.alpha = alpha;
-
-        if (time < hit.endTime) {
-            hit.top.scale.set(.3 * clamp01((time - (hit.time - this.spinnerZoomInTime - this.spinnerAppearTime)) / this.spinnerZoomInTime));
-            hit.base.scale.set(.6 * clamp01((time - (hit.time - this.spinnerZoomInTime)) / this.spinnerZoomInTime));
-        }
-        if (time < hit.time) {
-            const t = (hit.time - time) / (this.spinnerZoomInTime + this.spinnerAppearTime);
-            if (t < 1) hit.top.rotation = -t * t * 10;
-        }
-
-        const prog = hit.spinProg / hit.clearSpin;
-        if (time > hit.time) {
-            hit.base.rotation = hit.rotation / 2;
-            hit.top.rotation = hit.base.rotation;
-            hit.prog.scale.set(.6 * (.13 + .87 * clamp01(prog)));
-        }
-        else hit.prog.scale.set(0);
-
-        if (time > hit.endTime) {
-            if (hit.score < 0) {
-                if (game.autoplay) this.hitSuccess(hit, 300, hit.endTime);
-                else {
-                    let points = 0;
-                    if (prog >= 1) points = 300;
-                    else if (prog >= .9) points = 100;
-                    else if (prog >= .25) points = 50;
-
-                    this.hitSuccess(hit, points, hit.endTime);
-                }
-            }
-        }
-        this.updateJudgement(hit.judgements[0], time);
-    }
     updateHitObjects(time) {
         while (this.waitinghitid < this.hits.length && this.hits[this.waitinghitid].endTime < time) ++this.waitinghitid;
         while (this.current < this.hits.length && this.futuremost < time + 3000) {
@@ -1014,8 +783,236 @@ export default class Playback {
             }
             else switch (hit.type) {
                 case 'circle': this.updateHitCircle(hit, time); break;
-                case 'slider': this.updateSlider(hit, time); break;
-                case 'spinner': this.updateSpinner(hit, time); break;
+                case 'slider': {
+                    this.updateHitCircle(hit, time);
+                    const noteFullAppear = this.approachTime - hit.objectFadeInTime;
+                    hit.body.startt = 0;
+                    hit.body.endt = 1;
+            
+                    function setbodyAlpha(alpha) {
+                        hit.body.alpha = alpha;
+                        for (const tick of hit.ticks) tick.alpha = alpha;
+                    }
+                    const diff = hit.time - time;
+                    if (diff < this.approachTime && diff > noteFullAppear) {
+                        setbodyAlpha((this.approachTime - diff) / hit.objectFadeInTime);
+                        if (hit.reverse) hit.reverse.alpha = hit.body.alpha;
+                        if (hit.reverse_b) hit.reverse_b.alpha = hit.body.alpha;
+                    }
+                    else if (diff < noteFullAppear) {
+                        if (-diff > hit.fadeOutOffset) {
+                            const t = clamp01((-diff - hit.fadeOutOffset) / hit.fadeOutDuration);
+                            setbodyAlpha(1 - t * (2 - t));
+                        }
+                        else {
+                            setbodyAlpha(1);
+                            if (hit.reverse) hit.reverse.alpha = 1;
+                            if (hit.reverse_b) hit.reverse_b.alpha = 1;
+                        }
+                    }
+                    if (game.snakein) {
+                        if (diff > 0) {
+                            const t = clamp01((time - hit.time + this.approachTime) / this.approachTime * 3);
+                            hit.body.endt = t;
+                            if (hit.reverse) {
+                                const p = hit.curve.pointAt(t);
+                                hit.reverse.x = p.x;
+                                hit.reverse.y = p.y;
+            
+                                if (t < .5) {
+                                    const p2 = hit.curve.pointAt(t + .000001);
+                                    hit.reverse.rotation = Math.atan2(p.y - p2.y, p.x - p2.x);
+                                }
+                                else {
+                                    const p2 = hit.curve.pointAt(t - .000001);
+                                    hit.reverse.rotation = Math.atan2(p2.y - p.y, p2.x - p.x);
+                                }
+                            }
+                        }
+                    }
+                    function resizeFollow(hit, time, dir) {
+                        if (!hit.followLasttime) hit.followLasttime = time;
+                        if (!hit.followLinearSize) hit.followLinearSize = 1;
+                        hit.followLinearSize = Math.max(1, Math.min(2.2, hit.followLinearSize + (time - hit.followLasttime) * dir));
+                        hit.followSize = hit.followLinearSize;
+                        hit.followLasttime = time;
+                    }
+                    if (-diff >= 0 && -diff <= hit.fadeOutDuration + hit.sliderTimeTotal) {
+                        let t = -diff / hit.sliderTime;
+                        const curRep = Math.floor(t);
+                        hit.currentRepeat = Math.min(Math.ceil(t), hit.repeat);
+            
+                        t = repeatclamp(Math.min(t, hit.repeat));
+                        const at = hit.curve.pointAt(t);
+            
+                        hit.follow.x = at.x;
+                        hit.follow.y = at.y;
+                        hit.ball.x = at.x;
+                        hit.ball.y = at.y;
+            
+                        if (!game.autoplay) {
+                            const dx = game.mouseX - at.x, dy = game.mouseY - at.y, followpx = hit.followSize * this.circleRadius / 1.8;
+                            var isfollowing = dx * dx + dy * dy <= followpx * followpx;
+            
+                            if (!isfollowing) {
+                                const predict = this.player.mouse(this.realtime), dx1 = predict.x - at.x, dy1 = predict.y - at.y, laxRad = followpx + predict.r;
+                                isfollowing = dx1 * dx1 + dy1 * dy1 <= laxRad * laxRad;
+                            }
+                        }
+                        const activated = game.autoplay || (game.down && isfollowing);
+            
+                        for (; hit.nexttick < hit.ticks.length; ++hit.nexttick) {
+                            const currentTick = hit.ticks[hit.nexttick];
+                            if (currentTick.time > time) break;
+            
+                            if (!currentTick.result) {
+                                if (activated) {
+                                    currentTick.result = true;
+                                    hit.judgements.at(-1).defaultScore = 50;
+            
+                                    while (this.timingId + 1 < this.track.timing.length && this.track.timing[this.timingId + 1].offset <= currentTick.time) ++this.timingId;
+                                    while (this.timingId > 0 && this.track.timing[this.timingId].offset > time) --this.timingId;
+                                    const timing = this.track.timing[this.timingId], tickSound = game.sample[hit.hitSample.normalSet || timing.sampleSet || game.sampleSet].slidertick;
+                                    tickSound.volume = game.masterVolume * game.effectVolume * timing.volume;
+                                    tickSound.play();
+                                }
+                                this.scoreOverlay.hit(activated ? 10 : 0, 10, currentTick.time);
+                            }
+                        }
+                        for (let hsPlayed = 0; hit.nextRepeat < hit.repeat; ++hit.nextRepeat) {
+                            const currentRep = hit.repeats[hit.nextRepeat - 1];
+                            if (currentRep.time > time) break;
+            
+                            if (!currentRep.result) {
+                                if (activated) {
+                                    currentRep.result = true;
+                                    if (++hsPlayed < 20) {
+                                        this.playHitsound(hit, hit.nextRepeat, currentRep.time);
+                                        hit.judgements.at(-1).defaultScore = 50;
+                                    }
+                                }
+                                this.scoreOverlay.hit(activated ? 30 : 0, 30, currentRep.time);
+                            }
+                        }
+                        if (curRep === hit.repeat && activated && !hit.scoredSliderEnd) {
+                            hit.scoredSliderEnd = hit.time + hit.sliderTimeTotal;
+                            this.invokeJudgement(hit.judgements.at(-1), 300, hit.scoredSliderEnd);
+                            this.scoreOverlay.hit(300, 300, hit.scoredSliderEnd);
+                            this.playHitsound(hit, hit.repeat, hit.scoredSliderEnd);
+                        }
+                        if (-diff >= 0 && -diff <= hit.sliderTimeTotal) {
+                            hit.ball.visible = true;
+                            hit.ball.alpha = 1;
+                            hit.follow.visible = true;
+                            resizeFollow(hit, time, (activated ? 1 : -1) / this.followZoomInTime);
+                            hit.follow.scale.x = hit.follow.scale.y = hit.followSize * .45 * this.hitSpriteScale;
+                            hit.follow.alpha = hit.followSize - 1;
+                        }
+            
+                        const timeAfter = -diff - hit.sliderTimeTotal;
+                        if (timeAfter > 0) {
+                            resizeFollow(hit, time, -1 / this.followZoomInTime);
+                            hit.follow.scale.x = hit.follow.scale.y = hit.followSize * .45 * this.hitSpriteScale;
+                            hit.follow.alpha = hit.followSize - 1;
+                            hit.ball.alpha = 1 - timeAfter / this.ballFadeOutTime;
+                            hit.ball.scale.x = hit.ball.scale.y = (1 + .15 * timeAfter / this.ballFadeOutTime) / 2 * this.hitSpriteScale;
+                        }
+                        if (hit.repeat > 1) {
+                            hit.reverse.visible = hit.currentRepeat < hit.repeat - hit.repeat % 2;
+                            if (hit.reverse_b) hit.reverse_b.visible = hit.currentRepeat < hit.repeat - 1 + hit.repeat % 2;
+                        }
+                        if (game.snakeout && hit.currentRepeat === hit.repeat) {
+                            if (hit.repeat % 2 === 1) {
+                                hit.body.startt = t;
+                                hit.body.endt = 1;
+                            }
+                            else {
+                                hit.body.startt = 0;
+                                hit.body.endt = t;
+                            }
+                        }
+                    };
+                    for (const tick of hit.ticks) {
+                        if (time < tick.appeartime) {
+                            const dt = (tick.appeartime - time) / 500;
+                            tick.alpha *= clamp01(1 - dt);
+                            tick.scale.set(this.hitSpriteScale / 2 * (.5 + clamp01((1 - dt) * (1 + dt)) / 2));
+                        }
+                        else tick.scale.set(this.hitSpriteScale / 2);
+            
+                        if (time >= tick.time) {
+                            const dt = (time - tick.time) / 150;
+                            if (tick.result) {
+                                tick.alpha *= clamp01(-((dt - 1) ** 5));
+                                tick.scale.set(.5 * this.hitSpriteScale * (1 + dt / 2 * (2 - dt)));
+                            }
+                            else {
+                                tick.alpha *= clamp01(1 - dt);
+                                tick.tint = colorLerp(0xffffff, 0xff0000, clamp01(dt * 2));
+                            }
+                        }
+                    }
+                    for (const judge of hit.judgements) this.updateJudgement(judge, time);
+                    break;
+                }
+                case 'spinner': {
+                    if (time > hit.time && time < hit.endTime) {
+                        if (game.down && !game.paused) {
+                            const mouseAngle = Math.atan2(game.mouseY - hit.y, game.mouseX - hit.x);
+                            if (!hit.clicked) hit.clicked = true;
+                            else {
+                                let delta = mouseAngle - hit.lastAngle;
+                                if (delta > Math.PI) delta -= Math.PI * 2;
+                                if (delta < -Math.PI) delta += Math.PI * 2;
+                                hit.rotation += delta;
+                                hit.spinProg += Math.abs(delta);
+                            }
+                            hit.lastAngle = mouseAngle;
+                        }
+                        else hit.clicked = false;
+                    }
+                    let alpha = 0;
+                    if (time > hit.time - this.spinnerZoomInTime - this.spinnerAppearTime) {
+                        if (time < hit.endTime) alpha = 1;
+                        else alpha = 1 - (time - hit.endTime) / 150;
+                    }
+                    hit.top.alpha = alpha;
+                    hit.prog.alpha = alpha;
+                    hit.base.alpha = alpha;
+            
+                    if (time < hit.endTime) {
+                        hit.top.scale.set(.3 * clamp01((time - (hit.time - this.spinnerZoomInTime - this.spinnerAppearTime)) / this.spinnerZoomInTime));
+                        hit.base.scale.set(.6 * clamp01((time - (hit.time - this.spinnerZoomInTime)) / this.spinnerZoomInTime));
+                    }
+                    if (time < hit.time) {
+                        const t = (hit.time - time) / (this.spinnerZoomInTime + this.spinnerAppearTime);
+                        if (t < 1) hit.top.rotation = -t * t * 10;
+                    }
+            
+                    const prog = hit.spinProg / hit.clearSpin;
+                    if (time > hit.time) {
+                        hit.base.rotation = hit.rotation / 2;
+                        hit.top.rotation = hit.base.rotation;
+                        hit.prog.scale.set(.6 * (.13 + .87 * clamp01(prog)));
+                    }
+                    else hit.prog.scale.set(0);
+            
+                    if (time > hit.endTime) {
+                        if (hit.score < 0) {
+                            if (game.autoplay) this.hitSuccess(hit, 300, hit.endTime);
+                            else {
+                                let points = 0;
+                                if (prog >= 1) points = 300;
+                                else if (prog >= .9) points = 100;
+                                else if (prog >= .25) points = 50;
+            
+                                this.hitSuccess(hit, points, hit.endTime);
+                            }
+                        }
+                    }
+                    this.updateJudgement(hit.judgements[0], time);
+                    break;
+                }
             }
         }
     }
@@ -1026,19 +1023,19 @@ export default class Playback {
         this.bg.tint = colorLerp(0xffffff, 0, fade);
     }
     render(frame, timestamp) {
-        if (this.audioReady) {
+        if (this.audioReady && !this.ended) {
             this.realtime = timestamp;
             this.activeTime = frame;
 
             var time = this.osu.audio.pos * 1000 + game.globalOffset;
-            if (!game.paused && this.hits.counter++ % 20 !== 0 && this.lastAudioTick) time += frame - (time - this.lastAudioTick) / this.speed;
+            if (!game.paused && this.hits.counter++ % 10 !== 0 && this.lastAudioTick) time += frame - (time - this.lastAudioTick) / this.speed;
             this.lastAudioTick = time;
 
-            for (let i = this.breakIndex; i < this.track.breaks.length; ++i) {
-                const b = this.track.breaks[i];
-                if (time > b.startTime && time < b.endTime) {
+            for (; this.breakIndex < this.track.breaks.length; ++this.breakIndex) {
+                const b = this.track.breaks[this.breakIndex];
+                if (time < b.startTime) break;
+                else if (time < b.endTime) {
                     var breakEnd = b.endTime;
-                    this.breakIndex = i;
                     break;
                 }
             }
@@ -1088,12 +1085,12 @@ export default class Playback {
         this.bg.destroy(true);
         SliderMesh.prototype.deallocate();
 
-        window.onresize = null;
+        if (game.allowMouseScroll) window.removeEventListener('wheel', this.volumeCallback);
         window.removeEventListener('blur', this.blurCallback);
-        window.removeEventListener('wheel', this.volumeCallback);
         window.removeEventListener('keyup', this.pauseCallback);
         window.removeEventListener('keydown', this.skipCallback);
 
+        window.onresize = null;
         if (!game.autoplay) this.player.cleanup();
     }
     start() {
@@ -1119,8 +1116,5 @@ export default class Playback {
         this.osu.audio.ctx.suspend();
         this.destroy();
         stopGame();
-    }
-    skip() {
-        if (this.started && this.osu.audio.seek(this.skipTime / 1000)) this.skipped = true;
     }
 }
