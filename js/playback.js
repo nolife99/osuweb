@@ -285,6 +285,7 @@ export default class Playback {
                 }
             }
             this.hits = hits;
+            this.hits.counter = 0;
 
             SliderMesh.prototype.initialize(track.colors, this.circleRadius / 2.1, {
                 dx: 2 * this.gfx.width / window.innerWidth / 512,
@@ -1028,7 +1029,10 @@ export default class Playback {
         if (this.audioReady) {
             this.realtime = timestamp;
             this.activeTime = frame;
+
             var time = this.osu.audio.pos * 1000 + game.globalOffset;
+            if (!game.paused && this.hits.counter++ % 20 !== 0 && this.lastAudioTick) time += frame - (time - this.lastAudioTick) / this.speed;
+            this.lastAudioTick = time;
 
             for (let i = this.breakIndex; i < this.track.breaks.length; ++i) {
                 const b = this.track.breaks[i];

@@ -113,8 +113,7 @@ export default class PlayerActions {
     }
     triggerTap() {
         const click = {
-            x: game.mouseX, y: game.mouseY,
-            time: this.playback.osu.audio ? this.playback.osu.audio.pos * 1000 : 0
+            x: game.mouseX, y: game.mouseY, time: this.playback.lastAudioTick
         };
         let hit = this.playback.newHits.find(inUpcoming(click, this.playback));
         if (!hit && !game.autoplay) {

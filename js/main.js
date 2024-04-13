@@ -147,8 +147,8 @@ class BeatmapController {
         pGameArea.hidden = false;
 
         let playback = new Playback(this.osu, this.osu.tracks[trackid]);
-        app.ticker.add(t => {
-            playback.render(t, app.ticker.lastTime);
+        app.ticker.add(() => {
+            playback.render(app.ticker.elapsedMS, app.ticker.lastTime);
             if (cursor) {
                 cursor.x = game.mouseX / 512 * playback.gfx.width + playback.gfx.xoffset;
                 cursor.y = game.mouseY / 384 * playback.gfx.height + playback.gfx.yoffset;
