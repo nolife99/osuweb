@@ -171,30 +171,30 @@ export default class Playback {
         this.player = new Player(this);
         game.paused = false;
 
-        this.pauseCallback = e => {
+        this.pauseEv = e => {
             if (e.code === 'Escape') {
                 if (!game.paused) this.pause();
                 else this.resume();
             }
         };
-        this.blurCallback = () => {
+        this.blurEv = () => {
             if (this.started) this.pause();
         };
-        this.skipCallback = e => {
+        this.skipEv = e => {
             if (e.code === 'Space' && !game.paused && !this.skipped && this.started && this.osu.audio.seek(this.skipTime / 1000)) this.skipped = true;
         };
         if (game.allowMouseScroll) {
-            this.volumeCallback = e => {
+            this.volumeEv = e => {
                 if (!osu.audio) return;
                 game.masterVolume = clamp01(game.masterVolume - e.deltaY * .002);
                 osu.audio.gain.gain.value = game.musicVolume * game.masterVolume;
                 this.volumeMenu.set(game.masterVolume * 100);
             };
-            window.addEventListener('wheel', this.volumeCallback);
+            window.addEventListener('wheel', this.volumeEv);
         }
-        window.addEventListener('blur', this.blurCallback);
-        window.addEventListener('keydown', this.skipCallback);
-        window.addEventListener('keyup', this.pauseCallback);
+        window.addEventListener('blur', this.blurEv);
+        window.addEventListener('keydown', this.skipEv);
+        window.addEventListener('keyup', this.pauseEv);
 
         const loadTask = Promise.all(track.hitObjects.map(a => {
             const hit = structuredClone(a);
@@ -205,7 +205,7 @@ export default class Playback {
 
                 if (hit.type === 'slider') {
                     hit.fadeOutOffset = -.6 * this.approachTime;
-                    hit.fadeOutDuration = hit.sliderTimeTotal - hit.fadeOutOffset;
+                    hit.fadeOutTime = hit.sliderTimeTotal - hit.fadeOutOffset;
                 }
             }
             else {
@@ -216,7 +216,7 @@ export default class Playback {
 
                 if (hit.type === 'slider') {
                     hit.fadeOutOffset = hit.sliderTimeTotal;
-                    hit.fadeOutDuration = 300;
+                    hit.fadeOutTime = 300;
                 }
             }
             return new Promise(resolve => window.setTimeout(() => {
@@ -307,7 +307,7 @@ export default class Playback {
                 }
                 hit.ticks = [];
                 hit.objects = [];
-                hit.judgements = [];
+                hit.judges = [];
                 hit.score = -1;
 
                 const newHitSprite = (path, depth, scale = 1, anchorx = .5, anchory = .5) => {
@@ -339,7 +339,7 @@ export default class Playback {
                     hit.approach.tint = this.track.colors[hit.combo % this.track.colors.length];
                     if (!hit.enableflash) hit.approach.visible = false;
 
-                    hit.judgements.push(this.createJudgement(hit.x, hit.y, hit.time + this.MehTime));
+                    hit.judges.push(this.createJudgement(hit.x, hit.y, hit.time + this.MehTime));
                     hit.numbers = [];
                     if (!game.hideNumbers) {
                         if (index < 10) hit.numbers.push(newHitSprite(`score-${index}.png`, basedep, .4, .5, .47));
@@ -403,7 +403,7 @@ export default class Playback {
                         createHitCircle();
 
                         const v = hit.repeat % 2 === 1 ? hit.curve.pointAt(1) : hit;
-                        hit.judgements.push(this.createJudgement(v.x, v.y, hit.time + hit.sliderTimeTotal + this.GoodTime));
+                        hit.judges.push(this.createJudgement(v.x, v.y, hit.time + hit.sliderTimeTotal + this.GoodTime));
                         break;
                     }
                     case 'spinner': {
@@ -433,7 +433,7 @@ export default class Playback {
                             hit.prog.visible = false;
                             hit.base.visible = false;
                         }
-                        hit.judgements.push(this.createJudgement(hit.x, hit.y, hit.endTime + 233));
+                        hit.judges.push(this.createJudgement(hit.x, hit.y, hit.endTime + 233));
                         break;
                     }
                 }
@@ -680,19 +680,19 @@ export default class Playback {
             else {
                 this.playHitsound(hit, 0, hit.time);
                 this.errorMeter.hit(time - hit.time, time);
+                if (hit.type === 'slider') hit.judges.at(-1).defaultScore = 50;
             }
-            if (hit.type === 'slider') hit.judgements.at(-1).defaultScore = 50;
         }
 
         hit.score = points;
         hit.clickTime = time;
-        this.invokeJudgement(hit.judgements[0], points, time);
+        this.invokeJudgement(hit.judges[0], points, time);
     }
-    updateHitObjects(time) {
+    updateHits(time) {
         while (this.current < this.hits.length && this.futuremost < time + 3000) {
             const hit = this.hits[this.current++];
-            for (let i = hit.judgements.length - 1; i >= 0; --i) {
-                const judge = hit.judgements[i];
+            for (let i = hit.judges.length - 1; i >= 0; --i) {
+                const judge = hit.judges[i];
                 this.gamefield.addChildAt(judge, findindex(judge.depth || 0, this.gamefield));
             }
             for (let i = hit.objects.length - 1; i >= 0; --i) {
@@ -707,7 +707,7 @@ export default class Playback {
             if (time - hit.endTime > this.approachTime + 800) {
                 PIXI.utils.removeItems(this.newHits, i, 1);
                 hit.objects.forEach(this.destroyHit);
-                hit.judgements.forEach(this.destroyHit);
+                hit.judges.forEach(this.destroyHit);
                 hit.destroyed = true;
             }
             else {
@@ -768,7 +768,7 @@ export default class Playback {
                             }
                         }
                     }
-                    if (isCircle) this.updateJudgement(hit.judgements[0], time);
+                    if (isCircle) this.updateJudgement(hit.judges[0], time);
                 }
                 switch (hit.type) {
                     case 'circle': updateHitCircle(true); break;
@@ -782,15 +782,15 @@ export default class Playback {
                             hit.body.alpha = alpha;
                             for (const tick of hit.ticks) tick.alpha = alpha;
                         }
-                        const diff = hit.time - time;
+                        const diff = hit.time - time, dAfter = -diff;
                         if (diff < this.approachTime && diff > noteFullAppear) {
                             setbodyAlpha((this.approachTime - diff) / hit.objectFadeInTime);
                             if (hit.reverse) hit.reverse.alpha = hit.body.alpha;
                             if (hit.reverse_b) hit.reverse_b.alpha = hit.body.alpha;
                         }
                         else if (diff < noteFullAppear) {
-                            if (-diff > hit.fadeOutOffset) {
-                                const t = clamp01((-diff - hit.fadeOutOffset) / hit.fadeOutDuration);
+                            if (dAfter > hit.fadeOutOffset) {
+                                const t = clamp01((dAfter - hit.fadeOutOffset) / hit.fadeOutTime);
                                 setbodyAlpha(1 - t * (2 - t));
                             }
                             else {
@@ -825,11 +825,11 @@ export default class Playback {
                             hit.followSize = Math.max(1, Math.min(2.2, hit.followSize + (time - hit.followLasttime) * dir));
                             hit.followLasttime = time;
                         }
-                        if (-diff >= 0 && -diff <= hit.fadeOutDuration + hit.sliderTimeTotal) {
-                            let t = -diff / hit.sliderTime;
-                            const curRep = Math.floor(t);
+                        if (dAfter >= 0 && dAfter <= hit.fadeOutTime + hit.sliderTimeTotal) {
+                            let t = dAfter / hit.sliderTime;
                             hit.currentRepeat = Math.min(Math.ceil(t), hit.repeat);
 
+                            const realT = t;
                             t = repeatclamp(Math.min(t, hit.repeat));
                             const at = hit.curve.pointAt(t);
 
@@ -856,7 +856,7 @@ export default class Playback {
                                 if (!currentTick.result) {
                                     if (activated) {
                                         currentTick.result = true;
-                                        hit.judgements.at(-1).defaultScore = 50;
+                                        hit.judges.at(-1).defaultScore = 50;
 
                                         while (this.timingId + 1 < this.track.timing.length && this.track.timing[this.timingId + 1].offset <= currentTick.time) ++this.timingId;
                                         while (this.timingId > 0 && this.track.timing[this.timingId].offset > time) --this.timingId;
@@ -868,23 +868,23 @@ export default class Playback {
                                 }
                             }
                             for (let hsPlayed = 0; hit.nextRepeat < hit.repeat; ++hit.nextRepeat) {
-                                const currentRep = hit.repeats[hit.nextRepeat - 1];
-                                if (currentRep.time > time) break;
+                                const curRep = hit.repeats[hit.nextRepeat - 1];
+                                if (curRep.time > time) break;
 
-                                if (!currentRep.result) {
+                                if (!curRep.result) {
                                     if (activated) {
-                                        currentRep.result = true;
+                                        curRep.result = true;
                                         if (++hsPlayed < 20) {
-                                            this.playHitsound(hit, hit.nextRepeat, currentRep.time);
-                                            hit.judgements.at(-1).defaultScore = 50;
+                                            this.playHitsound(hit, hit.nextRepeat, curRep.time);
+                                            hit.judges.at(-1).defaultScore = 50;
                                         }
                                     }
-                                    this.scoreOverlay.hit(activated ? 30 : 0, 30, currentRep.time);
+                                    this.scoreOverlay.hit(activated ? 30 : 0, 30, curRep.time);
                                 }
                             }
-                            if (curRep === hit.repeat && activated && !hit.scoredSliderEnd) {
+                            if (realT > hit.repeat && activated && !hit.scoredSliderEnd) {
                                 hit.scoredSliderEnd = hit.time + hit.sliderTimeTotal;
-                                this.invokeJudgement(hit.judgements.at(-1), 300, hit.scoredSliderEnd);
+                                this.invokeJudgement(hit.judges.at(-1), 300, hit.scoredSliderEnd);
                                 this.scoreOverlay.hit(300, 300, hit.scoredSliderEnd);
                                 this.playHitsound(hit, hit.repeat, hit.scoredSliderEnd);
                             }
@@ -906,8 +906,9 @@ export default class Playback {
                                 hit.ball.scale.x = hit.ball.scale.y = (1 + .15 * timeAfter / ballFadeOutTime) / 2 * this.hitScale;
                             }
                             if (hit.repeat > 1) {
-                                hit.reverse.visible = hit.currentRepeat < hit.repeat - hit.repeat % 2;
-                                if (hit.reverse_b) hit.reverse_b.visible = hit.currentRepeat < hit.repeat - 1 + hit.repeat % 2;
+                                const normal = hit.repeat - hit.repeat % 2;
+                                hit.reverse.visible = hit.currentRepeat < normal;
+                                if (hit.reverse_b) hit.reverse_b.visible = hit.currentRepeat < normal - 1;
                             }
                             if (game.snakeout && hit.currentRepeat === hit.repeat) {
                                 if (hit.repeat % 2 === 1) {
@@ -940,7 +941,7 @@ export default class Playback {
                                 }
                             }
                         }
-                        for (const judge of hit.judgements) this.updateJudgement(judge, time);
+                        for (const judge of hit.judges) this.updateJudgement(judge, time);
                         break;
                     }
                     case 'spinner': {
@@ -998,27 +999,27 @@ export default class Playback {
                                 }
                             }
                         }
-                        this.updateJudgement(hit.judgements[0], time);
+                        this.updateJudgement(hit.judges[0], time);
                         break;
                     }
                 }
             }
         }
     }
-    updateBackground(time) {
+    updateBg(time) {
         if (!this.bg) return;
         let fade = game.backgroundDimRate;
         if (time < -this.wait) fade *= Math.max(0, 1 - (-this.wait - time) / bgFadeTime);
         this.bg.tint = colorLerp(0xffffff, 0, fade);
     }
-    render(frame, timestamp) {
+    render(frame, t) {
         if (this.started && !this.ended) {
-            this.realtime = timestamp;
+            this.realtime = t;
             this.activeTime = frame;
 
             var time = this.osu.audio.pos * 1000 + game.globalOffset;
-            if (!game.paused && this.hits.counter++ % 10 !== 0 && this.lastAudioTick) time += frame - (time - this.lastAudioTick) / this.speed;
-            this.lastAudioTick = time;
+            if (!game.paused && this.hits.counter++ % 10 !== 0 && this.audioTick) time += frame - (time - this.audioTick) / this.speed;
+            this.audioTick = time;
 
             for (; this.breakIndex < this.track.breaks.length; ++this.breakIndex) {
                 const b = this.track.breaks[this.breakIndex];
@@ -1033,17 +1034,17 @@ export default class Playback {
             else if (time < this.skipTime) this.breakOverlay.countdown(this.skipTime, time);
             else this.breakOverlay.visible = false;
 
-            this.updateHitObjects(time);
+            this.updateHits(time);
             if (game.autoplay) this.player.update(time);
-            this.updateBackground(time);
+            this.updateBg(time);
             this.scoreOverlay.update(time);
             this.progOverlay.update(time);
             this.errorMeter.update(time);
         }
-        else this.updateBackground(Number.MIN_SAFE_INTEGER);
+        else this.updateBg(Number.MIN_SAFE_INTEGER);
 
-        this.volumeMenu.update(timestamp);
-        this.loadingMenu.update(timestamp);
+        this.volumeMenu.update(t);
+        this.loadingMenu.update(t);
         if (time > this.endTime) {
             if (!this.ended) {
                 this.ended = true;
@@ -1057,7 +1058,7 @@ export default class Playback {
     destroy() {
         for (const hit of this.hits) if (!hit.destroyed) {
             hit.objects.forEach(this.destroyHit);
-            hit.judgements.forEach(this.destroyHit);
+            hit.judges.forEach(this.destroyHit);
             hit.destroyed = true;
         }
 
@@ -1075,10 +1076,10 @@ export default class Playback {
         this.bg.renderTexture?.destroy?.(true);
         SliderMesh.deallocate();
 
-        if (game.allowMouseScroll) window.removeEventListener('wheel', this.volumeCallback);
-        window.removeEventListener('blur', this.blurCallback);
-        window.removeEventListener('keyup', this.pauseCallback);
-        window.removeEventListener('keydown', this.skipCallback);
+        if (game.allowMouseScroll) window.removeEventListener('wheel', this.volumeEv);
+        window.removeEventListener('blur', this.blurEv);
+        window.removeEventListener('keyup', this.pauseEv);
+        window.removeEventListener('keydown', this.skipEv);
 
         window.onresize = null;
         if (!game.autoplay) this.player.cleanup();

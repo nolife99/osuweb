@@ -11,19 +11,19 @@ export const game = {
     K1down: false, K2down: false, M1down: false, M2down: false, down: false,
     finished: false,
     sample: [{}, {}, {}, {}], sampleSet: 1
-}, progresses = document.getElementsByClassName('progress'), pDragbox = document.getElementsByClassName('dragbox')[0],
+}, progresses = document.getElementsByClassName('progress'),
+    pDragbox = document.getElementsByClassName('dragbox')[0],
     pDragboxInner = document.getElementsByClassName('dragbox-inner')[0],
     pDragboxHint = document.getElementsByClassName('dragbox-hint')[0],
     pBeatmapList = document.getElementsByClassName('beatmap-list')[0];
 
-const beatmapFileList = JSON.parse(localStorage.getItem('beatmapfilelist')) || [], fileCount = beatmapFileList.length;
-if (fileCount > 0) {
-    console.log('Local beatmaps:', beatmapFileList);
+const mapList = JSON.parse(localStorage.getItem('beatmapfilelist')) || [];
+if (mapList.length > 0) {
     const counter = progresses[3].childNodes;
-    counter[3].innerText = fileCount;
+    counter[3].innerText = mapList.length;
 
-    const tempbox = Array(fileCount);
-    for (let i = 0; i < fileCount; ++i) {
+    const tempbox = Array(mapList.length);
+    for (let i = 0; i < mapList.length; ++i) {
         const box = document.createElement('div');
         box.className = 'beatmapbox';
         pBeatmapList.insertBefore(box, pDragbox);
@@ -32,9 +32,9 @@ if (fileCount > 0) {
     const loadingCounter = counter[1];
 
     let loadedCount = 0;
-    for (let i = 0; i < fileCount; ++i) localforage.getItem(beatmapFileList[i]).then(blob => {
+    for (let i = 0; i < mapList.length; ++i) localforage.getItem(mapList[i]).then(blob => {
         const zipFs = new fs.FS;
-        zipFs.name = beatmapFileList[i];
+        zipFs.name = mapList[i];
         zipFs.importUint8Array(blob).then(() => {
             addbeatmap(zipFs, box => {
                 pBeatmapList.replaceChild(box, tempbox[i]);
@@ -42,10 +42,10 @@ if (fileCount > 0) {
             });
             loadingCounter.innerText = ++loadedCount;
         }).catch(e => {
-            console.warn('Error importing beatmap:', beatmapFileList[i], e);
+            console.warn('Error importing beatmap:', mapList[i], e);
             pDragboxHint.innerText = nonValidHint;
         });
-    }).catch(err => console.warn('Error getting beatmap:', beatmapFileList[i], err));
+    }).catch(err => console.warn('Error getting beatmap:', mapList[i], err));
 }
 
 export let skin;
@@ -295,9 +295,9 @@ function handleDragDrop(e) {
                     pDragboxHint.innerText = defaultHint;
                 });
                 localforage.setItem(blob.name, zipFs.exportUint8Array()).catch(err => console.warn('Error saving beatmap:', zipFs.name, err));
-                if (!beatmapFileList.includes(zipFs.name)) {
-                    beatmapFileList.push(zipFs.name);
-                    localStorage.setItem('beatmapfilelist', JSON.stringify(beatmapFileList));
+                if (!mapList.includes(zipFs.name)) {
+                    mapList.push(zipFs.name);
+                    localStorage.setItem('beatmapfilelist', JSON.stringify(mapList));
                 }
             }).catch(ex => {
                 console.warn('Error during file transfer:', zipFs.name, ex);

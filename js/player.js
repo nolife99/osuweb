@@ -113,7 +113,7 @@ export default class Player {
     }
     triggerTap() {
         const click = {
-            x: game.mouseX, y: game.mouseY, time: this.playback.lastAudioTick
+            x: game.mouseX, y: game.mouseY, time: this.playback.audioTick
         };
         let hit = this.playback.newHits.find(inUpcoming(click, this.playback));
         if (!hit && !game.autoplay) {
