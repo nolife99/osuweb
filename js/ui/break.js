@@ -49,19 +49,19 @@ export default class BreakOverlay extends PIXI.Container {
         this.x = windowfield.width / 2;
         this.y = windowfield.height / 2;
     }
-    countdown(nextapproachtime, time) {
+    countdown(end, time) {
         if (!this.visible) {
             this.visible = true;
             this.starttime = time;
-            this.nextapproachtime = nextapproachtime;
+            this.end = end;
         }
         if (!this.visible) return;
-        if (time > this.nextapproachtime) {
+        if (time > this.end) {
             this.visible = false;
             return;
         }
 
-        const t = this.nextapproachtime - time, radius = 200 * t / (this.nextapproachtime - this.starttime);
+        const t = this.end - time, radius = 200 * t / (this.end - this.starttime);
         this.barmid.width = 2 * radius;
         this.barleft.x = -radius;
         this.barright.x = radius;

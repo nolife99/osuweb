@@ -105,10 +105,8 @@ class BeatmapController {
     startGame(trackid) {
         if (app) return;
         app = new PIXI.Application({
-            width: window.innerWidth,
-            height: window.innerHeight,
-            resolution: window.devicePixelRatio || 1,
-            autoDensity: true
+            width: window.innerWidth, height: window.innerHeight,
+            resolution: window.devicePixelRatio || 1, autoDensity: true
         });
         app.renderer.autoDensity = true;
         app.renderer.backgroundColor = 0x111111;
@@ -121,7 +119,7 @@ class BeatmapController {
         document.body.classList.add('gaming');
 
         settings.loadToGame(game);
-        this.osu.load_mp3(trackid);
+        this.osu.loadAudio(trackid);
 
         if (!game.showhwmouse || game.autoplay) {
             var cursor = new PIXI.Sprite(skin['cursor.png']);
@@ -180,45 +178,45 @@ class BeatmapController {
         };
     }
     createBeatmapBox() {
-        const pBeatmapBox = document.createElement('div'), pBeatmapCover = document.createElement('img'),
-            pBeatmapTitle = document.createElement('div'), pBeatmapAuthor = document.createElement('div');
+        const box = document.createElement('div'), boxCover = document.createElement('img'),
+            mapTitle = document.createElement('div'), mapper = document.createElement('div');
 
-        pBeatmapBox.className = 'beatmapbox';
-        pBeatmapCover.className = 'beatmapcover';
-        pBeatmapTitle.className = 'beatmaptitle';
-        pBeatmapAuthor.className = 'beatmapauthor';
-        pBeatmapBox.appendChild(pBeatmapCover);
-        pBeatmapBox.appendChild(pBeatmapTitle);
-        pBeatmapBox.appendChild(pBeatmapAuthor);
+        box.className = 'beatmapbox';
+        boxCover.className = 'beatmapcover';
+        mapTitle.className = 'beatmaptitle';
+        mapper.className = 'beatmapauthor';
+        box.appendChild(boxCover);
+        box.appendChild(mapTitle);
+        box.appendChild(mapper);
 
-        pBeatmapTitle.innerText = this.osu.tracks[0].metadata.Title;
-        pBeatmapAuthor.innerText = `${this.osu.tracks[0].metadata.Artist}/${this.osu.tracks[0].metadata.Creator}`;
-        this.osu.getCoverSrc(pBeatmapCover);
+        mapTitle.innerText = this.osu.tracks[0].metadata.Title;
+        mapper.innerText = `${this.osu.tracks[0].metadata.Artist}/${this.osu.tracks[0].metadata.Creator}`;
+        this.osu.getCoverSrc(boxCover);
 
         const first = this.osu.tracks[0].length;
         if (first) {
-            const pBeatmapLength = document.createElement('div');
-            pBeatmapLength.className = 'beatmaplength';
-            pBeatmapBox.appendChild(pBeatmapLength);
+            const mapLength = document.createElement('div');
+            mapLength.className = 'beatmaplength';
+            box.appendChild(mapLength);
 
             let mins = Math.floor(first / 60), text = '';
             if (mins >= 60) {
                 text = Math.floor(mins / 60) + ':';
                 mins %= 60;
             }
-            pBeatmapLength.innerText = `${text}${mins}:${first % 60 < 10 ? '0' : ''}${(first % 60).toFixed(0)}`;
+            mapLength.innerText = `${text}${mins}:${first % 60 < 10 ? '0' : ''}${(first % 60).toFixed(0)}`;
         }
-        pBeatmapBox.onclick = e => {
+        box.onclick = e => {
             if (!showingDifficultyBox) {
                 e.stopPropagation();
                 const difficultyBox = document.createElement('div'), closeDifficultyMenu = () => {
-                    pBeatmapBox.removeChild(difficultyBox);
+                    box.removeChild(difficultyBox);
                     showingDifficultyBox = false;
                     window.removeEventListener('click', closeDifficultyMenu, false);
                 }
                 difficultyBox.className = 'difficulty-box';
 
-                const rect = pBeatmapBox.getBoundingClientRect();
+                const rect = box.getBoundingClientRect();
                 difficultyBox.style.left = e.clientX - rect.left + 'px';
                 difficultyBox.style.top = e.clientY - rect.top + 'px';
 
@@ -249,13 +247,13 @@ class BeatmapController {
                         this.startGame(i);
                     };
                 }
-                pBeatmapBox.appendChild(difficultyBox);
+                box.appendChild(difficultyBox);
 
                 showingDifficultyBox = true;
                 window.addEventListener('click', closeDifficultyMenu, false);
             }
         };
-        return pBeatmapBox;
+        return box;
     }
 }
 
@@ -268,15 +266,14 @@ const defaultHint = 'Drag and drop a beatmap (.osz) file here',
 
 function addbeatmap(osz, f) {
     const map = new BeatmapController(osz), osu = map.osu;
-    osu.ondecoded = () => {
+    osu.onerror = e => console.warn('Error loading .osu:', e);
+    osu.load(() => {
         if (!osu.tracks.some(t => t.general.Mode !== 3)) {
             pDragboxHint.innerText = modeErrHint;
             return;
         }
         f(map.createBeatmapBox());
-    };
-    osu.onerror = e => console.warn('Error loading .osu:', e);
-    osu.load();
+    });
 }
 function handleDragDrop(e) {
     e.stopPropagation();

@@ -14,13 +14,12 @@ class Track {
     events = [];
     timing = [];
     hitObjects = [];
-    ondecoded = () => { };
 
     constructor(zip, track) {
         this.track = track;
         this.zip = zip;
     }
-    decode() {
+    decode(ondecoded) {
         let section, combo = 0, index = 0, forceNewCombo = false, key, value, parts;
         for (const l of this.track.split('\n')) {
             const line = l.trim();
@@ -209,27 +208,25 @@ class Track {
         }
         this.length = (this.hitObjects.at(-1).endTime - this.hitObjects[0].time) / 1000;
         this.oldStar = (this.difficulty.HPDrainRate + this.difficulty.CircleSize + this.difficulty.OverallDifficulty + clamp(this.hitObjects.length / this.length * 8, 0, 16)) / 38 * 5;
-        this.ondecoded(this);
+        ondecoded(this);
     }
 }
 export default class Osu {
     tracks = [];
     count = 0;
     onready = () => { };
-    ondecoded = () => { };
 
     constructor(zip) {
         this.zip = zip;
     }
-    load() {
+    load(ondecoded) {
         const rawTracks = this.zip.children.filter(c => c.name.indexOf('.osu') === c.name.length - 4);
         for (const t of rawTracks) t.getText().then(text => {
             const track = new Track(this.zip, text);
             this.tracks.push(track);
-            track.ondecoded = () => {
-                if (++this.count === rawTracks.length) this.sortTracks().then(() => this.ondecoded());
-            };
-            track.decode();
+            track.decode(() => {
+                if (++this.count === rawTracks.length) this.sortTracks().then(ondecoded);
+            });
         });
     }
     getCoverSrc(img) {
@@ -244,15 +241,15 @@ export default class Osu {
                     if (!PIXI.Loader.shared.resources[id]) PIXI.Loader.shared.add({
                         key: id.toString(), url: b, loadType: PIXI.LoaderResource.LOAD_TYPE.IMAGE
                     });
-                }).catch(e => console.log("Couldn't cache background:", e.message));
+                }).catch();
                 return;
             }
             catch { }
         }
         img.src = 'asset/skin/defaultbg.jpg';
     }
-    load_mp3(tIndex) {
-        return this.zip.getChildByName(this.tracks[tIndex].general.AudioFilename).getUint8Array().then((e => this.audio = new OsuAudio(e, this.onready)));
+    loadAudio(tIndex) {
+        return this.zip.getChildByName(this.tracks[tIndex].general.AudioFilename).getUint8Array().then(e => this.audio = new OsuAudio(e, this.onready));
     }
     sortTracks() {
         this.tracks = this.tracks.filter(t => t.general.Mode !== 3);

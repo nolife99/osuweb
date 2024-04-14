@@ -68,7 +68,7 @@ export default class LoadingMenu extends PIXI.Container {
         this.loading.x = windowfield.width / 2;
         this.loading.y = windowfield.height / 2;
     }
-    hide(_e) {
+    hide() {
         this.hidden = true;
     }
     update(timestamp) {

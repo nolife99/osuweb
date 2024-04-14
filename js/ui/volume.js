@@ -30,7 +30,7 @@ export default class VolumeMenu extends PIXI.Container {
         this.volumetext.x = windowfield.width - 100;
         this.volumetext.y = windowfield.height / 2 + 10;
     }
-    setVolume(volume) {
+    set(volume) {
         this.changed = true;
         this.volumetext.text = volume.toFixed(0);
 

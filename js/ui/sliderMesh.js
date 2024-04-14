@@ -11,7 +11,7 @@ export default class SliderMesh extends PIXI.Container {
 
         for (let i = 1; i < res; ++i) {
             const pt = curve.pointAt((i + 1) / res), prevPt = curve.pointAt(i / res),
-                dx = pt.x - prevPt.x, dy = pt.y - prevPt.y, length = Math.hypot(dx, dy), ox = this.radius * -dy / length, oy = this.radius * dx / length;
+                dx = pt.x - prevPt.x, dy = pt.y - prevPt.y, length = Math.hypot(dx, dy), ox = SliderMesh.radius * -dy / length, oy = SliderMesh.radius * dx / length;
 
             vert.push(prevPt.x + ox, prevPt.y + oy, prevPt.t, 1,
                 prevPt.x - ox, prevPt.y - oy, prevPt.t, 1,
@@ -36,7 +36,7 @@ export default class SliderMesh extends PIXI.Container {
 
             let last = p1;
             for (let i = 1; i < divs; ++i) {
-                const a = aStart + i * theta, newv = vert.push(v + this.radius * Math.cos(a), nextV + this.radius * Math.sin(a), t, 1) / 4 - 1;
+                const a = aStart + i * theta, newv = vert.push(v + SliderMesh.radius * Math.cos(a), nextV + SliderMesh.radius * Math.sin(a), t, 1) / 4 - 1;
                 ptrs.push(c, last, newv);
                 last = newv;
             }
@@ -55,7 +55,7 @@ export default class SliderMesh extends PIXI.Container {
         this.geometry = new PIXI.Geometry().addAttribute('pos', vert, 4).addIndex(ptrs);
 
         this.curve = curve;
-        this.texPos = tintid / this.ncolors + .001;
+        this.texPos = tintid / SliderMesh.ncolors + .001;
 
         this.state = new PIXI.State();
         this.state.depthTest = true;
@@ -64,7 +64,7 @@ export default class SliderMesh extends PIXI.Container {
         renderer.batch.flush();
         renderer.state.set(this.state);
 
-        const uniform = this.shader.uniforms, ox0 = uniform.ox, oy0 = uniform.oy, gl = renderer.gl;
+        const uniform = SliderMesh.shader.uniforms, ox0 = uniform.ox, oy0 = uniform.oy, gl = renderer.gl;
         uniform.texPos = this.texPos;
         uniform.alpha = this.alpha;
         uniform.dt = 0;
@@ -76,7 +76,7 @@ export default class SliderMesh extends PIXI.Container {
         gl.colorMask(false, false, false, false);
 
         const bind = (geometry, draw = true) => {
-            renderer.shader.bind(this.shader);
+            renderer.shader.bind(SliderMesh.shader);
             renderer.geometry.bind(geometry);
             if (draw) renderer.geometry.draw(gl.TRIANGLES);
         };
@@ -102,7 +102,7 @@ export default class SliderMesh extends PIXI.Container {
             const p = this.curve.pointAt(this.startt);
             uniform.ox += p.x * uniform.dx;
             uniform.oy += p.y * uniform.dy;
-            bind(this.circle);
+            bind(SliderMesh.circle);
         }
         else if (this.startt === 0) {
             if (this.endt !== 0) {
@@ -116,7 +116,7 @@ export default class SliderMesh extends PIXI.Container {
             const p = this.curve.pointAt(this.endt);
             uniform.ox += p.x * uniform.dx;
             uniform.oy += p.y * uniform.dy;
-            bind(this.circle);
+            bind(SliderMesh.circle);
         }
         gl.stencilFunc(gl.EQUAL, 1, 0xff);
         gl.stencilOp(gl.KEEP, gl.KEEP, gl.INCR);
@@ -152,7 +152,7 @@ export default class SliderMesh extends PIXI.Container {
         uniform.ox = ox0;
         uniform.oy = oy0;
     }
-    initialize(colors, radius, transform, bodyTint, borderTint) {
+    static initialize(colors, radius, transform, bodyTint, borderTint) {
         const buf = new Uint8Array(colors.length * width * 4), blur = .02, bodyFrac = .87, outline = borderTint || 0xffffff,
             borderR = outline >> 16, borderG = (outline >> 8) & 255, borderB = outline & 255;
 
@@ -218,20 +218,20 @@ export default class SliderMesh extends PIXI.Container {
         }
         this.circle = new PIXI.Geometry().addAttribute('pos', vert, 4).addIndex(ptrs);
     }
-    resetTransform(dx, dy, ox, oy) {
+    static resetTransform(dx, dy, ox, oy) {
         const uniform = this.shader.uniforms;
         uniform.dx = dx;
         uniform.dy = dy;
         uniform.ox = ox;
         uniform.oy = oy;
     }
-    destroy(opt) {
-        super.destroy(opt);
-        this.geometry.dispose();
-    }
-    deallocate() {
+    static deallocate() {
         this.circle.dispose();
         this.shader.uniforms.tex.destroy(true);
         this.shader.destroy();
+    }
+    destroy(opt) {
+        super.destroy(opt);
+        this.geometry.dispose();
     }
 };
