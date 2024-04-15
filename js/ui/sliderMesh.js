@@ -74,17 +74,13 @@ export default class SliderMesh extends PIXI.Container {
         gl.clearDepth(1);
         gl.clear(gl.STENCIL_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
         gl.colorMask(false, false, false, false);
+        gl.depthFunc(gl.LESS);
 
         const bind = (geometry, draw = true) => {
             renderer.shader.bind(SliderMesh.shader);
             renderer.geometry.bind(geometry);
             if (draw) renderer.geometry.draw(gl.TRIANGLES);
         };
-        gl.enable(gl.STENCIL_TEST);
-        gl.stencilFunc(gl.ALWAYS, 1, 0xff);
-        gl.stencilOp(gl.KEEP, gl.KEEP, gl.REPLACE);
-        gl.depthFunc(gl.LESS);
-
         if (this.startt === 0 && this.endt === 1) {
             uniform.dt = 0;
             uniform.ot = 1;
@@ -118,7 +114,8 @@ export default class SliderMesh extends PIXI.Container {
             uniform.oy += p.y * uniform.dy;
             bind(SliderMesh.circle);
         }
-        gl.stencilFunc(gl.EQUAL, 1, 0xff);
+        gl.enable(gl.STENCIL_TEST);
+        gl.stencilFunc(gl.EQUAL, 0, 0xff);
         gl.stencilOp(gl.KEEP, gl.KEEP, gl.INCR);
         gl.depthFunc(gl.LEQUAL);
         gl.colorMask(true, true, true, true);
@@ -153,7 +150,7 @@ export default class SliderMesh extends PIXI.Container {
         uniform.oy = oy0;
     }
     static initialize(colors, radius, transform, bodyTint, borderTint) {
-        const buf = new Uint8Array(colors.length * width * 4), blur = .02, bodyFrac = .87, outline = borderTint || 0xffffff,
+        const buf = new Uint8Array(colors.length * width * 4), blur = .021, bodyFrac = .87, outline = borderTint || 0xffffff,
             borderR = outline >> 16, borderG = (outline >> 8) & 255, borderB = outline & 255;
 
         for (let k = 0; k < colors.length; ++k) {

@@ -45,12 +45,12 @@ settings.loadToGame = game => {
         game.hideFollow = settings.hideFollow;
     }
 }
-settings.restoreCallbacks = [];
+settings.restorers = [];
 
 function bindcheck(id, item) {
     const c = document.getElementById(id);
     c.checked = settings[item];
-    settings.restoreCallbacks.push(() => c.checked = settings[item]);
+    settings.restorers.push(() => c.checked = settings[item]);
     c.onclick = () => {
         settings[item] = c.checked;
         saveToLocal();
@@ -61,8 +61,8 @@ function bindExclusiveCheck(id1, item1, id2, item2) {
     c1.checked = settings[item1];
     c2.checked = settings[item2];
 
-    settings.restoreCallbacks.push(() => c1.checked = settings[item1]);
-    settings.restoreCallbacks.push(() => c2.checked = settings[item2]);
+    settings.restorers.push(() => c1.checked = settings[item1]);
+    settings.restorers.push(() => c2.checked = settings[item2]);
     c1.onclick = () => {
         settings[item1] = c1.checked;
         settings[item2] = false;
@@ -90,7 +90,7 @@ function bindrange(id, item, feedback) {
         indicator.innerText = feedback(val);
     }
     range.value = settings[item];
-    settings.restoreCallbacks.push(() => range.value = settings[item]);
+    settings.restorers.push(() => range.value = settings[item]);
     range.oninput();
     range.onchange = () => {
         settings[item] = range.value;
@@ -118,7 +118,7 @@ function bindkeyselector(id, keynameitem, keycodeitem) {
     }
     btn.onclick = activate;
     btn.value = settings[keynameitem];
-    settings.restoreCallbacks.push(() => btn.value = settings[keynameitem]);
+    settings.restorers.push(() => btn.value = settings[keynameitem]);
 }
 
 bindrange('dim-range', 'dim', v => v + '%');
@@ -145,7 +145,7 @@ bindcheck('hidefollowpoints-check', 'hideFollow');
 
 document.getElementById('restoredefault-btn').onclick = () => {
     Object.assign(settings, defaultsettings);
-    for (const c of settings.restoreCallbacks) c();
+    for (const c of settings.restorers) c();
     saveToLocal();
 }
 document.getElementById('deletemaps-btn').onclick = () => {

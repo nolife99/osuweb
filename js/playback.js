@@ -12,7 +12,7 @@ import SliderMesh from './ui/sliderMesh.js';
 import CircleApproximator from './math/CircleApproximator.js';
 import BezierApproximator from './math/BezierApproximator.js';
 
-const glowFadeOutTime = 350, flashFadeInTime = 40, defaultBg = 'asset/skin/defaultbg.jpg',
+const glowFadeOut = 350, flashFadeIn = 40, defaultBg = 'asset/skin/defaultbg.jpg',
     followZoomInTime = 100, ballFadeOutTime = 100, bgFadeTime = 800, spinnerInTime = 300,
     clamp01 = num => Math.min(Math.max(num, 0), 1), lerp = (a, b, t) => a + (b - a) * t,
     colorLerp = (rgb1, rgb2, t) => lerp(rgb1 >> 16, rgb2 >> 16, t) << 16 |
@@ -22,12 +22,12 @@ function repeatclamp(a) {
     a %= 2;
     return a > 1 ? 2 - a : a;
 }
-function findindex(i, gamefield) {
-    let l = 0, r = gamefield.children.length;
+function findindex(i, children) {
+    let l = 0, r = children.length;
     while (l + 1 < r) {
-        const m = Math.floor((l + r) / 2) - 1;
-        if ((gamefield.children[m].depth || 0) < i) l = m + 1;
-        else r = m + 1;
+        let m = Math.floor((l + r) / 2) - 1;
+        if ((children[m++].zIndex || 0) < i) l = m;
+        else r = m;
     }
     return l;
 }
@@ -199,9 +199,9 @@ export default class Playback {
         const loadTask = Promise.all(track.hitObjects.map(a => {
             const hit = structuredClone(a);
             if (game.hidden && hit.hitIndex > 0) {
-                hit.objectFadeInTime = .4 * this.approachTime;
-                hit.objectFadeOutOffset = -.6 * this.approachTime;
-                hit.circleFadeOutTime = .3 * this.approachTime;
+                hit.objFadeIn = .4 * this.approachTime;
+                hit.objFadeOut = -.6 * this.approachTime;
+                hit.circFadeOut = .3 * this.approachTime;
 
                 if (hit.type === 'slider') {
                     hit.fadeOutOffset = -.6 * this.approachTime;
@@ -210,9 +210,9 @@ export default class Playback {
             }
             else {
                 hit.enableflash = true;
-                hit.objectFadeInTime = Math.min(400, this.approachTime);
-                hit.circleFadeOutTime = 100;
-                hit.objectFadeOutOffset = this.MehTime;
+                hit.objFadeIn = Math.min(400, this.approachTime);
+                hit.circFadeOut = 100;
+                hit.objFadeOut = this.MehTime;
 
                 if (hit.type === 'slider') {
                     hit.fadeOutOffset = hit.sliderTimeTotal;
@@ -310,32 +310,32 @@ export default class Playback {
                 hit.judges = [];
                 hit.score = -1;
 
-                const newHitSprite = (path, depth, scale = 1, anchorx = .5, anchory = .5) => {
+                const newHitSprite = (path, zIndex, scale = 1, anchorx = .5, anchory = .5) => {
                     const sprite = new PIXI.Sprite(skin[path]);
-                    sprite.initialscale = this.hitScale * scale;
-                    sprite.scale.x = sprite.scale.y = sprite.initialscale;
+                    sprite.firstScale = this.hitScale * scale;
+                    sprite.scale.x = sprite.scale.y = sprite.firstScale;
                     sprite.anchor.x = anchorx;
                     sprite.anchor.y = anchory;
                     sprite.x = hit.x;
                     sprite.y = hit.y;
-                    sprite.depth = depth;
+                    sprite.zIndex = zIndex;
                     sprite.alpha = 0;
                     hit.objects.push(sprite);
                     return sprite;
                 }, createHitCircle = () => {
-                    const index = hit.index + 1, basedep = 5 - .000001 * hit.hitIndex;
+                    const index = hit.index + 1, basedep = 1 - .000001 * hit.hitIndex;
                     hit.base = newHitSprite('disc.png', basedep, .5);
                     hit.base.tint = this.track.colors[hit.combo % this.track.colors.length];
                     hit.circle = newHitSprite('hitcircleoverlay.png', basedep, .5);
 
-                    hit.glow = newHitSprite('ring-glow.png', 7, .46);
+                    hit.glow = newHitSprite('ring-glow.png', 2, .46);
                     hit.glow.tint = this.track.colors[hit.combo % this.track.colors.length];
                     hit.glow.blendMode = PIXI.BLEND_MODES.ADD;
 
-                    hit.burst = newHitSprite('hitburst.png', 8);
+                    hit.burst = newHitSprite('hitburst.png', 2);
                     hit.burst.visible = false;
 
-                    hit.approach = newHitSprite('approachcircle.png', 8);
+                    hit.approach = newHitSprite('approachcircle.png', 2);
                     hit.approach.tint = this.track.colors[hit.combo % this.track.colors.length];
                     if (!hit.enableflash) hit.approach.visible = false;
 
@@ -356,7 +356,7 @@ export default class Playback {
                         hit.nexttick = 0;
                         hit.body = new SliderMesh(hit.curve, hit.combo % this.track.colors.length);
                         hit.body.alpha = 0;
-                        hit.body.depth = 5 - .000001 * hit.hitIndex;
+                        hit.body.zIndex = 1 - .000001 * hit.hitIndex;
                         hit.objects.push(hit.body);
 
                         const newSprite = (path, x, y, scale = 1) => {
@@ -365,7 +365,7 @@ export default class Playback {
                             sprite.anchor.set(.5);
                             sprite.x = x;
                             sprite.y = y;
-                            sprite.depth = 5 - .000001 * hit.hitIndex;
+                            sprite.zIndex = 1 - .000001 * hit.hitIndex;
                             sprite.alpha = 0;
                             hit.objects.push(sprite);
                             return sprite;
@@ -421,7 +421,7 @@ export default class Playback {
                             sprite.anchor.set(.5);
                             sprite.x = hit.x;
                             sprite.y = hit.y;
-                            sprite.depth = 4 - .000001 * hit.hitIndex;
+                            sprite.zIndex = .5;
                             sprite.alpha = 0;
                             hit.objects.push(sprite);
                             return sprite;
@@ -449,7 +449,6 @@ export default class Playback {
                     }
 
                     const container = new PIXI.Container;
-                    container.depth = 3;
                     container.x1 = x1;
                     container.y1 = y1;
                     container.t1 = t1;
@@ -534,7 +533,6 @@ export default class Playback {
         judge.visible = false;
         judge.x = x;
         judge.baseY = judge.y = y;
-        judge.depth = 4;
         judge.points = -1;
         judge.finalTime = finalTime;
         judge.defaultScore = 0;
@@ -622,8 +620,8 @@ export default class Playback {
                 this.bg.scale.set(Math.max(window.innerWidth / txt.width, window.innerHeight / txt.height));
                 app.stage.addChildAt(this.bg, 0);
             }, txt = PIXI.Loader.shared.resources[key];
-            if (txt) consumeImage(txt.texture);
-
+            
+            if (txt.texture) consumeImage(txt.texture);
             else PIXI.Loader.shared.add({
                 key: key.toString(), url: uri ? await uri() : defaultBg, loadType: PIXI.LoaderResource.LOAD_TYPE.IMAGE
             }, resource => consumeImage(resource.texture)).load();
@@ -689,22 +687,31 @@ export default class Playback {
         this.invokeJudgement(hit.judges[0], points, time);
     }
     updateHits(time) {
-        while (this.current < this.hits.length && this.futuremost < time + 3000) {
+        while (this.current < this.hits.length && this.futuremost < time + this.approachTime) {
             const hit = this.hits[this.current++];
             for (let i = hit.judges.length - 1; i >= 0; --i) {
                 const judge = hit.judges[i];
-                this.gamefield.addChildAt(judge, findindex(judge.depth || 0, this.gamefield));
+                if (judge.parent) break;
+
+                const children = this.gamefield.children;
+                judge.parent = this.gamefield;
+                children.splice(findindex(judge.zIndex || 0, children), 0, judge);
             }
             for (let i = hit.objects.length - 1; i >= 0; --i) {
                 const obj = hit.objects[i];
-                this.gamefield.addChildAt(obj, findindex(obj.depth || 0, this.gamefield));
+                if (obj.parent) break;
+
+                const children = this.gamefield.children;
+                obj.parent = this.gamefield;
+                children.splice(findindex(obj.zIndex || 0, children), 0, obj);
             }
+
             this.newHits.push(hit);
             if (hit.time > this.futuremost) this.futuremost = hit.time;
         }
         for (let i = this.newHits.length - 1; i >= 0; --i) {
             const hit = this.newHits[i];
-            if (time - hit.endTime > this.approachTime + 800) {
+            if (time - hit.endTime > this.MehTime + 800) {
                 PIXI.utils.removeItems(this.newHits, i, 1);
                 hit.objects.forEach(this.destroyHit);
                 hit.judges.forEach(this.destroyHit);
@@ -714,7 +721,7 @@ export default class Playback {
                 const updateHitCircle = isCircle => {
                     const f = hit.followPoints;
                     if (f) for (const o of f.children) {
-                        const x = f.x1 + (o.frac - .1) * f.dx, y = f.y1 + (o.frac - .1) * f.dy, fadeOutTime = f.t1 + o.frac * f.dt, fadeInTime = fadeOutTime - f.preempt, hitFadeIn = f.hit.objectFadeInTime;
+                        const x = f.x1 + (o.frac - .1) * f.dx, y = f.y1 + (o.frac - .1) * f.dy, fadeOutTime = f.t1 + o.frac * f.dt, fadeInTime = fadeOutTime - f.preempt, hitFadeIn = f.hit.objFadeIn;
                         let relpos = clamp01((time - fadeInTime) / hitFadeIn);
 
                         relpos *= 2 - relpos;
@@ -729,36 +736,36 @@ export default class Playback {
 
                     if (diff < this.approachTime && diff > opaque) hit.approach.alpha = (this.approachTime - diff) / this.approachFade;
                     else if (diff < opaque && hit.score < 0) hit.approach.alpha = 1;
-                    const noteFullAppear = this.approachTime - hit.objectFadeInTime, setcircleAlpha = alpha => {
+                    const noteFullAppear = this.approachTime - hit.objFadeIn, setcircleAlpha = alpha => {
                         hit.base.alpha = alpha;
                         hit.circle.alpha = alpha;
                         for (const digit of hit.numbers) digit.alpha = alpha;
                         hit.glow.alpha = alpha / 2;
                     };
 
-                    if (diff < this.approachTime && diff > noteFullAppear) setcircleAlpha((this.approachTime - diff) / hit.objectFadeInTime);
+                    if (diff < this.approachTime && diff > noteFullAppear) setcircleAlpha((this.approachTime - diff) / hit.objFadeIn);
                     else if (diff < noteFullAppear) {
-                        if (-diff > hit.objectFadeOutOffset) {
-                            const timeAfter = -diff - hit.objectFadeOutOffset;
-                            setcircleAlpha(1 - timeAfter / hit.circleFadeOutTime);
+                        if (-diff > hit.objFadeOut) {
+                            const timeAfter = -diff - hit.objFadeOut;
+                            setcircleAlpha(1 - timeAfter / hit.circFadeOut);
                             hit.approach.alpha = 1 - timeAfter / 50;
                         }
                         else setcircleAlpha(1);
                     }
                     if (hit.score > 0 && hit.enableflash) {
                         hit.burst.visible = true;
-                        const timeAfter = time - hit.clickTime, t = timeAfter / glowFadeOutTime, size = 1 + t / 2 * (2 - t);
+                        const timeAfter = time - hit.clickTime, t = timeAfter / glowFadeOut, size = 1 + t / 2 * (2 - t);
 
-                        hit.burst.scale.set(size * hit.burst.initialscale);
-                        hit.glow.scale.set(size * hit.glow.initialscale);
-                        hit.burst.alpha = .8 * clamp01(timeAfter < flashFadeInTime ? timeAfter / flashFadeInTime : 1 - (timeAfter - flashFadeInTime) / 120);
-                        hit.glow.alpha = clamp01(1 - timeAfter / glowFadeOutTime) / 2;
+                        hit.burst.scale.set(size * hit.burst.firstScale);
+                        hit.glow.scale.set(size * hit.glow.firstScale);
+                        hit.burst.alpha = .8 * clamp01(timeAfter < flashFadeIn ? timeAfter / flashFadeIn : 1 - (timeAfter - flashFadeIn) / 120);
+                        hit.glow.alpha = clamp01(1 - timeAfter / glowFadeOut) / 2;
 
                         if (hit.base.visible) {
-                            if (timeAfter < flashFadeInTime) {
-                                hit.base.scale.set(size * hit.base.initialscale);
-                                hit.circle.scale.set(size * hit.circle.initialscale);
-                                for (const digit of hit.numbers) digit.scale.set(size * digit.initialscale);
+                            if (timeAfter < flashFadeIn) {
+                                hit.base.scale.set(size * hit.base.firstScale);
+                                hit.circle.scale.set(size * hit.circle.firstScale);
+                                for (const digit of hit.numbers) digit.scale.set(size * digit.firstScale);
                             }
                             else {
                                 hit.base.visible = false;
@@ -774,7 +781,7 @@ export default class Playback {
                     case 'circle': updateHitCircle(true); break;
                     case 'slider': {
                         updateHitCircle(false);
-                        const noteFullAppear = this.approachTime - hit.objectFadeInTime;
+                        const noteFullAppear = this.approachTime - hit.objFadeIn;
                         hit.body.startt = 0;
                         hit.body.endt = 1;
 
@@ -784,7 +791,7 @@ export default class Playback {
                         }
                         const diff = hit.time - time, dAfter = -diff;
                         if (diff < this.approachTime && diff > noteFullAppear) {
-                            setbodyAlpha((this.approachTime - diff) / hit.objectFadeInTime);
+                            setbodyAlpha((this.approachTime - diff) / hit.objFadeIn);
                             if (hit.reverse) hit.reverse.alpha = hit.body.alpha;
                             if (hit.reverse_b) hit.reverse_b.alpha = hit.body.alpha;
                         }
@@ -820,10 +827,10 @@ export default class Playback {
                             }
                         }
                         const resizeFollow = dir => {
-                            if (!hit.followLasttime) hit.followLasttime = time;
+                            if (!hit.lastFollow) hit.lastFollow = time;
                             if (!hit.followSize) hit.followSize = 1;
-                            hit.followSize = Math.max(1, Math.min(2.2, hit.followSize + (time - hit.followLasttime) * dir));
-                            hit.followLasttime = time;
+                            hit.followSize = Math.max(1, Math.min(2.2, hit.followSize + (time - hit.lastFollow) * dir));
+                            hit.lastFollow = time;
                         }
                         if (dAfter >= 0 && dAfter <= hit.fadeOutTime + hit.sliderTimeTotal) {
                             let t = dAfter / hit.sliderTime;
