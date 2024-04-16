@@ -34,7 +34,6 @@ if (mapList.length > 0) {
     let loadedCount = 0;
     for (let i = 0; i < mapList.length; ++i) localforage.getItem(mapList[i]).then(blob => {
         const zipFs = new fs.FS;
-        zipFs.name = mapList[i];
         zipFs.importUint8Array(blob).then(() => {
             addbeatmap(zipFs, box => {
                 pBeatmapList.replaceChild(box, tempbox[i]);
@@ -93,6 +92,7 @@ sounds.load(sample, () => {
     game.sampleComboBreak = sounds[sample[15]];
     progresses[2].classList.add('finished');
 });
+PIXI.utils.skipHello();
 
 export let app, stopGame;
 let showingDifficultyBox;
@@ -116,15 +116,14 @@ class BeatmapController {
             e.preventDefault();
             return false;
         });
-        document.body.classList.add('gaming');
 
         settings.loadToGame(game);
         this.osu.loadAudio(trackid);
 
         if (!game.showhwmouse || game.autoplay) {
             var cursor = new PIXI.Sprite(skin['cursor.png']);
-            cursor.anchor.x = cursor.anchor.y = .5;
-            cursor.scale.x = cursor.scale.y = .3 * game.cursorSize;
+            cursor.anchor.set(.5);
+            cursor.scale.set(.3 * game.cursorSize);
         }
         const pGameArea = document.getElementsByClassName('game-area')[0], pMainPage = document.getElementsByClassName('main-page')[0];
         pGameArea.appendChild(app.view);
@@ -159,7 +158,6 @@ class BeatmapController {
             if (!restart) {
                 pGameArea.hidden = true;
                 pMainPage.hidden = false;
-                document.body.classList.remove('gaming');
                 document.body.scrollTop = scrollTop;
                 window.alert = defaultAlert;
 
@@ -266,7 +264,6 @@ const defaultHint = 'Drag and drop a beatmap (.osz) file here',
 
 function addbeatmap(osz, f) {
     const map = new BeatmapController(osz), osu = map.osu;
-    osu.onerror = e => console.warn('Error loading .osu:', e);
     osu.load(() => {
         if (!osu.tracks.some(t => t.general.Mode !== 3)) {
             pDragboxHint.innerText = modeErrHint;
@@ -287,20 +284,20 @@ function handleDragDrop(e) {
         }
         if (blob.name.indexOf('.osz') === blob.name.length - 4) {
             const zipFs = new fs.FS;
-            zipFs.name = blob.name;
-
             zipFs.importBlob(blob).then(() => {
+                const id = blob.size.toString();
                 addbeatmap(zipFs, box => {
                     pBeatmapList.insertBefore(box, pDragbox);
                     pDragboxHint.innerText = defaultHint;
                 });
-                localforage.setItem(blob.name, zipFs.exportUint8Array()).catch(err => console.warn('Error saving beatmap:', zipFs.name, err));
-                if (!mapList.includes(zipFs.name)) {
-                    mapList.push(zipFs.name);
-                    localStorage.setItem('beatmapfilelist', JSON.stringify(mapList));
-                }
+                zipFs.exportUint8Array().then(buf => localforage.setItem(id, buf)).then(() => {
+                    if (!mapList.includes(id)) {
+                        mapList.push(id);
+                        localStorage.setItem('beatmapfilelist', JSON.stringify(mapList));
+                    }
+                }).catch(err => console.warn('Error saving beatmap:', blob.name, err));
             }).catch(ex => {
-                console.warn('Error during file transfer:', zipFs.name, ex);
+                console.warn('Error during file transfer:', blob.name, ex);
                 pDragboxHint.innerText = nonValidHint;
             });
         }

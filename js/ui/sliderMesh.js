@@ -150,7 +150,7 @@ export default class SliderMesh extends PIXI.Container {
         uniform.oy = oy0;
     }
     static initialize(colors, radius, transform, bodyTint, borderTint) {
-        const buf = new Uint8Array(colors.length * width * 4), blur = .021, bodyFrac = .87, outline = borderTint || 0xffffff,
+        const buf = new Uint8Array(colors.length * width * 4), blur = .02, bodyFrac = .87, outline = borderTint || 0xffffff,
             borderR = outline >> 16, borderG = (outline >> 8) & 255, borderB = outline & 255;
 
         for (let k = 0; k < colors.length; ++k) {

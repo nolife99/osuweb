@@ -22,7 +22,7 @@ export default class ProgressOverlay extends PIXI.Container {
     remaining = new PIXI.Text(null, font);
     past = new PIXI.Text(null, font);
 
-    constructor(windowfield, starttime, endtime) {
+    constructor(starttime, endtime) {
         super();
 
         this.starttime = starttime;
@@ -35,17 +35,14 @@ export default class ProgressOverlay extends PIXI.Container {
         this.past.roundPixels = true;
         this.past.anchor.set(0, 1);
         super.addChild(this.past);
-
-        this.resize(windowfield);
-    }
-    resize(windowfield) {
-        this.remaining.x = windowfield.width - 10;
-        this.remaining.y = windowfield.height - 10;
-        this.past.x = 10;
-        this.past.y = windowfield.height - 10;
     }
     update(time) {
         if (time > this.endtime) return;
+        
+        this.remaining.x = innerWidth - 10;
+        this.remaining.y = this.past.y = innerHeight - 10;
+        this.past.x = 10;
+        
         this.remaining.text = timeformat(this.endtime - time);
         this.past.text = timeformat(time - this.starttime);
     }

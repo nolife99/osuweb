@@ -97,12 +97,11 @@ export default class ScoreOverlay extends PIXI.Container {
     accuracyDisplay = new LazyNumber(100);
     HPDisplay = new LazyNumber(1);
 
-    constructor(windowfield, HPdrain, scoreMultiplier) {
+    constructor(HPdrain, scoreMultiplier) {
         super();
 
-        this.field = windowfield;
         this.HPdrain = HPdrain;
-        this.scaleMul = windowfield.height / 800;
+        this.scaleMul = innerHeight / 800;
         this.scoreMultiplier = scoreMultiplier;
 
         this.scoreDigits = this.newSpriteArray(10, .4, 0xddffff);
@@ -114,7 +113,7 @@ export default class ScoreOverlay extends PIXI.Container {
         this.HPbar[1].texture = skin['hpbarright.png'];
         this.HPbar[2].texture = skin['hpbarmid.png'];
         this.HPbar[0].anchor.x = 1;
-        this.HPbar[0].scale.x = this.HPbar[1].scale.x = this.field.width / 500;
+        this.HPbar[0].scale.x = this.HPbar[1].scale.x = innerWidth / 500;
         this.HPbar[0].y = this.HPbar[1].y = this.HPbar[2].y = -7 * this.scaleMul;
     }
     newSpriteArray(len, scaleMul, tint = 0xffffff) {
@@ -131,20 +130,16 @@ export default class ScoreOverlay extends PIXI.Container {
         }
         return a;
     }
-    resize(windowfield) {
-        this.field = windowfield;
-        this.scaleMul = windowfield.height / 800;
+    resize() {
+        this.scaleMul = innerHeight / 800;
 
         f(this.scoreDigits, this.scaleMul * .4);
         f(this.comboDigits, this.scaleMul * .2);
         f(this.accuracyDigits, this.scaleMul * .2);
         f(this.HPbar, this.scaleMul * .5);
 
-        this.HPbar[0].scale.x = this.field.width / 500;
-        this.HPbar[1].scale.x = this.field.width / 500;
-        this.HPbar[0].y = -7 * this.scaleMul;
-        this.HPbar[1].y = -7 * this.scaleMul;
-        this.HPbar[2].y = -7 * this.scaleMul;
+        this.HPbar[0].scale.x = this.HPbar[1].scale.x = innerWidth / 500;
+        this.HPbar[0].y = this.HPbar[1].y = this.HPbar[2].y = -7 * this.scaleMul;
     }
     HPincreasefor(result, isTick) {
         if (isTick) {
@@ -189,7 +184,7 @@ export default class ScoreOverlay extends PIXI.Container {
         this.HPDisplay.set(time, this.HP);
     }
     update(time) {
-        const HPpos = this.HPDisplay.valueAt(time) * this.field.width;
+        const HPpos = this.HPDisplay.valueAt(time) * innerWidth;
         this.HPbar[0].x = HPpos;
         this.HPbar[1].x = HPpos;
         this.HPbar[2].x = HPpos;
@@ -198,7 +193,7 @@ export default class ScoreOverlay extends PIXI.Container {
         setSpriteArrayText(this.comboDigits, this.comboDisplay.valueAt(time).toFixed(0) + 'x');
         setSpriteArrayText(this.accuracyDigits, this.accuracyDisplay.valueAt(time).toFixed(2) + '%');
 
-        const basex = this.field.width / 2, basey = this.field.height * .017, unit = Math.min(this.field.width / 640, this.field.height / 480);
+        const basex = innerWidth / 2, basey = innerHeight * .017, unit = Math.min(innerWidth / 640, innerHeight / 480);
         setSpriteArrayPos(this.scoreDigits, basex - this.scoreDigits.width / 2, basey);
         setSpriteArrayPos(this.accuracyDigits, basex - this.scoreDigits.width / 2 - this.accuracyDigits.width - 16 * unit, basey + 3 * unit);
         setSpriteArrayPos(this.comboDigits, basex + this.scoreDigits.width / 2 + 16 * unit, basey + 3 * unit);

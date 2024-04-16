@@ -11,7 +11,7 @@ export default class VolumeMenu extends PIXI.Container {
         fontFamily: 'Venera', fontSize: 40, fill: 0xffffff
     });
 
-    constructor(windowfield) {
+    constructor() {
         super();
 
         this.mastertext.roundPixels = true;
@@ -21,14 +21,6 @@ export default class VolumeMenu extends PIXI.Container {
 
         super.addChild(this.mastertext);
         super.addChild(this.volumetext);
-
-        this.resize(windowfield);
-    }
-    resize(windowfield) {
-        this.mastertext.x = windowfield.width - 100;
-        this.mastertext.y = windowfield.height / 2 - 30;
-        this.volumetext.x = windowfield.width - 100;
-        this.volumetext.y = windowfield.height / 2 + 10;
     }
     set(volume) {
         this.changed = true;
@@ -49,6 +41,15 @@ export default class VolumeMenu extends PIXI.Container {
         const dt = timestamp - this.t0;
         if (dt > this.fadetime) this.visible = false;
         else this.alpha = 1 - (dt / this.fadetime) ** 5;
+
+        if (this.alpha <= 0) {
+            this.visible = false;
+            return;
+        }
+        const ordinate = innerHeight / 2;
+        this.mastertext.x = this.volumetext.x = innerWidth - 100;
+        this.mastertext.y = ordinate - 30;
+        this.volumetext.y = ordinate + 10;
     }
     destroy(opt) {
         super.destroy(opt);

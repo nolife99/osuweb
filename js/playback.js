@@ -13,7 +13,7 @@ import CircleApproximator from './math/CircleApproximator.js';
 import BezierApproximator from './math/BezierApproximator.js';
 
 const glowFadeOut = 350, flashFadeIn = 40, defaultBg = 'asset/skin/defaultbg.jpg',
-    followZoomInTime = 100, ballFadeOutTime = 100, bgFadeTime = 800, spinnerInTime = 300,
+    followZoomInTime = 100, ballFadeOut = 100, bgFadeTime = 800, spinnerInTime = 300,
     clamp01 = num => Math.min(Math.max(num, 0), 1), lerp = (a, b, t) => a + (b - a) * t,
     colorLerp = (rgb1, rgb2, t) => lerp(rgb1 >> 16, rgb2 >> 16, t) << 16 |
         lerp((rgb1 >> 8) & 255, (rgb2 >> 8) & 255, t) << 8 | lerp(rgb1 & 255, rgb2 & 255, t);
@@ -35,9 +35,7 @@ function findindex(i, children) {
 export default class Playback {
     ready = true;
     newHits = [];
-    volumeMenu = new VolumeMenu({
-        width: window.innerWidth, height: window.innerHeight
-    });
+    volumeMenu = new VolumeMenu;
     gfx = {};
     gamefield = new PIXI.Container;
     destroyHit = o => {
@@ -59,9 +57,7 @@ export default class Playback {
         game.mouseX = 256;
         game.mouseY = 192;
 
-        this.loadingMenu = new LoadingMenu({
-            width: window.innerWidth, height: window.innerHeight
-        }, track);
+        this.loadingMenu = new LoadingMenu(track);
         this.calcSize();
 
         this.createBackground();
@@ -69,23 +65,16 @@ export default class Playback {
         app.stage.addChild(this.volumeMenu);
         app.stage.addChild(this.loadingMenu);
 
-        this.endTime = track.hitObjects.at(-1).endTime + 1500;
-        this.wait = Math.max(0, bgFadeTime - track.hitObjects[0].time);
-        this.skipTime = track.hitObjects[0].time - 2000;
+        this.endTime = track.hits.at(-1).endTime + 1500;
+        this.wait = Math.max(0, bgFadeTime - track.hits[0].time);
+        this.skipTime = track.hits[0].time - 2000;
 
         osu.onready = () => {
-            this.errorMeter = new ErrorMeterOverlay({
-                width: window.innerWidth, height: window.innerHeight
-            }, this.GreatTime, this.GoodTime, this.MehTime);
-            this.progOverlay = new ProgressOverlay({
-                width: window.innerWidth, height: window.innerHeight
-            }, track.hitObjects[0].time, track.hitObjects.at(-1).endTime);
-            this.breakOverlay = new BreakOverlay({
-                width: window.innerWidth, height: window.innerHeight
-            });
-            this.scoreOverlay = new ScoreOverlay({
-                width: window.innerWidth, height: window.innerHeight
-            }, this.HP, scoreMult);
+            this.errorMeter = new ErrorMeterOverlay(this.GreatTime, this.GoodTime, this.MehTime);
+            this.progOverlay = new ProgressOverlay(track.hits[0].time, track.hits.at(-1).endTime);
+            this.breakOverlay = new BreakOverlay;
+            this.scoreOverlay = new ScoreOverlay(this.HP, scoreMult);
+            
             loadTask.then(() => {
                 app.stage.addChild(this.scoreOverlay);
                 app.stage.addChild(this.errorMeter);
@@ -96,41 +85,23 @@ export default class Playback {
                 this.osu.audio.gain.gain.value = game.musicVolume * game.masterVolume;
                 this.osu.audio.speed = this.speed;
                 this.osu.audio.play(bgFadeTime + this.wait);
+                this.audioTick = bgFadeTime + this.wait;
                 this.started = true;
             });
         };
-        window.onresize = () => {
-            app.renderer.resize(window.innerWidth, window.innerHeight);
+        onresize = () => {
+            app.renderer.resize(innerWidth, innerHeight);
             this.calcSize();
 
-            this.loadingMenu.resize({
-                width: window.innerWidth, height: window.innerHeight
-            });
-            this.volumeMenu.resize({
-                width: window.innerWidth, height: window.innerHeight
-            });
-            if (this.started) {
-                this.scoreOverlay.resize({
-                    width: window.innerWidth, height: window.innerHeight
-                });
-                this.errorMeter.resize({
-                    width: window.innerWidth, height: window.innerHeight
-                });
-                this.breakOverlay.resize({
-                    width: window.innerWidth, height: window.innerHeight
-                });
-                this.progOverlay.resize({
-                    width: window.innerWidth, height: window.innerHeight
-                });
-            }
+            if (this.started) this.scoreOverlay.resize();
             if (this.bg && this.bg.texture) {
-                this.bg.x = window.innerWidth / 2;
-                this.bg.y = window.innerHeight / 2;
-                this.bg.scale.set(Math.max(window.innerWidth / this.bg.texture.width, window.innerHeight / this.bg.texture.height));
+                this.bg.x = innerWidth / 2;
+                this.bg.y = innerHeight / 2;
+                this.bg.scale.set(Math.max(innerWidth / this.bg.texture.width, innerHeight / this.bg.texture.height));
             }
             SliderMesh.resetTransform(
-                2 * this.gfx.width / window.innerWidth / 512, -2 * this.gfx.height / window.innerHeight / 384,
-                2 * this.gfx.xoffset / window.innerWidth - 1, 1 - 2 * this.gfx.yoffset / window.innerHeight);
+                2 * this.gfx.width / innerWidth / 512, -2 * this.gfx.height / innerHeight / 384,
+                2 * this.gfx.xoffset / innerWidth - 1, 1 - 2 * this.gfx.yoffset / innerHeight);
         };
 
         this.OD = track.difficulty.OverallDifficulty;
@@ -181,7 +152,10 @@ export default class Playback {
             if (this.started) this.pause();
         };
         this.skipEv = e => {
-            if (e.code === 'Space' && !game.paused && !this.skipped && this.started && this.osu.audio.seek(this.skipTime / 1000)) this.skipped = true;
+            if (e.code === 'Space' && !game.paused && !this.skipped && this.started && this.osu.audio.seek(this.skipTime / 1000)) {
+                this.skipped = true;
+                this.audioTick = this.skipTime;
+            }
         };
         if (game.allowMouseScroll) {
             this.volumeEv = e => {
@@ -190,13 +164,13 @@ export default class Playback {
                 osu.audio.gain.gain.value = game.musicVolume * game.masterVolume;
                 this.volumeMenu.set(game.masterVolume * 100);
             };
-            window.addEventListener('wheel', this.volumeEv);
+            addEventListener('wheel', this.volumeEv);
         }
-        window.addEventListener('blur', this.blurEv);
-        window.addEventListener('keydown', this.skipEv);
-        window.addEventListener('keyup', this.pauseEv);
+        addEventListener('blur', this.blurEv);
+        addEventListener('keydown', this.skipEv);
+        addEventListener('keyup', this.pauseEv);
 
-        const loadTask = Promise.all(track.hitObjects.map(a => {
+        const loadTask = Promise.all(track.hits.map(a => {
             const hit = structuredClone(a);
             if (game.hidden && hit.hitIndex > 0) {
                 hit.objFadeIn = .4 * this.approachTime;
@@ -219,7 +193,7 @@ export default class Playback {
                     hit.fadeOutTime = 300;
                 }
             }
-            return new Promise(resolve => window.setTimeout(() => {
+            return new Promise(resolve => setTimeout(() => {
                 if (game.hardrock) {
                     hit.y = 384 - hit.y;
                     if (hit.type === 'slider') for (const k of hit.keyframes) k.y = 384 - k.y;
@@ -283,14 +257,12 @@ export default class Playback {
             this.hits.counter = 0;
 
             SliderMesh.initialize(track.colors, this.circleRadius / 2.1, {
-                dx: 2 * this.gfx.width / window.innerWidth / 512,
-                ox: -1 + 2 * this.gfx.xoffset / window.innerWidth,
-                dy: -2 * this.gfx.height / window.innerHeight / 384,
-                oy: 1 - 2 * this.gfx.yoffset / window.innerHeight
+                dx: 2 * this.gfx.width / innerWidth / 512, dy: -2 * this.gfx.height / innerHeight / 384,
+                ox: -1 + 2 * this.gfx.xoffset / innerWidth, oy: 1 - 2 * this.gfx.yoffset / innerHeight
             }, track.colors.SliderTrackOverride, track.colors.SliderBorder);
 
             let prev;
-            return Promise.all(hits.map(hit => new Promise(resolve => window.setTimeout(() => {
+            return Promise.all(hits.map(hit => new Promise(resolve => setTimeout(() => {
                 if (hit.chain !== 0) {
                     const ofs = stackOfs * hit.chain;
                     hit.x += ofs;
@@ -478,17 +450,17 @@ export default class Playback {
                 resolve();
             }))));
         });
-        this.futuremost = track.hitObjects[0].time;
+        this.futuremost = track.hits[0].time;
     }
     calcSize() {
-        this.gfx.width = window.innerWidth;
-        this.gfx.height = window.innerHeight;
+        this.gfx.width = innerWidth;
+        this.gfx.height = innerHeight;
         if (this.gfx.width / 512 > this.gfx.height / 384) this.gfx.width = this.gfx.height / 384 * 512;
         else this.gfx.height = this.gfx.width / 512 * 384;
         this.gfx.width *= .8;
         this.gfx.height *= .8;
-        this.gfx.xoffset = (window.innerWidth - this.gfx.width) / 2;
-        this.gfx.yoffset = (window.innerHeight - this.gfx.height) / 2;
+        this.gfx.xoffset = (innerWidth - this.gfx.width) / 2;
+        this.gfx.yoffset = (innerHeight - this.gfx.height) / 2;
         this.gamefield.x = this.gfx.xoffset;
         this.gamefield.y = this.gfx.yoffset;
         this.gamefield.scale.set(this.gfx.width / 512);
@@ -615,14 +587,14 @@ export default class Playback {
                 else this.bg = new PIXI.Sprite(txt);
 
                 this.bg.anchor.set(.5);
-                this.bg.x = window.innerWidth / 2;
-                this.bg.y = window.innerHeight / 2;
-                this.bg.scale.set(Math.max(window.innerWidth / txt.width, window.innerHeight / txt.height));
+                this.bg.x = innerWidth / 2;
+                this.bg.y = innerHeight / 2;
+                this.bg.scale.set(Math.max(innerWidth / txt.width, innerHeight / txt.height));
                 app.stage.addChildAt(this.bg, 0);
             }, txt = PIXI.Loader.shared.resources[key];
-            
+
             if (txt.texture) consumeImage(txt.texture);
-            else PIXI.Loader.shared.add({
+            else PIXI.Loader.shared.onComplete = async loader => loader.add({
                 key: key.toString(), url: uri ? await uri() : defaultBg, loadType: PIXI.LoaderResource.LOAD_TYPE.IMAGE
             }, resource => consumeImage(resource.texture)).load();
         }
@@ -900,17 +872,17 @@ export default class Playback {
                                 hit.ball.alpha = 1;
                                 hit.follow.visible = true;
                                 resizeFollow((activated ? 1 : -1) / followZoomInTime);
-                                hit.follow.scale.x = hit.follow.scale.y = hit.followSize * .45 * this.hitScale;
+                                hit.follow.scale.set(hit.followSize * .45 * this.hitScale);
                                 hit.follow.alpha = hit.followSize - 1;
                             }
 
                             const timeAfter = -diff - hit.sliderTimeTotal;
                             if (timeAfter > 0) {
                                 resizeFollow(-1 / followZoomInTime);
-                                hit.follow.scale.x = hit.follow.scale.y = hit.followSize * .45 * this.hitScale;
+                                hit.follow.scale.set(hit.followSize * .45 * this.hitScale);
                                 hit.follow.alpha = hit.followSize - 1;
-                                hit.ball.alpha = 1 - timeAfter / ballFadeOutTime;
-                                hit.ball.scale.x = hit.ball.scale.y = (1 + .15 * timeAfter / ballFadeOutTime) / 2 * this.hitScale;
+                                hit.ball.alpha = 1 - timeAfter / ballFadeOut;
+                                hit.ball.scale.set((1 + .15 * timeAfter / ballFadeOut) / 2 * this.hitScale);
                             }
                             if (hit.repeat > 1) {
                                 const normal = hit.repeat - hit.repeat % 2;
@@ -967,11 +939,7 @@ export default class Playback {
                             }
                             else hit.clicked = false;
                         }
-                        let alpha = 0;
-                        if (time > hit.time - spinnerInTime - this.approachTime) {
-                            if (time < hit.endTime) alpha = 1;
-                            else alpha = 1 - (time - hit.endTime) / 150;
-                        }
+                        const alpha = time < hit.time - spinnerInTime - this.approachTime ? 0 : time < hit.endTime ? 1 : 1 - (time - hit.endTime) / 150;
                         hit.top.alpha = alpha;
                         hit.prog.alpha = alpha;
                         hit.base.alpha = alpha;
@@ -993,17 +961,15 @@ export default class Playback {
                         }
                         else hit.prog.scale.set(0);
 
-                        if (time > hit.endTime) {
-                            if (hit.score < 0) {
-                                if (game.autoplay) this.hitSuccess(hit, 300, hit.endTime);
-                                else {
-                                    let points = 0;
-                                    if (prog >= 1) points = 300;
-                                    else if (prog >= .9) points = 100;
-                                    else if (prog >= .25) points = 50;
+                        if (time > hit.endTime && hit.score < 0) {
+                            if (game.autoplay) this.hitSuccess(hit, 300, hit.endTime);
+                            else {
+                                let points = 300;
+                                if (prog < .25) points = 0;
+                                else if (prog < .9) points = 50;
+                                else if (prog < 1) points = 100;
 
-                                    this.hitSuccess(hit, points, hit.endTime);
-                                }
+                                this.hitSuccess(hit, points, hit.endTime);
                             }
                         }
                         this.updateJudgement(hit.judges[0], time);
@@ -1025,7 +991,7 @@ export default class Playback {
             this.activeTime = frame;
 
             var time = this.osu.audio.pos * 1000 + game.globalOffset;
-            if (!game.paused && this.hits.counter++ % 10 !== 0 && this.audioTick) time += frame - (time - this.audioTick) / this.speed;
+            if (!game.paused && this.hits.counter++ % 10 !== 0) time += frame - (time - this.audioTick) / this.speed;
             this.audioTick = time;
 
             for (; this.breakIndex < this.track.breaks.length; ++this.breakIndex) {
@@ -1083,12 +1049,12 @@ export default class Playback {
         this.bg.renderTexture?.destroy?.(true);
         SliderMesh.deallocate();
 
-        if (game.allowMouseScroll) window.removeEventListener('wheel', this.volumeEv);
-        window.removeEventListener('blur', this.blurEv);
-        window.removeEventListener('keyup', this.pauseEv);
-        window.removeEventListener('keydown', this.skipEv);
+        if (game.allowMouseScroll) removeEventListener('wheel', this.volumeEv);
+        removeEventListener('blur', this.blurEv);
+        removeEventListener('keyup', this.pauseEv);
+        removeEventListener('keydown', this.skipEv);
 
-        window.onresize = null;
+        onresize = null;
         if (!game.autoplay) this.player.cleanup();
     }
     retry() {

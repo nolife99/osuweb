@@ -11,7 +11,7 @@ export default class BreakOverlay extends PIXI.Container {
         fontFamily: 'Venera', fontSize: 40, fill: 0xffffff
     });
 
-    constructor(windowfield) {
+    constructor() {
         super();
 
         this.barmid.anchor.set(.5);
@@ -42,12 +42,6 @@ export default class BreakOverlay extends PIXI.Container {
         this.number.x = 0;
         this.number.y = -40;
         super.addChild(this.number);
-
-        this.resize(windowfield);
-    }
-    resize(windowfield) {
-        this.x = windowfield.width / 2;
-        this.y = windowfield.height / 2;
     }
     countdown(end, time) {
         if (!this.visible) {
@@ -60,6 +54,8 @@ export default class BreakOverlay extends PIXI.Container {
             this.visible = false;
             return;
         }
+        this.x = innerWidth / 2;
+        this.y = innerHeight / 2;
 
         const t = this.end - time, radius = 200 * t / (this.end - this.starttime);
         this.barmid.width = 2 * radius;

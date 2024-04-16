@@ -69,7 +69,7 @@ class ErrorMeter extends PIXI.Container {
 export default class ErrorMeterOverlay extends PIXI.Container {
     record = [];
 
-    constructor(windowfield, r300, r100, r50) {
+    constructor(r300, r100, r50) {
         super();
 
         this.barl = new ErrorMeter(r300, r100, r50);
@@ -77,14 +77,6 @@ export default class ErrorMeterOverlay extends PIXI.Container {
         this.barr.scale.x = -1;
         super.addChild(this.barl);
         super.addChild(this.barr);
-
-        this.resize(windowfield);
-    }
-    resize(windowfield) {
-        this.barl.x = 27;
-        this.barl.y = windowfield.height / 2;
-        this.barr.x = windowfield.width - 27;
-        this.barr.y = windowfield.height / 2;
     }
     hit(hiterror, time) {
         this.barl.hit(hiterror, time);
@@ -92,6 +84,10 @@ export default class ErrorMeterOverlay extends PIXI.Container {
         this.record.push(hiterror);
     }
     update(time) {
+        this.barl.x = 27;
+        this.barr.x = innerWidth - 27;
+        this.barl.y = this.barr.y = innerHeight / 2;
+        
         this.barl.update(time);
         this.barr.update(time);
     }

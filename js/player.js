@@ -206,9 +206,9 @@ export default class Player {
                 targX += spinRadius * Math.cos(ang);
                 targY += spinRadius * Math.sin(ang);
             }
-            const t = Math.sin(((time - this.lastTime) / (cur.time - this.lastTime) * Math.PI) / 2);
-            game.mouseX = t * targX + (1 - t) * this.lastX;
-            game.mouseY = t * targY + (1 - t) * this.lastY;
+            const t = Math.sin(((time - this.lastTime) / (cur.time - this.lastTime) * Math.PI) / 2), ease = 1 - t;
+            game.mouseX = t * targX + ease * this.lastX;
+            game.mouseY = t * targY + ease * this.lastY;
         }
     }
 };

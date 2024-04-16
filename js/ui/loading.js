@@ -11,7 +11,7 @@ export default class LoadingMenu extends PIXI.Container {
     bg = new PIXI.Sprite(skin['hpbarright.png']);
     loading = new PIXI.Sprite(skin['dot.png']);
 
-    constructor(windowfield, track) {
+    constructor(track) {
         super();
 
         this.bg.rotation = Math.PI / 2;
@@ -24,49 +24,31 @@ export default class LoadingMenu extends PIXI.Container {
         super.addChild(this.bg);
         super.addChild(this.loading);
 
-        this.titletext = new PIXI.Text(track.metadata.Title || '-', {
+        this.title = new PIXI.Text(track.metadata.Title || '-', {
             fontFamily: 'Venera', fontSize: 24, fill: 0xffffff
         });
-        this.artisttext = new PIXI.Text(track.metadata.Artist || '-', allFont);
-        this.versiontext = new PIXI.Text(track.metadata.Version || '-', allFont);
-        this.sourcetext = new PIXI.Text('Source: ' + (track.metadata.Source || '-'), allFont);
-        this.mappertext = new PIXI.Text('Mapper: ' + (track.metadata.Creator || '-'), allFont);
+        this.artist = new PIXI.Text(track.metadata.Artist || '-', allFont);
+        this.version = new PIXI.Text(track.metadata.Version || '-', allFont);
+        this.source = new PIXI.Text('Source: ' + (track.metadata.Source || '-'), allFont);
+        this.mapper = new PIXI.Text('Mapper: ' + (track.metadata.Creator || '-'), allFont);
 
-        this.titletext.roundPixels = true;
-        this.artisttext.roundPixels = true;
-        this.versiontext.roundPixels = true;
-        this.sourcetext.roundPixels = true;
-        this.mappertext.roundPixels = true;
+        this.title.roundPixels = true;
+        this.artist.roundPixels = true;
+        this.version.roundPixels = true;
+        this.source.roundPixels = true;
+        this.mapper.roundPixels = true;
 
-        this.titletext.anchor.set(.5);
-        this.artisttext.anchor.set(.5);
-        this.versiontext.anchor.set(.5);
-        this.sourcetext.anchor.set(.5);
-        this.mappertext.anchor.set(.5);
+        this.title.anchor.set(.5);
+        this.artist.anchor.set(.5);
+        this.version.anchor.set(.5);
+        this.source.anchor.set(.5);
+        this.mapper.anchor.set(.5);
 
-        super.addChild(this.titletext);
-        super.addChild(this.artisttext);
-        super.addChild(this.versiontext);
-        super.addChild(this.sourcetext);
-        super.addChild(this.mappertext);
-
-        this.resize(windowfield);
-    }
-    resize(windowfield) {
-        this.bg.x = windowfield.width / 2;
-        this.bg.y = windowfield.height / 2;
-        this.titletext.x = windowfield.width / 2;
-        this.artisttext.x = windowfield.width / 2;
-        this.versiontext.x = windowfield.width / 2;
-        this.sourcetext.x = windowfield.width / 2;
-        this.mappertext.x = windowfield.width / 2;
-        this.titletext.y = windowfield.height / 2 - 90;
-        this.artisttext.y = windowfield.height / 2 - 60;
-        this.versiontext.y = windowfield.height / 2 + 60;
-        this.sourcetext.y = windowfield.height / 2 + 85;
-        this.mappertext.y = windowfield.height / 2 + 110;
-        this.loading.x = windowfield.width / 2;
-        this.loading.y = windowfield.height / 2;
+        super.addChild(this.title);
+        super.addChild(this.artist);
+        super.addChild(this.version);
+        super.addChild(this.source);
+        super.addChild(this.mapper);
     }
     hide() {
         this.hidden = true;
@@ -74,6 +56,14 @@ export default class LoadingMenu extends PIXI.Container {
     update(timestamp) {
         if (super.alpha <= 0) this.visible = false;
         if (!this.visible) return;
+
+        this.bg.x = this.title.x = this.artist.x = this.version.x = this.source.x = this.mapper.x = this.loading.x = innerWidth / 2;
+        this.bg.y = this.loading.y = innerHeight / 2;
+        this.title.y = this.bg.y - 90;
+        this.artist.y = this.bg.y - 60;
+        this.version.y = this.bg.y + 60;
+        this.source.y = this.bg.y + 85;
+        this.mapper.y = this.bg.y + 110;
 
         if (!this.hidden) {
             this.loading.rotation = timestamp * .0075;

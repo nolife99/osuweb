@@ -13,11 +13,10 @@ class Track {
     breaks = [];
     events = [];
     timing = [];
-    hitObjects = [];
+    hits = [];
 
-    constructor(zip, track) {
+    constructor(track) {
         this.track = track;
-        this.zip = zip;
     }
     decode(ondecoded) {
         let section, combo = 0, index = 0, forceNewCombo = false, key, value, parts;
@@ -162,13 +161,13 @@ class Track {
                             // filename: hitSample[4]
                         };
                     }
-                    this.hitObjects.push(hit);
+                    this.hits.push(hit);
                     break;
             }
         }
 
         this.general.PreviewTime /= 10;
-        if (this.general.PreviewTime > this.hitObjects[0].time) this.general.PreviewTime = 0;
+        if (this.general.PreviewTime > this.hits[0].time) this.general.PreviewTime = 0;
         if (this.colors.length === 0) this.colors = [0x609f9f, 0xc0c0c0, 0x80ffff, 0x8bbfde];
 
         let last = this.timing[0];
@@ -188,7 +187,7 @@ class Track {
         }
 
         let j = 0, curIdx = 0;
-        for (const hit of this.hitObjects) {
+        for (const hit of this.hits) {
             while (j + 1 < this.timing.length && this.timing[j + 1].offset <= hit.time) ++j;
             hit.timing = this.timing[j];
             hit.hitIndex = curIdx++;
@@ -206,8 +205,8 @@ class Track {
                 };
             }
         }
-        this.length = (this.hitObjects.at(-1).endTime - this.hitObjects[0].time) / 1000;
-        this.oldStar = (this.difficulty.HPDrainRate + this.difficulty.CircleSize + this.difficulty.OverallDifficulty + clamp(this.hitObjects.length / this.length * 8, 0, 16)) / 38 * 5;
+        this.length = (this.hits.at(-1).endTime - this.hits[0].time) / 1000;
+        this.oldStar = (this.difficulty.HPDrainRate + this.difficulty.CircleSize + this.difficulty.OverallDifficulty + clamp(this.hits.length / this.length * 8, 0, 16)) / 38 * 5;
         ondecoded(this);
     }
 }
@@ -222,7 +221,7 @@ export default class Osu {
     load(ondecoded) {
         const rawTracks = this.zip.children.filter(c => c.name.indexOf('.osu') === c.name.length - 4);
         for (const t of rawTracks) t.getText().then(text => {
-            const track = new Track(this.zip, text);
+            const track = new Track(text);
             this.tracks.push(track);
             track.decode(() => {
                 if (++this.count === rawTracks.length) this.sortTracks().then(ondecoded);
