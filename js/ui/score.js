@@ -119,14 +119,12 @@ export default class ScoreOverlay extends PIXI.Container {
     newSpriteArray(len, scaleMul, tint = 0xffffff) {
         const a = Array(len);
         for (let i = 0; i < len; ++i) {
-            const s = new PIXI.Sprite;
+            const s = super.addChild(new PIXI.Sprite);
             s.scale.x = s.scale.y = this.scaleMul * scaleMul;
-            s.anchor.x = 0;
-            s.anchor.y = 0;
+            s.anchor.x = s.anchor.y = 0;
             s.alpha = 1;
             s.tint = tint;
             a[i] = s;
-            super.addChild(s);
         }
         return a;
     }
@@ -134,9 +132,9 @@ export default class ScoreOverlay extends PIXI.Container {
         this.scaleMul = innerHeight / 800;
 
         f(this.scoreDigits, this.scaleMul * .4);
-        f(this.comboDigits, this.scaleMul * .2);
-        f(this.accuracyDigits, this.scaleMul * .2);
-        f(this.HPbar, this.scaleMul * .5);
+        f(this.comboDigits, this.scaleMul / 5);
+        f(this.accuracyDigits, this.scaleMul / 5);
+        f(this.HPbar, this.scaleMul / 2);
 
         this.HPbar[0].scale.x = this.HPbar[1].scale.x = innerWidth / 500;
         this.HPbar[0].y = this.HPbar[1].y = this.HPbar[2].y = -7 * this.scaleMul;
@@ -144,23 +142,22 @@ export default class ScoreOverlay extends PIXI.Container {
     HPincreasefor(result, isTick) {
         if (isTick) {
             if (result === 0) return -.005 * this.HPdrain;
-            else return .005 * (10.2 - this.HPdrain);
+            return .005 * (10.2 - this.HPdrain);
         }
         switch (result) {
             case 0: return -.02 * this.HPdrain;
             case 50: return .01 * (4 - this.HPdrain);
             case 100: return .01 * (8 - this.HPdrain);
             case 300: return .01 * (10.2 - this.HPdrain);
-            default: return .005 * (10.2 - this.HPdrain);
         }
     }
     hit(result, maxresult, time) {
         const isTick = maxresult !== 300;
-        if (!isTick) {
-            if (result === 300) ++this.judgecnt.great;
-            else if (result === 100) ++this.judgecnt.good;
-            else if (result === 50) ++this.judgecnt.meh;
-            else if (result === 0) ++this.judgecnt.miss;
+        if (!isTick) switch (result) {
+            case 300: ++this.judgecnt.great; break;
+            case 100: ++this.judgecnt.good; break;
+            case 50: ++this.judgecnt.meh; break;
+            default: ++this.judgecnt.miss; break;
         }
 
         this.judgeTotal += result;
@@ -184,10 +181,7 @@ export default class ScoreOverlay extends PIXI.Container {
         this.HPDisplay.set(time, this.HP);
     }
     update(time) {
-        const HPpos = this.HPDisplay.valueAt(time) * innerWidth;
-        this.HPbar[0].x = HPpos;
-        this.HPbar[1].x = HPpos;
-        this.HPbar[2].x = HPpos;
+        this.HPbar[0].x = this.HPbar[1].x = this.HPbar[2].x = this.HPDisplay.valueAt(time) * innerWidth;
 
         setSpriteArrayText(this.scoreDigits, this.scoreDisplay.valueAt(time).toFixed(0).padStart(6, '0'));
         setSpriteArrayText(this.comboDigits, this.comboDisplay.valueAt(time).toFixed(0) + 'x');
@@ -234,7 +228,7 @@ export default class ScoreOverlay extends PIXI.Container {
             grading.remove();
             playback.quit();
         };
-        window.setTimeout(() => grading.classList.remove('transparent'), 100);
+        setTimeout(() => grading.classList.remove('transparent'), 100);
     }
     destroy(opt) {
         super.destroy(opt);

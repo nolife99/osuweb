@@ -22,11 +22,11 @@ function repeatclamp(a) {
     a %= 2;
     return a > 1 ? 2 - a : a;
 }
-function findindex(i, children) {
-    let l = 0, r = children.length;
-    while (l + 1 < r) {
-        let m = Math.floor((l + r) / 2) - 1;
-        if ((children[m++].zIndex || 0) < i) l = m;
+function binarySearch(i, array) {
+    let l = 0, r = array.length;
+    while (l < r) {
+        const m = Math.floor((l + r) / 2);
+        if ((array[m].zIndex || 0) < i) l = m + 1;
         else r = m;
     }
     return l;
@@ -36,14 +36,14 @@ export default class Playback {
     ready = true;
     newHits = [];
     volumeMenu = new VolumeMenu;
+    breakOverlay = new BreakOverlay;
     gfx = {};
     gamefield = new PIXI.Container;
     destroyHit = o => {
-        const opt = {
-            children: true
-        }
         this.gamefield.removeChild(o);
-        o.destroy(opt);
+        o.destroy({
+            children: true
+        });
     };
     timingId = 0;
     current = 0;
@@ -61,9 +61,7 @@ export default class Playback {
         this.calcSize();
 
         this.createBackground();
-        app.stage.addChild(this.gamefield);
-        app.stage.addChild(this.volumeMenu);
-        app.stage.addChild(this.loadingMenu);
+        app.stage.addChild(this.gamefield, this.volumeMenu, this.loadingMenu);
 
         this.endTime = track.hits.at(-1).endTime + 1500;
         this.wait = Math.max(0, bgFadeTime - track.hits[0].time);
@@ -72,20 +70,15 @@ export default class Playback {
         osu.onready = () => {
             this.errorMeter = new ErrorMeterOverlay(this.GreatTime, this.GoodTime, this.MehTime);
             this.progOverlay = new ProgressOverlay(track.hits[0].time, track.hits.at(-1).endTime);
-            this.breakOverlay = new BreakOverlay;
             this.scoreOverlay = new ScoreOverlay(this.HP, scoreMult);
-            
-            loadTask.then(() => {
-                app.stage.addChild(this.scoreOverlay);
-                app.stage.addChild(this.errorMeter);
-                app.stage.addChild(this.progOverlay);
-                app.stage.addChild(this.breakOverlay);
 
-                this.loadingMenu.hide();
+            loadTask.then(() => {
+                app.stage.addChild(this.scoreOverlay, this.errorMeter, this.progOverlay, this.breakOverlay);
+                this.loadingMenu.hidden = true;
+
                 this.osu.audio.gain.gain.value = game.musicVolume * game.masterVolume;
                 this.osu.audio.speed = this.speed;
-                this.osu.audio.play(bgFadeTime + this.wait);
-                this.audioTick = bgFadeTime + this.wait;
+                this.osu.audio.play(this.audioTick = bgFadeTime + this.wait);
                 this.started = true;
             });
         };
@@ -434,7 +427,7 @@ export default class Playback {
 
                     const spacing = 33, rotation = Math.atan2(container.dy, container.dx), distance = Math.hypot(container.dx, container.dy);
                     for (let d = spacing * 1.5; d < distance - spacing; d += spacing) {
-                        const frac = d / distance, p = new PIXI.Sprite(skin['followpoint.png']);
+                        const frac = d / distance, p = container.addChild(new PIXI.Sprite(skin['followpoint.png']));
                         p.scale.set(this.hitScale * .4, this.hitScale * .3);
                         p.x = x1 + container.dx * frac;
                         p.y = y1 + container.dy * frac;
@@ -443,7 +436,6 @@ export default class Playback {
                         p.blendMode = PIXI.BLEND_MODES.ADD;
                         p.alpha = 0;
                         p.frac = frac;
-                        container.addChild(p);
                     }
                 }
                 prev = hit;
@@ -568,11 +560,11 @@ export default class Playback {
                     sprite.x = txt.width / 2;
                     sprite.y = txt.height / 2;
 
-                    const blurstrength = game.backgroundBlurRate * Math.min(txt.width, txt.height);
-                    t = Math.max(Math.min(txt.width, txt.height), Math.max(10, blurstrength) * 3);
-                    sprite.scale.set(t / (t - 2 * Math.max(10, blurstrength)));
+                    const shortSide = Math.min(txt.width, txt.height), blurPower = game.backgroundBlurRate * shortSide,
+                        t = Math.max(shortSide, Math.max(10, blurPower) * 3);
 
-                    const blurFilter = new PIXI.filters.BlurFilter(blurstrength, 14);
+                    sprite.scale.set(t / (t - 2 * Math.max(10, blurPower)));
+                    const blurFilter = new PIXI.filters.BlurFilter(blurPower, 14);
                     blurFilter.autoFit = false;
                     sprite.filters = [blurFilter];
 
@@ -667,7 +659,7 @@ export default class Playback {
 
                 const children = this.gamefield.children;
                 judge.parent = this.gamefield;
-                children.splice(findindex(judge.zIndex || 0, children), 0, judge);
+                children.splice(binarySearch(judge.zIndex || 0, children), 0, judge);
             }
             for (let i = hit.objects.length - 1; i >= 0; --i) {
                 const obj = hit.objects[i];
@@ -675,7 +667,7 @@ export default class Playback {
 
                 const children = this.gamefield.children;
                 obj.parent = this.gamefield;
-                children.splice(findindex(obj.zIndex || 0, children), 0, obj);
+                children.splice(binarySearch(obj.zIndex || 0, children), 0, obj);
             }
 
             this.newHits.push(hit);
@@ -709,8 +701,7 @@ export default class Playback {
                     if (diff < this.approachTime && diff > opaque) hit.approach.alpha = (this.approachTime - diff) / this.approachFade;
                     else if (diff < opaque && hit.score < 0) hit.approach.alpha = 1;
                     const noteFullAppear = this.approachTime - hit.objFadeIn, setcircleAlpha = alpha => {
-                        hit.base.alpha = alpha;
-                        hit.circle.alpha = alpha;
+                        hit.base.alpha = hit.circle.alpha = alpha;
                         for (const digit of hit.numbers) digit.alpha = alpha;
                         hit.glow.alpha = alpha / 2;
                     };
@@ -740,10 +731,8 @@ export default class Playback {
                                 for (const digit of hit.numbers) digit.scale.set(size * digit.firstScale);
                             }
                             else {
-                                hit.base.visible = false;
-                                hit.circle.visible = false;
+                                hit.base.visible = hit.circle.visible = hit.approach.visible = false;
                                 for (const digit of hit.numbers) digit.visible = false;
-                                hit.approach.visible = false;
                             }
                         }
                     }
@@ -812,18 +801,16 @@ export default class Playback {
                             t = repeatclamp(Math.min(t, hit.repeat));
                             const at = hit.curve.pointAt(t);
 
-                            hit.follow.x = at.x;
-                            hit.follow.y = at.y;
-                            hit.ball.x = at.x;
-                            hit.ball.y = at.y;
+                            hit.follow.x = hit.ball.x = at.x;
+                            hit.follow.y = hit.ball.y = at.y;
 
                             if (!game.autoplay) {
                                 const dx = game.mouseX - at.x, dy = game.mouseY - at.y, followpx = hit.followSize * this.circleRadius / 1.8;
-                                var isfollowing = dx * dx + dy * dy <= followpx * followpx;
+                                var isfollowing = dx * dx + dy * dy < followpx * followpx;
 
                                 if (!isfollowing) {
                                     const predict = this.player.mouse(this.realtime), dx1 = predict.x - at.x, dy1 = predict.y - at.y, laxRad = followpx + predict.r;
-                                    isfollowing = dx1 * dx1 + dy1 * dy1 <= laxRad * laxRad;
+                                    isfollowing = dx1 * dx1 + dy1 * dy1 < laxRad * laxRad;
                                 }
                             }
                             const activated = game.autoplay || (game.down && isfollowing);
@@ -868,9 +855,8 @@ export default class Playback {
                                 this.playHitsound(hit, hit.repeat, hit.scoredSliderEnd);
                             }
                             if (-diff >= 0 && -diff <= hit.sliderTimeTotal) {
-                                hit.ball.visible = true;
+                                hit.ball.visible = hit.follow.visible = true;
                                 hit.ball.alpha = 1;
-                                hit.follow.visible = true;
                                 resizeFollow((activated ? 1 : -1) / followZoomInTime);
                                 hit.follow.scale.set(hit.followSize * .45 * this.hitScale);
                                 hit.follow.alpha = hit.followSize - 1;
@@ -940,9 +926,7 @@ export default class Playback {
                             else hit.clicked = false;
                         }
                         const alpha = time < hit.time - spinnerInTime - this.approachTime ? 0 : time < hit.endTime ? 1 : 1 - (time - hit.endTime) / 150;
-                        hit.top.alpha = alpha;
-                        hit.prog.alpha = alpha;
-                        hit.base.alpha = alpha;
+                        hit.top.alpha = hit.prog.alpha = hit.base.alpha = alpha;
 
                         if (time < hit.endTime) {
                             hit.top.scale.set(.3 * clamp01((time - (hit.time - spinnerInTime - this.approachTime)) / spinnerInTime));
@@ -986,33 +970,35 @@ export default class Playback {
         this.bg.tint = colorLerp(0xffffff, 0, fade);
     }
     render(frame, t) {
-        if (this.started && !this.ended) {
-            this.realtime = t;
-            this.activeTime = frame;
+        if (this.started) {
+            if (!this.ended && !game.paused) {
+                this.realtime = t;
+                this.activeTime = frame;
 
-            var time = this.osu.audio.pos * 1000 + game.globalOffset;
-            if (!game.paused && this.hits.counter++ % 10 !== 0) time += frame - (time - this.audioTick) / this.speed;
-            this.audioTick = time;
+                var time = this.osu.audio.pos * 1000 + game.globalOffset;
+                if (this.hits.counter++ % 10 !== 0) time += frame * this.speed - time + this.audioTick;
+                this.audioTick = time;
 
-            for (; this.breakIndex < this.track.breaks.length; ++this.breakIndex) {
-                const b = this.track.breaks[this.breakIndex];
-                if (time < b.startTime) break;
-                else if (time < b.endTime) {
-                    var breakEnd = b.endTime;
-                    break;
+                for (; this.breakIndex < this.track.breaks.length; ++this.breakIndex) {
+                    const b = this.track.breaks[this.breakIndex];
+                    if (time < b.startTime) break;
+                    else if (time < b.endTime) {
+                        var breakEnd = b.endTime;
+                        break;
+                    }
                 }
+
+                if (breakEnd) this.breakOverlay.countdown(breakEnd, time);
+                else if (time < this.skipTime) this.breakOverlay.countdown(this.skipTime, time);
+                else this.breakOverlay.visible = false;
+
+                this.updateHits(time);
+                if (game.autoplay) this.player.update(time);
+                this.scoreOverlay.update(time);
+                this.progOverlay.update(time);
+                this.errorMeter.update(time);
             }
-
-            if (breakEnd) this.breakOverlay.countdown(breakEnd, time);
-            else if (time < this.skipTime) this.breakOverlay.countdown(this.skipTime, time);
-            else this.breakOverlay.visible = false;
-
-            this.updateHits(time);
-            if (game.autoplay) this.player.update(time);
             this.updateBg(time);
-            this.scoreOverlay.update(time);
-            this.progOverlay.update(time);
-            this.errorMeter.update(time);
         }
         else this.updateBg(Number.MIN_SAFE_INTEGER);
 
@@ -1032,21 +1018,9 @@ export default class Playback {
         for (const hit of this.hits) if (!hit.destroyed) {
             hit.objects.forEach(this.destroyHit);
             hit.judges.forEach(this.destroyHit);
-            hit.destroyed = true;
         }
 
-        const opt = {
-            children: true
-        };
-        this.scoreOverlay.destroy(opt);
-        this.errorMeter.destroy(opt);
-        this.loadingMenu.destroy(opt);
-        this.volumeMenu.destroy(opt);
-        this.breakOverlay.destroy(opt);
-        this.progOverlay.destroy(opt);
-        this.gamefield.destroy(opt);
-        this.bg.destroy(opt);
-        this.bg.renderTexture?.destroy?.(true);
+        if (game.backgroundBlurRate > .0001) this.bg.destroy(true);
         SliderMesh.deallocate();
 
         if (game.allowMouseScroll) removeEventListener('wheel', this.volumeEv);

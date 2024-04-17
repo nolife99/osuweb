@@ -14,13 +14,11 @@ export default class VolumeMenu extends PIXI.Container {
     constructor() {
         super();
 
-        this.mastertext.roundPixels = true;
-        this.volumetext.roundPixels = true;
+        this.mastertext.roundPixels = this.volumetext.roundPixels = true;
         this.mastertext.anchor.set(.5);
         this.volumetext.anchor.set(.5);
 
-        super.addChild(this.mastertext);
-        super.addChild(this.volumetext);
+        super.addChild(this.mastertext, this.volumetext);
     }
     set(volume) {
         this.changed = true;

@@ -32,26 +32,14 @@ export default class LoadingMenu extends PIXI.Container {
         this.source = new PIXI.Text('Source: ' + (track.metadata.Source || '-'), allFont);
         this.mapper = new PIXI.Text('Mapper: ' + (track.metadata.Creator || '-'), allFont);
 
-        this.title.roundPixels = true;
-        this.artist.roundPixels = true;
-        this.version.roundPixels = true;
-        this.source.roundPixels = true;
-        this.mapper.roundPixels = true;
-
+        this.title.roundPixels = this.artist.roundPixels = this.version.roundPixels = this.source.roundPixels = this.mapper.roundPixels = true;
         this.title.anchor.set(.5);
         this.artist.anchor.set(.5);
         this.version.anchor.set(.5);
         this.source.anchor.set(.5);
         this.mapper.anchor.set(.5);
 
-        super.addChild(this.title);
-        super.addChild(this.artist);
-        super.addChild(this.version);
-        super.addChild(this.source);
-        super.addChild(this.mapper);
-    }
-    hide() {
-        this.hidden = true;
+        super.addChild(this.title, this.artist, this.version, this.source, this.mapper);
     }
     update(timestamp) {
         if (super.alpha <= 0) this.visible = false;

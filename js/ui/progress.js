@@ -28,21 +28,19 @@ export default class ProgressOverlay extends PIXI.Container {
         this.starttime = starttime;
         this.endtime = endtime;
 
-        this.remaining.roundPixels = true;
+        this.remaining.roundPixels = this.past.roundPixels = true;
         this.remaining.anchor.set(1);
-        super.addChild(this.remaining);
-
-        this.past.roundPixels = true;
         this.past.anchor.set(0, 1);
-        super.addChild(this.past);
+
+        super.addChild(this.remaining, this.past);
     }
     update(time) {
         if (time > this.endtime) return;
-        
+
         this.remaining.x = innerWidth - 10;
         this.remaining.y = this.past.y = innerHeight - 10;
         this.past.x = 10;
-        
+
         this.remaining.text = timeformat(this.endtime - time);
         this.past.text = timeformat(time - this.starttime);
     }

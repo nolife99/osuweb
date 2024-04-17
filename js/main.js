@@ -105,13 +105,12 @@ class BeatmapController {
     startGame(trackid) {
         if (app) return;
         app = new PIXI.Application({
-            width: window.innerWidth, height: window.innerHeight,
-            resolution: window.devicePixelRatio || 1, autoDensity: true
+            width: innerWidth, height: innerHeight, resolution: devicePixelRatio, autoDensity: true
         });
         app.renderer.autoDensity = true;
         app.renderer.backgroundColor = 0x111111;
 
-        const scrollTop = document.body.scrollTop, defaultAlert = window.alert;
+        const scrollTop = document.body.scrollTop, defaultAlert = alert;
         document.addEventListener('contextmenu', e => {
             e.preventDefault();
             return false;
@@ -159,7 +158,7 @@ class BeatmapController {
                 pGameArea.hidden = true;
                 pMainPage.hidden = false;
                 document.body.scrollTop = scrollTop;
-                window.alert = defaultAlert;
+                alert = defaultAlert;
 
                 app.ticker.stop();
                 app.destroy(true, {
@@ -210,7 +209,7 @@ class BeatmapController {
                 const difficultyBox = document.createElement('div'), closeDifficultyMenu = () => {
                     box.removeChild(difficultyBox);
                     showingDifficultyBox = false;
-                    window.removeEventListener('click', closeDifficultyMenu, false);
+                    removeEventListener('click', closeDifficultyMenu, false);
                 }
                 difficultyBox.className = 'difficulty-box';
 
@@ -248,7 +247,7 @@ class BeatmapController {
                 box.appendChild(difficultyBox);
 
                 showingDifficultyBox = true;
-                window.addEventListener('click', closeDifficultyMenu, false);
+                addEventListener('click', closeDifficultyMenu, false);
             }
         };
         return box;
@@ -306,8 +305,8 @@ function handleDragDrop(e) {
 }
 pDragbox.ondrop = handleDragDrop;
 
-window.addEventListener('dragover', e => e.preventDefault(), false);
-window.addEventListener('drop', e => e.preventDefault(), false);
+addEventListener('dragover', e => e.preventDefault(), false);
+addEventListener('drop', e => e.preventDefault(), false);
 
 pDragboxHint.innerText = defaultHint;
 pDragboxInner.hidden = false;

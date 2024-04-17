@@ -85,13 +85,13 @@ export default class Player {
                 game.down = k1 || k2 || m1 || m2;
             }
 
-            window.addEventListener('mousemove', this.mousemoveCallback);
+            addEventListener('mousemove', this.mousemoveCallback);
             if (game.allowMouseButton) {
-                window.addEventListener('mousedown', this.mousedownCallback);
-                window.addEventListener('mouseup', this.mouseupCallback);
+                addEventListener('mousedown', this.mousedownCallback);
+                addEventListener('mouseup', this.mouseupCallback);
             }
-            window.addEventListener('keydown', this.keydownCallback);
-            window.addEventListener('keyup', this.keyupCallback);
+            addEventListener('keydown', this.keydownCallback);
+            addEventListener('keyup', this.keyupCallback);
         }
         game.down = false;
     }
@@ -135,11 +135,11 @@ export default class Player {
         }
     }
     cleanup() {
-        window.removeEventListener('mousemove', this.mousemoveCallback);
-        window.removeEventListener('mousedown', this.mousedownCallback);
-        window.removeEventListener('mouseup', this.mouseupCallback);
-        window.removeEventListener('keydown', this.keydownCallback);
-        window.removeEventListener('keyup', this.keyupCallback);
+        removeEventListener('mousemove', this.mousemoveCallback);
+        removeEventListener('mousedown', this.mousedownCallback);
+        removeEventListener('mouseup', this.mouseupCallback);
+        removeEventListener('keydown', this.keydownCallback);
+        removeEventListener('keyup', this.keyupCallback);
     }
     update(time) {
         let cur = this.curObj;
