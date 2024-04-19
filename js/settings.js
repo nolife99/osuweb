@@ -8,7 +8,7 @@ const saveToLocal = () => localStorage.setItem('osugamesettings', JSON.stringify
     disableWheel: false, disableButton: false,
     K1name: 'Z', K2name: 'X', K1keycode: 'KeyZ', K2keycode: 'KeyX',
 
-    mastervolume: 100, effectvolume: 100, musicvolume: 100, audiooffset: 0, beatmapHitsound: false,
+    mastervolume: 100, effectvolume: 100, musicvolume: 50, audiooffset: 0, beatmapHitsound: false,
     easy: false, daycore: false, hardrock: false, nightcore: false, hidden: false, autoplay: false,
     hideNumbers: false, hideGreat: true, hideFollow: false
 };

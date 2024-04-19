@@ -218,7 +218,7 @@ export default class Playback {
 
             for (let i = hits.length - 1; i > 0; --i) {
                 let n = i, objectI = hits[i];
-                if (objectI.chain != 0 || objectI.type === 'spinner') continue;
+                if (objectI.chain !== 0 || objectI.type === 'spinner') continue;
 
                 if (objectI.type === 'circle') while (--n >= 0) {
                     const objectN = hits[n];
@@ -316,7 +316,7 @@ export default class Playback {
                 }
                 switch (hit.type) {
                     case 'circle': createHitCircle(); break;
-                    case 'slider': {
+                    case 'slider':
                         hit.nextRepeat = 1;
                         hit.nexttick = 0;
                         hit.body = new SliderMesh(hit.curve, hit.combo % this.track.colors.length);
@@ -370,8 +370,8 @@ export default class Playback {
                         const v = hit.repeat % 2 === 1 ? hit.curve.pointAt(1) : hit;
                         hit.judges.push(this.createJudgement(v.x, v.y, hit.time + hit.sliderTimeTotal + this.GoodTime));
                         break;
-                    }
-                    case 'spinner': {
+
+                    case 'spinner':
                         hit.approachTime = this.approachTime + spinnerInTime;
                         hit.x = 256;
                         hit.y = 192;
@@ -400,7 +400,6 @@ export default class Playback {
                         }
                         hit.judges.push(this.createJudgement(hit.x, hit.y, hit.endTime + 233));
                         break;
-                    }
                 }
                 if (!game.hideFollow && prev && hit.type !== 'spinner' && hit.combo === prev.combo) {
                     let x1 = prev.x, y1 = prev.y, t1 = prev.time;
@@ -521,7 +520,7 @@ export default class Playback {
         this.updateJudgement(judge, time);
     }
     updateJudgement(judge, time) {
-        if (judge.points < 0 && time >= judge.finalTime) {
+        if (judge.points < 0 && time > judge.finalTime) {
             const points = game.autoplay ? 300 : judge.defaultScore;
 
             this.scoreOverlay.hit(points, 300, judge.finalTime);
@@ -740,7 +739,7 @@ export default class Playback {
                 }
                 switch (hit.type) {
                     case 'circle': updateHitCircle(true); break;
-                    case 'slider': {
+                    case 'slider':
                         updateHitCircle(false);
                         const noteFullAppear = this.approachTime - hit.objFadeIn;
                         hit.body.startt = 0;
@@ -908,8 +907,8 @@ export default class Playback {
                         }
                         for (const judge of hit.judges) this.updateJudgement(judge, time);
                         break;
-                    }
-                    case 'spinner': {
+
+                    case 'spinner':
                         if (time > hit.time && time < hit.endTime) {
                             if (game.down && !game.paused) {
                                 const mouseAngle = Math.atan2(game.mouseY - hit.y, game.mouseX - hit.x);
@@ -958,7 +957,6 @@ export default class Playback {
                         }
                         this.updateJudgement(hit.judges[0], time);
                         break;
-                    }
                 }
             }
         }
@@ -970,34 +968,32 @@ export default class Playback {
         this.bg.tint = colorLerp(0xffffff, 0, fade);
     }
     render(frame, t) {
-        if (this.started) {
-            if (!this.ended && !game.paused) {
-                this.realtime = t;
-                this.activeTime = frame;
+        if (this.started && !this.ended) {
+            this.realtime = t;
+            this.activeTime = frame;
 
-                var time = this.osu.audio.pos * 1000 + game.globalOffset;
-                if (this.hits.counter++ % 10 !== 0) time += frame * this.speed - time + this.audioTick;
-                this.audioTick = time;
+            var time = this.osu.audio.pos * 1000 + game.globalOffset;
+            if (!game.paused && this.hits.counter++ % 10 > 0) time += frame * this.speed - time + this.audioTick;
+            this.audioTick = time;
 
-                for (; this.breakIndex < this.track.breaks.length; ++this.breakIndex) {
-                    const b = this.track.breaks[this.breakIndex];
-                    if (time < b.startTime) break;
-                    else if (time < b.endTime) {
-                        var breakEnd = b.endTime;
-                        break;
-                    }
+            for (; this.breakIndex < this.track.breaks.length; ++this.breakIndex) {
+                const b = this.track.breaks[this.breakIndex];
+                if (time < b.startTime) break;
+                else if (time < b.endTime) {
+                    var breakEnd = b.endTime;
+                    break;
                 }
-
-                if (breakEnd) this.breakOverlay.countdown(breakEnd, time);
-                else if (time < this.skipTime) this.breakOverlay.countdown(this.skipTime, time);
-                else this.breakOverlay.visible = false;
-
-                this.updateHits(time);
-                if (game.autoplay) this.player.update(time);
-                this.scoreOverlay.update(time);
-                this.progOverlay.update(time);
-                this.errorMeter.update(time);
             }
+
+            if (breakEnd) this.breakOverlay.countdown(breakEnd, time);
+            else if (time < this.skipTime) this.breakOverlay.countdown(this.skipTime, time);
+            else this.breakOverlay.visible = false;
+
+            this.updateHits(time);
+            if (game.autoplay) this.player.update(time);
+            this.scoreOverlay.update(time);
+            this.progOverlay.update(time);
+            this.errorMeter.update(time);
             this.updateBg(time);
         }
         else this.updateBg(Number.MIN_SAFE_INTEGER);
@@ -1019,7 +1015,6 @@ export default class Playback {
             hit.objects.forEach(this.destroyHit);
             hit.judges.forEach(this.destroyHit);
         }
-
         if (game.backgroundBlurRate > .0001) this.bg.destroy(true);
         SliderMesh.deallocate();
 
@@ -1036,7 +1031,19 @@ export default class Playback {
             this.osu.audio.pause();
             game.paused = true;
         }
+        const opt = {
+            children: true
+        };
         this.destroy();
+        this.scoreOverlay.destroy(opt);
+        this.errorMeter.destroy(opt);
+        this.loadingMenu.destroy(opt);
+        this.volumeMenu.destroy(opt);
+        this.breakOverlay.destroy(opt);
+        this.progOverlay.destroy(opt);
+        this.gamefield.destroy(opt);
+        if (game.backgroundBlurRate <= .0001) this.bg.destroy(opt);
+
         stopGame(true);
     }
     quit() {
