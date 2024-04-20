@@ -15,7 +15,7 @@ export default class BreakOverlay extends PIXI.Container {
         super();
 
         this.barmid.anchor.set(.5);
-        this.barmid.x = this.barmid.y = 0;
+        this.barmid.position.set(0);
 
         this.barleft.anchor.set(.1, .5);
         this.barleft.rotation = Math.PI;
@@ -32,8 +32,7 @@ export default class BreakOverlay extends PIXI.Container {
 
         this.number.roundPixels = true;
         this.number.anchor.set(.5);
-        this.number.x = 0;
-        this.number.y = -40;
+        this.number.position.set(0, -40);
 
         super.addChild(this.barmid, this.barleft, this.barright, this.number);
     }
@@ -48,8 +47,7 @@ export default class BreakOverlay extends PIXI.Container {
             this.visible = false;
             return;
         }
-        this.x = innerWidth / 2;
-        this.y = innerHeight / 2;
+        this.position.set(innerWidth / 2, innerHeight / 2);
 
         const t = this.end - time, radius = 200 * t / (this.end - this.starttime);
         this.barmid.width = 2 * radius;

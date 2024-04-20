@@ -6,66 +6,95 @@ export default class SliderMesh extends PIXI.Container {
     constructor(curve, tintid) {
         super();
 
-        const vao = [], ibo = [], first = curve.pointAt(0), res = Math.max(DIVIDES, Math.min(Math.ceil(curve.pointLength / 4.7), 9400));
-        vao.push(first.x, first.y, 0, 0);
-
-        for (let i = 1; i < res; ++i) {
-            const pt = curve.pointAt((i + 1) / res), prev = curve.pointAt(i / res), dx = pt.x - prev.x, dy = pt.y - prev.y,
-                length = Math.hypot(dx, dy), ox = SliderMesh.radius * dy / length, oy = SliderMesh.radius * dx / length;
-
-            vao.push(prev.x - ox, prev.y + oy, prev.t, 1,
-                prev.x + ox, prev.y - oy, prev.t, 1,
-                pt.x - ox, pt.y + oy, pt.t, 1,
-                pt.x + ox, pt.y - oy, pt.t, 1,
-                pt.x, pt.y, pt.t, 0);
-
-            const n = 5 * i;
-            ibo.push(n - 5, n - 4, n,
-                n - 4, n, n - 2,
-                n - 5, n - 3, n,
-                n - 3, n, n - 1);
-        }
-        const addArc = (c, p1, p2, t) => {
-            const v = vao[4 * c], nextV = vao[4 * c + 1], aStart = Math.atan2(vao[4 * p1 + 1] - nextV, vao[4 * p1] - v);
-            let aEnd = Math.atan2(vao[4 * p2 + 1] - nextV, vao[4 * p2] - v);
+        const vbo = [], ibo = [], first = curve.pointAt(0);
+        function addArc(c, p1, p2, t) {
+            const v = vbo[4 * c], nextV = vbo[4 * c + 1], aStart = Math.atan2(vbo[4 * p1 + 1] - nextV, vbo[4 * p1] - v);
+            let aEnd = Math.atan2(vbo[4 * p2 + 1] - nextV, vbo[4 * p2] - v);
             if (aStart > aEnd) aEnd += 2 * Math.PI;
 
             let theta = aEnd - aStart;
             const divs = Math.ceil(DIVIDES * Math.abs(theta) / 2 / Math.PI);
             theta /= divs;
 
-            let last = p1;
             for (let i = 1; i < divs; ++i) {
-                const a = aStart + i * theta, newv = vao.push(v + SliderMesh.radius * Math.cos(a), nextV + SliderMesh.radius * Math.sin(a), t, 1) / 4 - 1;
-                ibo.push(c, last, newv);
-                last = newv;
+                const a = aStart + i * theta, newv = vbo.push(v + SliderMesh.radius * Math.cos(a), nextV + SliderMesh.radius * Math.sin(a), t, 1) / 4 - 1;
+                ibo.push(c, p1, newv);
+                p1 = newv;
             }
-            ibo.push(c, last, p2);
+            ibo.push(c, p1, p2);
         }
-        addArc(0, 1, 2, 0);
+        vbo.push(first.x, first.y, 0, 0);
 
-        const resP = res * 5;
-        addArc(resP - 5, resP - 6, resP - 7, 1);
+        if (curve.calcLength < 131070) {
+            const res = Math.max(DIVIDES, Math.min(Math.ceil(curve.calcLength / 4), 10000));
+            for (let i = 1; i < res; ++i) {
+                const pt = curve.pointAt((i + 1) / res), prev = curve.pointAt(i / res), dx = pt.x - prev.x, dy = pt.y - prev.y,
+                    length = Math.hypot(dx, dy), ox = SliderMesh.radius * dy / length, oy = SliderMesh.radius * dx / length;
 
-        for (let i = 1; i < res - 1; ++i) {
-            const c = curve.pointAt((i + 1) / res), b = curve.pointAt(i / res), n = curve.pointAt((i + 2) / res), p = i * 5;
-            if ((c.x - b.x) * (n.y - c.y) > (n.x - c.x) * (c.y - b.y)) addArc(p, p - 1, p + 2);
-            else addArc(p, p + 1, p - 2);
+                vbo.push(prev.x - ox, prev.y + oy, prev.t, 1,
+                    prev.x + ox, prev.y - oy, prev.t, 1,
+                    pt.x - ox, pt.y + oy, pt.t, 1,
+                    pt.x + ox, pt.y - oy, pt.t, 1,
+                    pt.x, pt.y, pt.t, 0);
+
+                const n = 5 * i;
+                ibo.push(n - 5, n - 4, n,
+                    n - 4, n, n - 2,
+                    n - 5, n - 3, n,
+                    n - 3, n, n - 1);
+            }
+            addArc(0, 1, 2, 0);
+
+            const resP = res * 5;
+            addArc(resP - 5, resP - 6, resP - 7, 1);
+
+            for (let i = 1; i < res - 1; ++i) {
+                const c = curve.pointAt((i + 1) / res), b = curve.pointAt(i / res), n = curve.pointAt((i + 2) / res), p = i * 5;
+                if ((c.x - b.x) * (n.y - c.y) > (n.x - c.x) * (c.y - b.y)) addArc(p, p - 1, p + 2);
+                else addArc(p, p + 1, p - 2);
+            }
         }
-        this.geometry = new PIXI.Geometry().addAttribute('pos', vao, 4).addIndex(ibo);
+        else {
+            const segments = curve.paths.flat();
+            for (let i = 1; i < segments.length; ++i) {
+                const pt = segments[i], prev = segments[i - 1], dx = pt.x - prev.x, dy = pt.y - prev.y,
+                    preT = (i - 1) / segments.length, t = i / segments.length,
+                    length = Math.hypot(dx, dy), ox = SliderMesh.radius * dy / length, oy = SliderMesh.radius * dx / length;
+
+                vbo.push(prev.x - ox, prev.y + oy, preT, 1,
+                    prev.x + ox, prev.y - oy, preT, 1,
+                    pt.x - ox, pt.y + oy, t, 1,
+                    pt.x + ox, pt.y - oy, t, 1,
+                    pt.x, pt.y, t, 0);
+
+                const n = 5 * i;
+                ibo.push(n - 5, n - 4, n,
+                    n - 4, n, n - 2,
+                    n - 5, n - 3, n,
+                    n - 3, n, n - 1);
+            }
+            addArc(0, 1, 2, 0);
+
+            const resP = segments.length * 5;
+            addArc(resP - 5, resP - 6, resP - 7, 1);
+
+            for (let i = 1; i < segments.length - 1; ++i) {
+                const c = segments[i], b = segments[i - 1], n = segments[i + 1], p = i * 5;
+                if ((c.x - b.x) * (n.y - c.y) > (n.x - c.x) * (c.y - b.y)) addArc(p, p - 1, p + 2);
+                else addArc(p, p + 1, p - 2);
+            }
+        }
+        this.geometry = new PIXI.Geometry().addAttribute('pos', vbo, 4).addIndex(ibo);
 
         this.curve = curve;
-        this.texPos = tintid / SliderMesh.ncolors + .001;
-
-        this.state = new PIXI.State;
-        this.state.depthTest = true;
+        this.texelY = tintid / SliderMesh.ncolors + .001;
     }
     _render(renderer) {
         renderer.batch.flush();
-        renderer.state.set(this.state);
+        renderer.state.set(SliderMesh.state);
 
         const uniform = SliderMesh.shader.uniforms, ox0 = uniform.ox, oy0 = uniform.oy, gl = renderer.gl;
-        uniform.texPos = this.texPos;
+        uniform.texelY = this.texelY;
         uniform.alpha = this.alpha;
         uniform.dt = 0;
         uniform.ot = .5;
@@ -76,11 +105,11 @@ export default class SliderMesh extends PIXI.Container {
         gl.colorMask(false, false, false, false);
         gl.depthFunc(gl.LESS);
 
-        const bind = (geometry, draw = true) => {
+        function bind(geometry, draw = true) {
             renderer.shader.bind(SliderMesh.shader);
             renderer.geometry.bind(geometry);
             if (draw) renderer.geometry.draw(gl.TRIANGLES);
-        };
+        }
         if (this.startt === 0 && this.endt === 1) {
             uniform.dt = 0;
             uniform.ot = 1;
@@ -188,32 +217,35 @@ export default class SliderMesh extends PIXI.Container {
         }
         this.shader = PIXI.Shader.from(`
             attribute vec4 pos;
-            varying vec2 coord;
-            uniform float dx, dy, dt, ot, ox, oy, texPos;
+            varying vec2 texel;
+            uniform float dx, dy, dt, ot, ox, oy, texelY;
             void main() {
-                coord = vec2(pos.w, texPos);
+                texel = vec2(pos.w, texelY);
                 gl_Position = vec4(pos.xy * vec2(dx, dy) + vec2(ox, oy), pos.w + 2.0 * float(pos.z * dt > ot), 1.0);
             }`, `
-            varying vec2 coord;
-            uniform sampler2D tex;
+            varying vec2 texel;
+            uniform sampler2D texture;
             uniform float alpha;
             void main() {
-                gl_FragColor = alpha * texture2D(tex, coord);
+                gl_FragColor = alpha * texture2D(texture, texel);
             }`, {
-            tex: PIXI.Texture.fromBuffer(buf, width, colors.length),
+            texture: PIXI.Texture.fromBuffer(buf, width, colors.length),
             dx: transform.dx, dy: transform.dy, ox: transform.ox, oy: transform.oy
         });
         this.ncolors = colors.length;
         this.radius = radius;
 
-        const vao = [], ibo = [], step = 2 * Math.PI / DIVIDES;
-        vao.push(0, 0, 0, 0);
+        this.state = new PIXI.State;
+        this.state.depthTest = true;
+
+        const vbo = [], ibo = [], step = 2 * Math.PI / DIVIDES;
+        vbo.push(0, 0, 0, 0);
         for (let i = 0; i < DIVIDES; ++i) {
             const theta = step * i;
-            vao.push(radius * Math.cos(theta), radius * Math.sin(theta), 0, 1);
+            vbo.push(radius * Math.cos(theta), radius * Math.sin(theta), 0, 1);
             ibo.push(0, i + 1, (i + 1) % DIVIDES + 1);
         }
-        this.circle = new PIXI.Geometry().addAttribute('pos', vao, 4).addIndex(ibo);
+        this.circle = new PIXI.Geometry().addAttribute('pos', vbo, 4).addIndex(ibo);
     }
     static resetTransform(dx, dy, ox, oy) {
         const uniform = this.shader.uniforms;
@@ -224,7 +256,7 @@ export default class SliderMesh extends PIXI.Container {
     }
     static deallocate() {
         this.circle.dispose();
-        this.shader.uniforms.tex.destroy(true);
+        this.shader.uniforms.texture.destroy(true);
         this.shader.destroy();
     }
     destroy(opt) {

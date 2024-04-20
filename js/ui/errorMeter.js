@@ -15,7 +15,7 @@ class ErrorMeter extends PIXI.Container {
             piece.height = height;
             piece.tint = tint;
             piece.anchor.set(.5);
-            piece.x = piece.y = 0;
+            piece.position.set(0);
         }
         newbarpiece(barheight, color50);
         newbarpiece(barheight * r100 / r50, color100);
@@ -26,23 +26,21 @@ class ErrorMeter extends PIXI.Container {
         centerline.height = 2;
         centerline.anchor.set(0, .5);
         centerline.tint = color300;
-        centerline.x = centerline.y = 0;
+        centerline.position.set(0);
 
         this.avgmarker = super.addChild(new PIXI.Sprite(skin['reversearrow.png']));
         this.avgmarker.scale.set(.08);
         this.avgmarker.anchor.set(.5);
-        this.avgmarker.x = -8;
-        this.avgmarker.y = 0;
+        this.avgmarker.position.set(-8, 0);
 
         this.ticks = Array(20);
         for (let i = 0; i < this.ticks.length; ++i) {
-            const tick = super.addChild(new PIXI.Sprite(skin['followpoint.png']));
+            const tick = this.ticks[i] = super.addChild(new PIXI.Sprite(skin['followpoint.png']));
             tick.scale.set(.25, .19);
             tick.anchor.set(0, .5);
             tick.alpha = 0;
             tick.t0 = Number.MIN_SAFE_INTEGER;
             tick.x = 2;
-            this.ticks[i] = tick;
         }
     }
     update(time) {

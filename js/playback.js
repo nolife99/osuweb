@@ -86,10 +86,8 @@ export default class Playback {
             app.renderer.resize(innerWidth, innerHeight);
             this.calcSize();
 
-            if (this.started) this.scoreOverlay.resize();
             if (this.bg && this.bg.texture) {
-                this.bg.x = innerWidth / 2;
-                this.bg.y = innerHeight / 2;
+                this.bg.position.set(innerWidth / 2, innerHeight / 2);
                 this.bg.scale.set(Math.max(innerWidth / this.bg.texture.width, innerHeight / this.bg.texture.height));
             }
             SliderMesh.resetTransform(
@@ -186,7 +184,7 @@ export default class Playback {
                     hit.fadeOutTime = 300;
                 }
             }
-            return new Promise(resolve => setTimeout(() => {
+            return new Promise(resolve => requestIdleCallback(() => {
                 if (game.hardrock) {
                     hit.y = 384 - hit.y;
                     if (hit.type === 'slider') for (const k of hit.keyframes) k.y = 384 - k.y;
@@ -255,7 +253,7 @@ export default class Playback {
             }, track.colors.SliderTrackOverride, track.colors.SliderBorder);
 
             let prev;
-            return Promise.all(hits.map(hit => new Promise(resolve => setTimeout(() => {
+            return Promise.all(hits.map(hit => new Promise(resolve => requestIdleCallback(() => {
                 if (hit.chain !== 0) {
                     const ofs = stackOfs * hit.chain;
                     hit.x += ofs;
@@ -278,11 +276,9 @@ export default class Playback {
                 const newHitSprite = (path, zIndex, scale = 1, anchorx = .5, anchory = .5) => {
                     const sprite = new PIXI.Sprite(skin[path]);
                     sprite.firstScale = this.hitScale * scale;
-                    sprite.scale.x = sprite.scale.y = sprite.firstScale;
-                    sprite.anchor.x = anchorx;
-                    sprite.anchor.y = anchory;
-                    sprite.x = hit.x;
-                    sprite.y = hit.y;
+                    sprite.scale.set(sprite.firstScale);
+                    sprite.anchor.set(anchorx, anchory);
+                    sprite.position.set(hit.x, hit.y);
                     sprite.zIndex = zIndex;
                     sprite.alpha = 0;
                     hit.objects.push(sprite);
@@ -304,7 +300,7 @@ export default class Playback {
                     hit.approach.tint = this.track.colors[hit.combo % this.track.colors.length];
                     if (!hit.enableflash) hit.approach.visible = false;
 
-                    hit.judges.push(this.createJudgement(hit.x, hit.y, hit.time + this.MehTime));
+                    hit.judges.push(this.createJudgement(hit, hit.time + this.MehTime));
                     hit.numbers = [];
                     if (!game.hideNumbers) {
                         if (index < 10) hit.numbers.push(newHitSprite(`score-${index}.png`, basedep, .4, .5, .47));
@@ -328,8 +324,7 @@ export default class Playback {
                             const sprite = new PIXI.Sprite(skin[path]);
                             sprite.scale.set(this.hitScale * scale);
                             sprite.anchor.set(.5);
-                            sprite.x = x;
-                            sprite.y = y;
+                            sprite.position.set(x, y);
                             sprite.zIndex = 1 - .000001 * hit.hitIndex;
                             sprite.alpha = 0;
                             hit.objects.push(sprite);
@@ -368,7 +363,7 @@ export default class Playback {
                         createHitCircle();
 
                         const v = hit.repeat % 2 === 1 ? hit.curve.pointAt(1) : hit;
-                        hit.judges.push(this.createJudgement(v.x, v.y, hit.time + hit.sliderTimeTotal + this.GoodTime));
+                        hit.judges.push(this.createJudgement(v, hit.time + hit.sliderTimeTotal + this.GoodTime));
                         break;
 
                     case 'spinner':
@@ -398,7 +393,7 @@ export default class Playback {
                             hit.prog.visible = false;
                             hit.base.visible = false;
                         }
-                        hit.judges.push(this.createJudgement(hit.x, hit.y, hit.endTime + 233));
+                        hit.judges.push(this.createJudgement(hit, hit.endTime + 233));
                         break;
                 }
                 if (!game.hideFollow && prev && hit.type !== 'spinner' && hit.combo === prev.combo) {
@@ -452,8 +447,7 @@ export default class Playback {
         this.gfx.height *= .8;
         this.gfx.xoffset = (innerWidth - this.gfx.width) / 2;
         this.gfx.yoffset = (innerHeight - this.gfx.height) / 2;
-        this.gamefield.x = this.gfx.xoffset;
-        this.gamefield.y = this.gfx.yoffset;
+        this.gamefield.position.set(this.gfx.xoffset, this.gfx.yoffset);
         this.gamefield.scale.set(this.gfx.width / 512);
     }
     resume() {
@@ -486,7 +480,7 @@ export default class Playback {
             };
         }
     }
-    createJudgement(x, y, finalTime) {
+    createJudgement(pos, finalTime) {
         const judge = new PIXI.Text(null, {
             fontFamily: 'Venera', fontSize: 20, fill: 0xffffff
         });
@@ -494,8 +488,8 @@ export default class Playback {
         judge.anchor.set(.5);
         judge.scale.set(this.hitScale);
         judge.visible = false;
-        judge.x = x;
-        judge.baseY = judge.y = y;
+        judge.x = pos.x;
+        judge.baseY = judge.y = pos.y;
         judge.points = -1;
         judge.finalTime = finalTime;
         judge.defaultScore = 0;
@@ -556,8 +550,7 @@ export default class Playback {
                 if (game.backgroundBlurRate > .0001) {
                     const sprite = new PIXI.Sprite(txt);
                     sprite.anchor.set(.5);
-                    sprite.x = txt.width / 2;
-                    sprite.y = txt.height / 2;
+                    sprite.position.set(txt.width / 2, txt.height / 2);
 
                     const shortSide = Math.min(txt.width, txt.height), blurPower = game.backgroundBlurRate * shortSide,
                         t = Math.max(shortSide, Math.max(10, blurPower) * 3);
@@ -578,8 +571,7 @@ export default class Playback {
                 else this.bg = new PIXI.Sprite(txt);
 
                 this.bg.anchor.set(.5);
-                this.bg.x = innerWidth / 2;
-                this.bg.y = innerHeight / 2;
+                this.bg.position.set(innerWidth / 2, innerHeight / 2);
                 this.bg.scale.set(Math.max(innerWidth / txt.width, innerHeight / txt.height));
                 app.stage.addChildAt(this.bg, 0);
             }, txt = PIXI.Loader.shared.resources[key];
@@ -688,8 +680,7 @@ export default class Playback {
                         let relpos = clamp01((time - fadeInTime) / hitFadeIn);
 
                         relpos *= 2 - relpos;
-                        o.x = x + ((f.x1 + o.frac * f.dx) - x) * relpos;
-                        o.y = y + ((f.y1 + o.frac * f.dy) - y) * relpos;
+                        o.position.set(x + ((f.x1 + o.frac * f.dx) - x) * relpos, y + ((f.y1 + o.frac * f.dy) - y) * relpos);
                         o.alpha = (time < fadeOutTime ? (time - fadeInTime) / hitFadeIn : 1 - (time - fadeOutTime) / hitFadeIn) / 2;
                     }
                     const diff = hit.time - time, opaque = this.approachTime - this.approachFade;
@@ -772,8 +763,7 @@ export default class Playback {
                                 hit.body.endt = t;
                                 if (hit.reverse) {
                                     const p = hit.curve.pointAt(t);
-                                    hit.reverse.x = p.x;
-                                    hit.reverse.y = p.y;
+                                    hit.reverse.position.set(p.x, p.y);
 
                                     if (t < .5) {
                                         const p2 = hit.curve.pointAt(t + .000001);

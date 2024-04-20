@@ -1,6 +1,6 @@
 export default class BezierApproximator {
     paths = [];
-    pointLength = 0;
+    calcLength = 0;
 
     constructor(hit, line) {
         this.definedLength = hit.pixelLength;
@@ -29,18 +29,18 @@ export default class BezierApproximator {
             const parts = new Float32Array(curve.length - 1);
             for (let j = 0; j < parts.length; ++j) {
                 const cur = curve[j], nex = curve[j + 1];
-                this.pointLength += parts[j] = Math.hypot(nex.x - cur.x, nex.y - cur.y);
+                this.calcLength += parts[j] = Math.hypot(nex.x - cur.x, nex.y - cur.y);
             }
             return {
-                lengths: parts, total: this.pointLength
+                lengths: parts, total: this.calcLength
             };
         });
     }
     pointAt(t) {
         const target = t * this.definedLength;
-        if (this.pointLength < target) {
+        if (this.calcLength < target) {
             const lastCurve = this.paths.at(-1), p1 = lastCurve.at(-1), p2 = lastCurve.at(-2),
-                dir = Math.atan2(p1.y - p2.y, p1.x - p2.x), overshoot = target - this.pointLength;
+                dir = Math.atan2(p1.y - p2.y, p1.x - p2.x), overshoot = target - this.calcLength;
             return {
                 x: p1.x + overshoot * Math.cos(dir), y: p1.y + overshoot * Math.sin(dir), t: t
             };

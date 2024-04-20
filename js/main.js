@@ -24,9 +24,8 @@ if (mapList.length > 0) {
 
     const tempbox = Array(mapList.length);
     for (let i = 0; i < mapList.length; ++i) {
-        const box = document.createElement('div');
+        const box = pBeatmapList.insertBefore(document.createElement('div'), pDragbox);
         box.className = 'beatmapbox';
-        pBeatmapList.insertBefore(box, pDragbox);
         tempbox[i] = box;
     }
     const loadingCounter = counter[1];
@@ -145,11 +144,9 @@ class BeatmapController {
         let playback = new Playback(this.osu, this.osu.tracks[trackid]);
         app.ticker.add(() => {
             playback.render(app.ticker.elapsedMS, app.ticker.lastTime);
-            if (cursor) {
-                cursor.x = game.mouseX / 512 * playback.gfx.width + playback.gfx.xoffset;
-                cursor.y = game.mouseY / 384 * playback.gfx.height + playback.gfx.yoffset;
-                app.stage.addChild(cursor);
-            }
+            if (cursor) app.stage.addChild(cursor).position.set(
+                game.mouseX / 512 * playback.gfx.width + playback.gfx.xoffset,
+                game.mouseY / 384 * playback.gfx.height + playback.gfx.yoffset);
             app.renderer.render(app.stage);
         }).start();
 
@@ -175,16 +172,13 @@ class BeatmapController {
         };
     }
     createBeatmapBox() {
-        const box = document.createElement('div'), boxCover = document.createElement('img'),
-            mapTitle = document.createElement('div'), mapper = document.createElement('div');
+        const box = document.createElement('div'), boxCover = box.appendChild(document.createElement('img')),
+            mapTitle = box.appendChild(document.createElement('div')), mapper = box.appendChild(document.createElement('div'));
 
         box.className = 'beatmapbox';
         boxCover.className = 'beatmapcover';
         mapTitle.className = 'beatmaptitle';
         mapper.className = 'beatmapauthor';
-        box.appendChild(boxCover);
-        box.appendChild(mapTitle);
-        box.appendChild(mapper);
 
         mapTitle.innerText = this.osu.tracks[0].metadata.Title;
         mapper.innerText = `${this.osu.tracks[0].metadata.Artist}/${this.osu.tracks[0].metadata.Creator}`;
@@ -192,9 +186,8 @@ class BeatmapController {
 
         const first = this.osu.tracks[0].length;
         if (first) {
-            const mapLength = document.createElement('div');
+            const mapLength = box.appendChild(document.createElement('div'));
             mapLength.className = 'beatmaplength';
-            box.appendChild(mapLength);
 
             let mins = Math.floor(first / 60), text = '';
             if (mins >= 60) {
@@ -206,7 +199,7 @@ class BeatmapController {
         box.onclick = e => {
             if (!showingDifficultyBox) {
                 e.stopPropagation();
-                const difficultyBox = document.createElement('div'), closeDifficultyMenu = () => {
+                const difficultyBox = box.appendChild(document.createElement('div')), closeDifficultyMenu = () => {
                     box.removeChild(difficultyBox);
                     showingDifficultyBox = false;
                     removeEventListener('click', closeDifficultyMenu, false);
@@ -218,9 +211,9 @@ class BeatmapController {
                 difficultyBox.style.top = e.clientY - rect.top + 'px';
 
                 for (let i = 0; i < this.osu.tracks.length; ++i) {
-                    const difficultyItem = document.createElement('div'),
-                        difficultyRing = document.createElement('div'),
-                        difficultyText = document.createElement('span');
+                    const difficultyItem = difficultyBox.appendChild(document.createElement('div')),
+                        difficultyRing = difficultyItem.appendChild(document.createElement('div')),
+                        difficultyText = difficultyItem.appendChild(document.createElement('span'));
                     difficultyItem.className = 'difficulty-item';
                     difficultyRing.className = 'difficulty-ring';
 
@@ -235,17 +228,12 @@ class BeatmapController {
                     }
 
                     difficultyText.innerText = this.osu.tracks[i].metadata.Version;
-                    difficultyItem.appendChild(difficultyRing);
-                    difficultyItem.appendChild(difficultyText);
-                    difficultyBox.appendChild(difficultyItem);
                     difficultyItem.onclick = e => {
                         e.stopPropagation();
                         closeDifficultyMenu();
                         this.startGame(i);
                     };
                 }
-                box.appendChild(difficultyBox);
-
                 showingDifficultyBox = true;
                 addEventListener('click', closeDifficultyMenu, false);
             }

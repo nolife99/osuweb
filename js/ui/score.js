@@ -60,7 +60,7 @@ function newdiv(parent, classname, text) {
     return div;
 }
 function f(a, mul) {
-    for (const b of a) b.scale.x = b.scale.y = mul;
+    for (const b of a) b.scale.set(mul);
 }
 function setSpriteArrayText(arr, str) {
     arr.width = 0;
@@ -105,8 +105,8 @@ export default class ScoreOverlay extends PIXI.Container {
         this.scoreMultiplier = scoreMultiplier;
 
         this.scoreDigits = this.newSpriteArray(10, .4, 0xddffff);
-        this.comboDigits = this.newSpriteArray(6, .2, 0xddffff);
-        this.accuracyDigits = this.newSpriteArray(7, .2, 0xddffff);
+        this.comboDigits = this.newSpriteArray(5, .2, 0xddffff);
+        this.accDigits = this.newSpriteArray(7, .2, 0xddffff);
         this.HPbar = this.newSpriteArray(3, .5);
 
         this.HPbar[0].texture = skin['hpbarleft.png'];
@@ -119,25 +119,12 @@ export default class ScoreOverlay extends PIXI.Container {
     newSpriteArray(len, scaleMul, tint = 0xffffff) {
         const a = Array(len);
         for (let i = 0; i < len; ++i) {
-            const s = super.addChild(new PIXI.Sprite);
-            s.scale.x = s.scale.y = this.scaleMul * scaleMul;
-            s.anchor.x = s.anchor.y = 0;
+            const s = a[i] = super.addChild(new PIXI.Sprite);
+            s.scale.set(this.scaleMul * scaleMul);
             s.alpha = 1;
             s.tint = tint;
-            a[i] = s;
         }
         return a;
-    }
-    resize() {
-        this.scaleMul = innerHeight / 800;
-
-        f(this.scoreDigits, this.scaleMul * .4);
-        f(this.comboDigits, this.scaleMul / 5);
-        f(this.accuracyDigits, this.scaleMul / 5);
-        f(this.HPbar, this.scaleMul / 2);
-
-        this.HPbar[0].scale.x = this.HPbar[1].scale.x = innerWidth / 500;
-        this.HPbar[0].y = this.HPbar[1].y = this.HPbar[2].y = -7 * this.scaleMul;
     }
     HPincreasefor(result, isTick) {
         if (isTick) {
@@ -181,21 +168,36 @@ export default class ScoreOverlay extends PIXI.Container {
         this.HPDisplay.set(time, this.HP);
     }
     update(time) {
+        this.scaleMul = innerHeight / 800;
+
+        f(this.scoreDigits, this.scaleMul * .4);
+        f(this.comboDigits, this.scaleMul / 5);
+        f(this.accDigits, this.scaleMul / 5);
+        f(this.HPbar, this.scaleMul / 2);
+
+        this.HPbar[0].scale.x = this.HPbar[1].scale.x = innerWidth / 500;
+        this.HPbar[0].y = this.HPbar[1].y = this.HPbar[2].y = -7 * this.scaleMul;
         this.HPbar[0].x = this.HPbar[1].x = this.HPbar[2].x = this.HPDisplay.valueAt(time) * innerWidth;
 
         setSpriteArrayText(this.scoreDigits, this.scoreDisplay.valueAt(time).toFixed(0).padStart(6, '0'));
         setSpriteArrayText(this.comboDigits, this.comboDisplay.valueAt(time).toFixed(0) + 'x');
-        setSpriteArrayText(this.accuracyDigits, this.accuracyDisplay.valueAt(time).toFixed(2) + '%');
+        setSpriteArrayText(this.accDigits, this.accuracyDisplay.valueAt(time).toFixed(2) + '%');
 
         const basex = innerWidth / 2, basey = innerHeight * .017, unit = Math.min(innerWidth / 640, innerHeight / 480);
         setSpriteArrayPos(this.scoreDigits, basex - this.scoreDigits.width / 2, basey);
-        setSpriteArrayPos(this.accuracyDigits, basex - this.scoreDigits.width / 2 - this.accuracyDigits.width - 16 * unit, basey + 3 * unit);
+        setSpriteArrayPos(this.accDigits, basex - this.scoreDigits.width / 2 - this.accDigits.width - 16 * unit, basey + 3 * unit);
         setSpriteArrayPos(this.comboDigits, basex + this.scoreDigits.width / 2 + 16 * unit, basey + 3 * unit);
     }
     showSummary(metadata, a, playback) {
-        const acc = this.judgeTotal / this.maxJudgeTotal * 100, rank = grade(acc), grading = newdiv(null, 'grading');
+        const acc = this.judgeTotal / this.maxJudgeTotal * 100, grading = document.body.appendChild(newdiv(null, 'grading'));
         grading.classList.add('transparent');
-        document.body.appendChild(grading);
+
+        let rank = 'D';
+        if (acc >= 1) rank = 'SS';
+        else if (acc >= .95) rank = 'S';
+        else if (acc >= .9) rank = 'A';
+        else if (acc >= .8) rank = 'B';
+        else if (acc >= .7) rank = 'C';
 
         const top = newdiv(grading, 'top'), info = newdiv(top, 'beatmap-info');
         newdiv(info, 'title', metadata.Title);

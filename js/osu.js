@@ -240,7 +240,7 @@ export default class Osu {
                     if (!PIXI.Loader.shared.resources[id]) PIXI.Loader.shared.add({
                         key: id.toString(), url: b, loadType: PIXI.LoaderResource.LOAD_TYPE.IMAGE
                     });
-                }).catch();
+                }, () => {});
                 return;
             }
             catch { }
