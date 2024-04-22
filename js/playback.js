@@ -68,6 +68,8 @@ export default class Playback {
         this.skipTime = track.hits[0].time - 2000;
 
         osu.onready = () => {
+            for (const a of document.getElementsByTagName('audio')) if (a.softstop) a.softstop();
+            
             this.errorMeter = new ErrorMeterOverlay(this.GreatTime, this.GoodTime, this.MehTime);
             this.progOverlay = new ProgressOverlay(track.hits[0].time, track.hits.at(-1).endTime);
             this.scoreOverlay = new ScoreOverlay(this.HP, scoreMult);
@@ -443,12 +445,12 @@ export default class Playback {
         this.gfx.height = innerHeight;
         if (this.gfx.width / 512 > this.gfx.height / 384) this.gfx.width = this.gfx.height / 384 * 512;
         else this.gfx.height = this.gfx.width / 512 * 384;
-        this.gfx.width *= .8;
-        this.gfx.height *= .8;
+        this.gfx.width *= .88;
+        this.gfx.height *= .88;
         this.gfx.xoffset = (innerWidth - this.gfx.width) / 2;
         this.gfx.yoffset = (innerHeight - this.gfx.height) / 2;
         this.gamefield.position.set(this.gfx.xoffset, this.gfx.yoffset);
-        this.gamefield.scale.set(this.gfx.width / 512);
+        this.gamefield.scale.set(this.gfx.height / 384);
     }
     resume() {
         document.getElementsByClassName('pause-menu')[0].hidden = true;
@@ -576,9 +578,9 @@ export default class Playback {
                 app.stage.addChildAt(this.bg, 0);
             }, txt = PIXI.Loader.shared.resources[key];
 
-            if (txt.texture) consumeImage(txt.texture);
-            else PIXI.Loader.shared.onComplete = async loader => loader.add({
-                key: key.toString(), url: uri ? await uri() : defaultBg, loadType: PIXI.LoaderResource.LOAD_TYPE.IMAGE
+            if (txt?.texture) consumeImage(txt.texture);
+            else PIXI.Loader.shared.add(key.toString(), uri ? await uri() : key, {
+                loadType: PIXI.LoaderResource.LOAD_TYPE.IMAGE
             }, resource => consumeImage(resource.texture)).load();
         }
         if (this.track.events.length > 0) {

@@ -32,7 +32,7 @@ export default class ProgressOverlay extends PIXI.Container {
         this.remaining.anchor.set(1);
         this.past.anchor.set(0, 1);
 
-        super.addChild(this.remaining, this.past);
+        this.addChild(this.remaining, this.past);
     }
     update(time) {
         if (time > this.endtime) return;

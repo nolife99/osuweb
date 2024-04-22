@@ -15,16 +15,9 @@ export default class BreakOverlay extends PIXI.Container {
         super();
 
         this.barmid.anchor.set(.5);
-        this.barmid.position.set(0);
-
-        this.barleft.anchor.set(.1, .5);
+        this.barleft.anchor.set(.08, .5);
+        this.barright.anchor.set(.08, .5);
         this.barleft.rotation = Math.PI;
-        this.barleft.y = 0;
-
-        this.barright.anchor.set(.1, .5);
-        this.barright.y = 0;
-
-        this.barmid.blendMode = this.barleft.blendMode = this.barright.blendMode = PIXI.BLEND_MODES.ADD;
 
         this.barmid.scale.set(.3);
         this.barleft.scale.set(.3);
@@ -32,9 +25,10 @@ export default class BreakOverlay extends PIXI.Container {
 
         this.number.roundPixels = true;
         this.number.anchor.set(.5);
-        this.number.position.set(0, -40);
+        this.number.y = -40;
 
-        super.addChild(this.barmid, this.barleft, this.barright, this.number);
+        this.barmid.blendMode = this.barleft.blendMode = this.barright.blendMode = PIXI.BLEND_MODES.ADD;
+        this.addChild(this.barmid, this.barleft, this.barright, this.number);
     }
     countdown(end, time) {
         if (!this.visible) {
@@ -54,7 +48,7 @@ export default class BreakOverlay extends PIXI.Container {
         this.barleft.x = -radius;
         this.barright.x = radius;
         this.number.text = Math.ceil(t / 1000).toString();
-        super.alpha = Math.min(t, time - this.starttime - 200) / this.fadetime;
+        this.alpha = Math.min(t, time - this.starttime - 200) / this.fadetime;
     }
     destroy(opt) {
         super.destroy(opt);

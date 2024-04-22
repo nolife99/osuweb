@@ -29,8 +29,8 @@ class Track {
             }
             switch (section) {
                 case '[General]':
-                    key = line.slice(0, line.indexOf(':')), value = line.slice(line.indexOf(':') + 1);
-                    if (isNaN(value)) this.general[key] = value.trim();
+                    key = line.slice(0, line.indexOf(':')), value = line.slice(line.indexOf(':') + 2);
+                    if (isNaN(value)) this.general[key] = value;
                     else this.general[key] = +value;
                     break;
 
@@ -165,9 +165,6 @@ class Track {
                     break;
             }
         }
-
-        this.general.PreviewTime /= 10;
-        if (this.general.PreviewTime > this.hits[0].time) this.general.PreviewTime = 0;
         if (this.colors.length === 0) this.colors = [0x609f9f, 0xc0c0c0, 0x80ffff, 0x8bbfde];
 
         let last = this.timing[0];
@@ -237,18 +234,18 @@ export default class Osu {
                 const entry = this.zip.getChildByName(file.slice(1, file.length - 1)), id = entry.id + entry.uncompressedSize;
                 entry.getData64URI().then(b => {
                     img.src = b;
-                    if (!PIXI.Loader.shared.resources[id]) PIXI.Loader.shared.add({
-                        key: id.toString(), url: b, loadType: PIXI.LoaderResource.LOAD_TYPE.IMAGE
+                    if (!PIXI.Loader.shared.resources[id]) PIXI.Loader.shared.add(id.toString(), b, {
+                        loadType: PIXI.LoaderResource.LOAD_TYPE.IMAGE
                     });
-                }, () => {});
+                }).catch(() => {});
                 return;
             }
             catch { }
         }
         img.src = 'asset/skin/defaultbg.jpg';
     }
-    loadAudio(tIndex) {
-        return this.zip.getChildByName(this.tracks[tIndex].general.AudioFilename).getUint8Array().then(e => this.audio = new OsuAudio(e, this.onready));
+    loadAudio(track) {
+        return this.zip.getChildByName(track.general.AudioFilename).getUint8Array().then(e => this.audio = new OsuAudio(e, this.onready));
     }
     sortTracks() {
         this.tracks = this.tracks.filter(t => t.general.Mode !== 3);

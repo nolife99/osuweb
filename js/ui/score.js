@@ -119,7 +119,7 @@ export default class ScoreOverlay extends PIXI.Container {
     newSpriteArray(len, scaleMul, tint = 0xffffff) {
         const a = Array(len);
         for (let i = 0; i < len; ++i) {
-            const s = a[i] = super.addChild(new PIXI.Sprite);
+            const s = a[i] = this.addChild(new PIXI.Sprite);
             s.scale.set(this.scaleMul * scaleMul);
             s.alpha = 1;
             s.tint = tint;

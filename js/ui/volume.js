@@ -18,7 +18,7 @@ export default class VolumeMenu extends PIXI.Container {
         this.mastertext.anchor.set(.5);
         this.volumetext.anchor.set(.5);
 
-        super.addChild(this.mastertext, this.volumetext);
+        this.addChild(this.mastertext, this.volumetext);
     }
     set(volume) {
         this.changed = true;

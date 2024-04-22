@@ -10,7 +10,7 @@ class ErrorMeter extends PIXI.Container {
 
         this.lscale = barheight / 2 / r50;
         const newbarpiece = (height, tint) => {
-            const piece = super.addChild(new PIXI.Sprite(skin['errormeterbar.png']));
+            const piece = this.addChild(new PIXI.Sprite(skin['errormeterbar.png']));
             piece.width = 2;
             piece.height = height;
             piece.tint = tint;
@@ -21,21 +21,21 @@ class ErrorMeter extends PIXI.Container {
         newbarpiece(barheight * r100 / r50, color100);
         newbarpiece(barheight * r300 / r50, color300);
 
-        const centerline = super.addChild(new PIXI.Sprite(skin['errormeterbar.png']));
+        const centerline = this.addChild(new PIXI.Sprite(skin['errormeterbar.png']));
         centerline.width = 5;
         centerline.height = 2;
         centerline.anchor.set(0, .5);
         centerline.tint = color300;
         centerline.position.set(0);
 
-        this.avgmarker = super.addChild(new PIXI.Sprite(skin['reversearrow.png']));
+        this.avgmarker = this.addChild(new PIXI.Sprite(skin['reversearrow.png']));
         this.avgmarker.scale.set(.08);
         this.avgmarker.anchor.set(.5);
         this.avgmarker.position.set(-8, 0);
 
         this.ticks = Array(20);
         for (let i = 0; i < this.ticks.length; ++i) {
-            const tick = this.ticks[i] = super.addChild(new PIXI.Sprite(skin['followpoint.png']));
+            const tick = this.ticks[i] = this.addChild(new PIXI.Sprite(skin['followpoint.png']));
             tick.scale.set(.25, .19);
             tick.anchor.set(0, .5);
             tick.alpha = 0;
@@ -68,7 +68,7 @@ export default class ErrorMeterOverlay extends PIXI.Container {
         this.barr = new ErrorMeter(r300, r100, r50);
         this.barr.scale.x = -1;
 
-        super.addChild(this.barl, this.barr);
+        this.addChild(this.barl, this.barr);
     }
     hit(hiterror, time) {
         this.barl.hit(hiterror, time);

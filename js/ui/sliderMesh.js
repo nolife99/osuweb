@@ -6,7 +6,7 @@ export default class SliderMesh extends PIXI.Container {
     constructor(curve, tintid) {
         super();
 
-        const vbo = [], ibo = [], first = curve.pointAt(0);
+        const ibo = [], first = curve.pointAt(0), vbo = [first.x, first.y, 0, 0];
         function addArc(c, p1, p2, t) {
             const v = vbo[4 * c], nextV = vbo[4 * c + 1], aStart = Math.atan2(vbo[4 * p1 + 1] - nextV, vbo[4 * p1] - v);
             let aEnd = Math.atan2(vbo[4 * p2 + 1] - nextV, vbo[4 * p2] - v);
@@ -23,66 +23,33 @@ export default class SliderMesh extends PIXI.Container {
             }
             ibo.push(c, p1, p2);
         }
-        vbo.push(first.x, first.y, 0, 0);
 
-        if (curve.calcLength < 131070) {
-            const res = Math.max(DIVIDES, Math.min(Math.ceil(curve.calcLength / 4), 10000));
-            for (let i = 1; i < res; ++i) {
-                const pt = curve.pointAt((i + 1) / res), prev = curve.pointAt(i / res), dx = pt.x - prev.x, dy = pt.y - prev.y,
-                    length = Math.hypot(dx, dy), ox = SliderMesh.radius * dy / length, oy = SliderMesh.radius * dx / length;
+        const res = Math.max(DIVIDES, Math.min(Math.ceil(curve.calcLength / 4.7), 10000));
+        for (let i = 1; i < res; ++i) {
+            const pt = curve.pointAt((i + 1) / res), prev = curve.pointAt(i / res), dx = pt.x - prev.x, dy = pt.y - prev.y,
+                length = Math.hypot(dx, dy), ox = SliderMesh.radius * dy / length, oy = SliderMesh.radius * dx / length;
 
-                vbo.push(prev.x - ox, prev.y + oy, prev.t, 1,
-                    prev.x + ox, prev.y - oy, prev.t, 1,
-                    pt.x - ox, pt.y + oy, pt.t, 1,
-                    pt.x + ox, pt.y - oy, pt.t, 1,
-                    pt.x, pt.y, pt.t, 0);
+            vbo.push(prev.x - ox, prev.y + oy, prev.t, 1,
+                prev.x + ox, prev.y - oy, prev.t, 1,
+                pt.x - ox, pt.y + oy, pt.t, 1,
+                pt.x + ox, pt.y - oy, pt.t, 1,
+                pt.x, pt.y, pt.t, 0);
 
-                const n = 5 * i;
-                ibo.push(n - 5, n - 4, n,
-                    n - 4, n, n - 2,
-                    n - 5, n - 3, n,
-                    n - 3, n, n - 1);
-            }
-            addArc(0, 1, 2, 0);
-
-            const resP = res * 5;
-            addArc(resP - 5, resP - 6, resP - 7, 1);
-
-            for (let i = 1; i < res - 1; ++i) {
-                const c = curve.pointAt((i + 1) / res), b = curve.pointAt(i / res), n = curve.pointAt((i + 2) / res), p = i * 5;
-                if ((c.x - b.x) * (n.y - c.y) > (n.x - c.x) * (c.y - b.y)) addArc(p, p - 1, p + 2);
-                else addArc(p, p + 1, p - 2);
-            }
+            const n = 5 * i;
+            ibo.push(n - 5, n - 4, n,
+                n - 4, n, n - 2,
+                n - 5, n - 3, n,
+                n - 3, n, n - 1);
         }
-        else {
-            const segments = curve.paths.flat();
-            for (let i = 1; i < segments.length; ++i) {
-                const pt = segments[i], prev = segments[i - 1], dx = pt.x - prev.x, dy = pt.y - prev.y,
-                    preT = (i - 1) / segments.length, t = i / segments.length,
-                    length = Math.hypot(dx, dy), ox = SliderMesh.radius * dy / length, oy = SliderMesh.radius * dx / length;
+        addArc(0, 1, 2, 0);
 
-                vbo.push(prev.x - ox, prev.y + oy, preT, 1,
-                    prev.x + ox, prev.y - oy, preT, 1,
-                    pt.x - ox, pt.y + oy, t, 1,
-                    pt.x + ox, pt.y - oy, t, 1,
-                    pt.x, pt.y, t, 0);
+        const resP = res * 5;
+        addArc(resP - 5, resP - 6, resP - 7, 1);
 
-                const n = 5 * i;
-                ibo.push(n - 5, n - 4, n,
-                    n - 4, n, n - 2,
-                    n - 5, n - 3, n,
-                    n - 3, n, n - 1);
-            }
-            addArc(0, 1, 2, 0);
-
-            const resP = segments.length * 5;
-            addArc(resP - 5, resP - 6, resP - 7, 1);
-
-            for (let i = 1; i < segments.length - 1; ++i) {
-                const c = segments[i], b = segments[i - 1], n = segments[i + 1], p = i * 5;
-                if ((c.x - b.x) * (n.y - c.y) > (n.x - c.x) * (c.y - b.y)) addArc(p, p - 1, p + 2);
-                else addArc(p, p + 1, p - 2);
-            }
+        for (let i = 1; i < res - 1; ++i) {
+            const c = curve.pointAt((i + 1) / res), b = curve.pointAt(i / res), n = curve.pointAt((i + 2) / res), p = i * 5;
+            if ((c.x - b.x) * (n.y - c.y) > (n.x - c.x) * (c.y - b.y)) addArc(p, p - 1, p + 2);
+            else addArc(p, p + 1, p - 2);
         }
         this.geometry = new PIXI.Geometry().addAttribute('pos', vbo, 4).addIndex(ibo);
 
@@ -238,8 +205,7 @@ export default class SliderMesh extends PIXI.Container {
         this.state = new PIXI.State;
         this.state.depthTest = true;
 
-        const vbo = [], ibo = [], step = 2 * Math.PI / DIVIDES;
-        vbo.push(0, 0, 0, 0);
+        const vbo = [0, 0, 0, 0], ibo = [], step = 2 * Math.PI / DIVIDES;
         for (let i = 0; i < DIVIDES; ++i) {
             const theta = step * i;
             vbo.push(radius * Math.cos(theta), radius * Math.sin(theta), 0, 1);

@@ -21,8 +21,8 @@ export default class LoadingMenu extends PIXI.Container {
         this.loading.anchor.set(.5, .3);
         this.loading.scale.set(1, .6);
 
-        super.addChild(this.bg);
-        super.addChild(this.loading);
+        this.addChild(this.bg);
+        this.addChild(this.loading);
 
         this.title = new PIXI.Text(track.metadata.Title || '-', {
             fontFamily: 'Venera', fontSize: 24, fill: 0xffffff
@@ -39,10 +39,10 @@ export default class LoadingMenu extends PIXI.Container {
         this.source.anchor.set(.5);
         this.mapper.anchor.set(.5);
 
-        super.addChild(this.title, this.artist, this.version, this.source, this.mapper);
+        this.addChild(this.title, this.artist, this.version, this.source, this.mapper);
     }
     update(timestamp) {
-        if (super.alpha <= 0) this.visible = false;
+        if (this.alpha <= 0) this.visible = false;
         if (!this.visible) return;
 
         this.bg.x = this.title.x = this.artist.x = this.version.x = this.source.x = this.mapper.x = this.loading.x = innerWidth / 2;
@@ -61,7 +61,7 @@ export default class LoadingMenu extends PIXI.Container {
 
         const dt = timestamp - this.t0;
         if (dt > this.fadetime) this.visible = false;
-        else super.alpha = 1 - dt / this.fadetime;
+        else this.alpha = 1 - dt / this.fadetime;
     }
     destroy(opt) {
         super.destroy(opt);
