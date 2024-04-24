@@ -69,7 +69,7 @@ export default class Playback {
 
         osu.onready = () => {
             for (const a of document.getElementsByTagName('audio')) if (a.softstop) a.softstop();
-            
+
             this.errorMeter = new ErrorMeterOverlay(this.GreatTime, this.GoodTime, this.MehTime);
             this.progOverlay = new ProgressOverlay(track.hits[0].time, track.hits.at(-1).endTime);
             this.scoreOverlay = new ScoreOverlay(this.HP, scoreMult);
@@ -273,7 +273,6 @@ export default class Playback {
                 hit.ticks = [];
                 hit.objects = [];
                 hit.judges = [];
-                hit.score = -1;
 
                 const newHitSprite = (path, zIndex, scale = 1, anchorx = .5, anchory = .5) => {
                     const sprite = new PIXI.Sprite(skin[path]);
@@ -423,10 +422,13 @@ export default class Playback {
 
                     const spacing = 33, rotation = Math.atan2(container.dy, container.dx), distance = Math.hypot(container.dx, container.dy);
                     for (let d = spacing * 1.5; d < distance - spacing; d += spacing) {
-                        const frac = d / distance, p = container.addChild(new PIXI.Sprite(skin['followpoint.png']));
+                        const frac = d / distance, x = x1 + container.dx * frac, y = y1 + container.dy * frac;
+                        if (x < 0 || x > 512 || y < 0 || y > 384) continue;
+
+                        const p = container.addChild(new PIXI.Sprite(skin['followpoint.png']));
                         p.scale.set(this.hitScale * .4, this.hitScale * .3);
-                        p.x = x1 + container.dx * frac;
-                        p.y = y1 + container.dy * frac;
+                        p.x = x;
+                        p.y = y;
                         p.rotation = rotation;
                         p.anchor.set(.5);
                         p.blendMode = PIXI.BLEND_MODES.ADD;
@@ -445,8 +447,8 @@ export default class Playback {
         this.gfx.height = innerHeight;
         if (this.gfx.width / 512 > this.gfx.height / 384) this.gfx.width = this.gfx.height / 384 * 512;
         else this.gfx.height = this.gfx.width / 512 * 384;
-        this.gfx.width *= .88;
-        this.gfx.height *= .88;
+        this.gfx.width *= .85;
+        this.gfx.height *= .85;
         this.gfx.xoffset = (innerWidth - this.gfx.width) / 2;
         this.gfx.yoffset = (innerHeight - this.gfx.height) / 2;
         this.gamefield.position.set(this.gfx.xoffset, this.gfx.yoffset);
@@ -492,7 +494,6 @@ export default class Playback {
         judge.visible = false;
         judge.x = pos.x;
         judge.baseY = judge.y = pos.y;
-        judge.points = -1;
         judge.finalTime = finalTime;
         judge.defaultScore = 0;
         return judge;
@@ -516,7 +517,7 @@ export default class Playback {
         this.updateJudgement(judge, time);
     }
     updateJudgement(judge, time) {
-        if (judge.points < 0 && time > judge.finalTime) {
+        if (!judge.points && time > judge.finalTime) {
             const points = game.autoplay ? 300 : judge.defaultScore;
 
             this.scoreOverlay.hit(points, 300, judge.finalTime);
@@ -594,8 +595,7 @@ export default class Playback {
         while (this.timingId + 1 < this.track.timing.length && this.track.timing[this.timingId + 1].offset <= time) ++this.timingId;
         while (this.timingId > 0 && this.track.timing[this.timingId].offset > time) --this.timingId;
         const timing = this.track.timing[this.timingId],
-            volume = game.masterVolume * game.effectVolume * timing.volume,
-            defaultSet = timing.sampleSet || game.sampleSet;
+            volume = game.masterVolume * game.effectVolume * timing.volume, defaultSet = timing.sampleSet || game.sampleSet;
 
         function playHit(bitmask, normalSet, additionSet) {
             const normal = game.sample[normalSet].hitnormal;
@@ -620,12 +620,12 @@ export default class Playback {
             }
         }
         if (hit.type === 'circle' || hit.type === 'spinner') {
-            const normalSet = hit.hitSample.normalSet || defaultSet, additionSet = hit.hitSample.additionSet || normalSet;
-            playHit(hit.hitSound, normalSet, additionSet);
+            const normal = hit.hitSample.normal || defaultSet, addition = hit.hitSample.addition || normal;
+            playHit(hit.hitSound, normal, addition);
         }
         else if (hit.type === 'slider') {
-            const edgeSet = hit.edgeSets[id], normalSet = edgeSet.normalSet || defaultSet, additionSet = edgeSet.additionSet || normalSet;
-            playHit(hit.edgeHitsounds[id], normalSet, additionSet);
+            const edgeSet = hit.edgeSets[id], normal = edgeSet.normal || defaultSet, addition = edgeSet.addition || normal;
+            playHit(hit.edgeHitsounds[id], normal, addition);
         }
     }
     hitSuccess(hit, points, time) {
@@ -691,7 +691,7 @@ export default class Playback {
                     else hit.approach.scale.set(this.hitScale / 2);
 
                     if (diff < this.approachTime && diff > opaque) hit.approach.alpha = (this.approachTime - diff) / this.approachFade;
-                    else if (diff < opaque && hit.score < 0) hit.approach.alpha = 1;
+                    else if (diff < opaque && !hit.score) hit.approach.alpha = 1;
                     const noteFullAppear = this.approachTime - hit.objFadeIn, setcircleAlpha = alpha => {
                         hit.base.alpha = hit.circle.alpha = alpha;
                         for (const digit of hit.numbers) digit.alpha = alpha;
@@ -784,11 +784,10 @@ export default class Playback {
                             hit.followSize = Math.max(1, Math.min(2.2, hit.followSize + (time - hit.lastFollow) * dir));
                             hit.lastFollow = time;
                         }
-                        if (dAfter >= 0 && dAfter <= hit.fadeOutTime + hit.sliderTimeTotal) {
+                        if (dAfter > 0 && dAfter < hit.fadeOutTime + hit.sliderTimeTotal) {
                             let t = dAfter / hit.sliderTime;
-                            hit.currentRepeat = Math.min(Math.ceil(t), hit.repeat);
-
-                            const realT = t;
+                            const currentRepeat = Math.min(Math.ceil(t), hit.repeat), realT = t;
+                            
                             t = repeatclamp(Math.min(t, hit.repeat));
                             const at = hit.curve.pointAt(t);
 
@@ -807,21 +806,23 @@ export default class Playback {
                             const activated = game.autoplay || (game.down && isfollowing);
 
                             for (; hit.nexttick < hit.ticks.length; ++hit.nexttick) {
-                                const currentTick = hit.ticks[hit.nexttick];
-                                if (currentTick.time > time) break;
+                                const tick = hit.ticks[hit.nexttick];
+                                if (tick.time > time) break;
 
-                                if (!currentTick.result) {
+                                if (!tick.result) {
                                     if (activated) {
-                                        currentTick.result = true;
+                                        tick.result = true;
                                         hit.judges.at(-1).defaultScore = 50;
 
-                                        while (this.timingId + 1 < this.track.timing.length && this.track.timing[this.timingId + 1].offset <= currentTick.time) ++this.timingId;
+                                        while (this.timingId + 1 < this.track.timing.length && this.track.timing[this.timingId + 1].offset <= tick.time) ++this.timingId;
                                         while (this.timingId > 0 && this.track.timing[this.timingId].offset > time) --this.timingId;
-                                        const timing = this.track.timing[this.timingId], tickSound = game.sample[hit.hitSample.normalSet || timing.sampleSet || game.sampleSet].slidertick;
+                                        const timing = this.track.timing[this.timingId], 
+                                            tickSound = game.sample[hit.hitSample.normal || timing.sampleSet || game.sampleSet].slidertick;
+                                        
                                         tickSound.volume = game.masterVolume * game.effectVolume * timing.volume;
                                         tickSound.play();
                                     }
-                                    this.scoreOverlay.hit(activated ? 10 : 0, 10, currentTick.time);
+                                    this.scoreOverlay.hit(activated ? 10 : 0, 10, tick.time);
                                 }
                             }
                             for (let hsPlayed = 0; hit.nextRepeat < hit.repeat; ++hit.nextRepeat) {
@@ -863,10 +864,10 @@ export default class Playback {
                             }
                             if (hit.repeat > 1) {
                                 const normal = hit.repeat - hit.repeat % 2;
-                                hit.reverse.visible = hit.currentRepeat < normal;
-                                if (hit.reverse_b) hit.reverse_b.visible = hit.currentRepeat < normal - 1;
+                                hit.reverse.visible = currentRepeat < normal;
+                                if (hit.reverse_b) hit.reverse_b.visible = currentRepeat < normal - 1;
                             }
-                            if (game.snakeout && hit.currentRepeat === hit.repeat) {
+                            if (game.snakeout && currentRepeat === hit.repeat) {
                                 if (hit.repeat % 2 === 1) {
                                     hit.body.startt = t;
                                     hit.body.endt = 1;
@@ -885,7 +886,7 @@ export default class Playback {
                             }
                             else tick.scale.set(this.hitScale / 2);
 
-                            if (time >= tick.time) {
+                            if (time > tick.time) {
                                 const dt = (time - tick.time) / 150;
                                 if (tick.result) {
                                     tick.alpha *= clamp01(-((dt - 1) ** 5));
@@ -936,7 +937,7 @@ export default class Playback {
                         }
                         else hit.prog.scale.set(0);
 
-                        if (time > hit.endTime && hit.score < 0) {
+                        if (time > hit.endTime && !hit.score) {
                             if (game.autoplay) this.hitSuccess(hit, 300, hit.endTime);
                             else {
                                 let points = 300;

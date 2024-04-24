@@ -32,7 +32,7 @@ if (mapList.length > 0) {
     let loadedCount = 0;
     for (let i = 0; i < mapList.length; ++i) localforage.getItem(mapList[i]).then(blob => {
         const zipFs = new fs.FS;
-        zipFs.importUint8Array(blob).then(() => {
+        zipFs.importBlob(blob).then(() => {
             addbeatmap(zipFs, box => {
                 pBeatmapList.replaceChild(box, tempbox[i]);
                 pDragboxHint.innerText = defaultHint;
@@ -102,7 +102,7 @@ function previewMap(box, blob, time) {
     const a = box.appendChild(new Audio(URL.createObjectURL(blob)));
     a.volume = 0;
     a.currentTime = time;
-    
+
     a.play().then(() => {
         const fadeIn = setInterval(() => {
             if (a.volume < volume) a.volume = Math.min(volume, a.volume + .05 * volume);
@@ -291,32 +291,27 @@ function addbeatmap(osz, f) {
         f(map.createBeatmapBox());
     });
 }
-function handleDragDrop(e) {
+pDragbox.ondrop = e => {
     e.stopPropagation();
     e.preventDefault();
 
     pDragboxHint.innerText = loadingHint;
     for (const blob of e.dataTransfer.files) {
-        const zipFs = new fs.FS;
-        zipFs.importBlob(blob).then(() => {
-            const id = blob.size.toString();
-            addbeatmap(zipFs, box => {
-                pBeatmapList.insertBefore(box, pDragbox);
-                pDragboxHint.innerText = defaultHint;
-            });
-            zipFs.exportUint8Array().then(buf => localforage.setItem(id, buf)).then(() => {
-                if (!mapList.includes(id)) {
-                    mapList.push(id);
-                    localStorage.setItem('beatmapfilelist', JSON.stringify(mapList));
-                }
-            }).catch(err => console.warn('Error saving beatmap:', blob.name, err));
-        }).catch(ex => {
+        const id = blob.size.toString(), zipFs = new fs.FS;
+        localforage.setItem(id, blob);
+        if (!mapList.includes(id)) {
+            mapList.push(id);
+            localStorage.setItem('beatmapfilelist', JSON.stringify(mapList));
+        }
+        zipFs.importBlob(blob).then(() => addbeatmap(zipFs, box => {
+            pBeatmapList.insertBefore(box, pDragbox);
+            pDragboxHint.innerText = defaultHint;
+        })).catch(ex => {
             console.warn('Error during file transfer:', blob.name, ex);
             pDragboxHint.innerText = nonValidHint;
         });
     }
-}
-pDragbox.ondrop = handleDragDrop;
+};
 
 addEventListener('dragover', e => e.preventDefault(), false);
 addEventListener('drop', e => e.preventDefault(), false);

@@ -4,10 +4,10 @@ import { game } from './main.js';
 
 const inUpcoming = (click, playback) => hit => {
     const dx = click.x - hit.x, dy = click.y - hit.y;
-    return hit.score < 0 && dx * dx + dy * dy < playback.circleRadius * playback.circleRadius && Math.abs(click.time - hit.time) < playback.MehTime;
+    return !hit.score && dx * dx + dy * dy < playback.circleRadius * playback.circleRadius && Math.abs(click.time - hit.time) < playback.MehTime;
 }, inUpcoming_grace = (predict, playback) => hit => {
     const dx = predict.x - hit.x, dy = predict.y - hit.y, r = predict.r + playback.circleRadius;
-    return hit.score < 0 && dx * dx + dy * dy < r * r && Math.abs(predict.time - hit.time) < playback.MehTime;
+    return !hit.score && dx * dx + dy * dy < r * r && Math.abs(predict.time - hit.time) < playback.MehTime;
 }, spinRadius = 60;
 export default class Player {
     constructor(playback) {
@@ -172,7 +172,7 @@ export default class Player {
             const hit = this.playback.hits[this.curid];
             if (hit.time > time) break;
 
-            if (hit.score < 0) {
+            if (!hit.score) {
                 let targX = hit.x, targY = hit.y;
                 if (hit.type === 'spinner') {
                     const ang = Math.atan2(game.mouseY - targY, game.mouseX - targX);

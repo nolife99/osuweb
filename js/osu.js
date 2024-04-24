@@ -29,8 +29,8 @@ class Track {
             }
             switch (section) {
                 case '[General]':
-                    key = line.slice(0, line.indexOf(':')), value = line.slice(line.indexOf(':') + 2);
-                    if (isNaN(value)) this.general[key] = value;
+                    key = line.slice(0, line.indexOf(':')), value = line.slice(line.indexOf(':') + 1);
+                    if (isNaN(value)) this.general[key] = value.trim();
                     else this.general[key] = +value;
                     break;
 
@@ -96,8 +96,8 @@ class Track {
                         hit.type = 'circle';
                         const hitSample = (parts.length > 5 ? parts[5] : '0:0:0:0:').split(':');
                         hit.hitSample = {
-                            normalSet: +hitSample[0],
-                            additionSet: +hitSample[1],
+                            normal: +hitSample[0],
+                            addition: +hitSample[1],
                             // index: +hitSample[2],
                             // volume: +hitSample[3],
                             // filename: hitSample[4]
@@ -124,21 +124,21 @@ class Track {
 
                             hit.edgeSets = Array(hit.repeat + 1);
                             for (let wdnmd = 0; wdnmd < hit.repeat + 1; ++wdnmd) hit.edgeSets[wdnmd] = {
-                                normalSet: 0, additionSet: 0
+                                normal: 0, addition: 0
                             };
                             if (parts.length > 9) {
                                 const additions = parts[9].split('|');
                                 for (let wdnmd = 0; wdnmd < additions.length; ++wdnmd) {
                                     const sets = additions[wdnmd].split(':');
-                                    hit.edgeSets[wdnmd].normalSet = +sets[0];
-                                    hit.edgeSets[wdnmd].additionSet = +sets[1];
+                                    hit.edgeSets[wdnmd].normal = +sets[0];
+                                    hit.edgeSets[wdnmd].addition = +sets[1];
                                 }
                             }
                         }
                         const hitSample = (parts.length > 10 ? parts[10] : '0:0:0:0:').split(':');
                         hit.hitSample = {
-                            normalSet: +hitSample[0],
-                            additionSet: +hitSample[1],
+                            normal: +hitSample[0],
+                            addition: +hitSample[1],
                             // index: +hitSample[2],
                             // volume: +hitSample[3],
                             // filename: hitSample[4]
@@ -154,8 +154,8 @@ class Track {
 
                         const hitSample = (parts.length > 6 ? parts[6] : '0:0:0:0:').split(':');
                         hit.hitSample = {
-                            normalSet: +hitSample[0],
-                            additionSet: +hitSample[1],
+                            normal: +hitSample[0],
+                            addition: +hitSample[1],
                             // index: +hitSample[2],
                             // volume: +hitSample[3],
                             // filename: hitSample[4]
@@ -237,7 +237,7 @@ export default class Osu {
                     if (!PIXI.Loader.shared.resources[id]) PIXI.Loader.shared.add(id.toString(), b, {
                         loadType: PIXI.LoaderResource.LOAD_TYPE.IMAGE
                     });
-                }).catch(() => {});
+                }).catch(() => { });
                 return;
             }
             catch { }
