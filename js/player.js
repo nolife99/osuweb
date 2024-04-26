@@ -84,7 +84,12 @@ export default class Player {
                 e.stopPropagation();
                 game.down = k1 || k2 || m1 || m2;
             }
-
+            this.disableContextMenu = e => {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            
+            addEventListener('contextmenu', this.disableContextMenu);
             addEventListener('mousemove', this.mousemoveCallback);
             if (game.allowMouseButton) {
                 addEventListener('mousedown', this.mousedownCallback);
@@ -135,6 +140,7 @@ export default class Player {
         }
     }
     cleanup() {
+        removeEventListener('contextmenu', this.disableContextMenu);
         removeEventListener('mousemove', this.mousemoveCallback);
         removeEventListener('mousedown', this.mousedownCallback);
         removeEventListener('mouseup', this.mouseupCallback);

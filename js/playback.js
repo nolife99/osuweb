@@ -16,7 +16,9 @@ const glowFadeOut = 350, flashFadeIn = 40, defaultBg = 'asset/skin/defaultbg.jpg
     followZoomInTime = 100, ballFadeOut = 100, bgFadeTime = 800, spinnerInTime = 300,
     clamp01 = num => Math.min(Math.max(num, 0), 1), lerp = (a, b, t) => a + (b - a) * t,
     colorLerp = (rgb1, rgb2, t) => lerp(rgb1 >> 16, rgb2 >> 16, t) << 16 |
-        lerp((rgb1 >> 8) & 255, (rgb2 >> 8) & 255, t) << 8 | lerp(rgb1 & 255, rgb2 & 255, t);
+        lerp((rgb1 >> 8) & 255, (rgb2 >> 8) & 255, t) << 8 | lerp(rgb1 & 255, rgb2 & 255, t),
+    menu = document.getElementsByClassName('pause-menu')[0], buttons = document.getElementsByClassName('pausebutton'),
+    cont = buttons[0], retry = buttons[1], quit = buttons[2];;
 
 function repeatclamp(a) {
     a %= 2;
@@ -57,6 +59,18 @@ export default class Playback {
         game.mouseX = 256;
         game.mouseY = 192;
 
+        cont.onclick = () => this.resume();
+        retry.onclick = () => {
+            menu.hidden = true;
+            this.retry();
+            game.paused = false;
+        };
+        quit.onclick = () => {
+            menu.hidden = true;
+            this.quit();
+            game.paused = false;
+        };
+
         this.loadingMenu = new LoadingMenu(track);
         this.calcSize();
 
@@ -68,7 +82,7 @@ export default class Playback {
         this.skipTime = track.hits[0].time - 2000;
 
         osu.onready = () => {
-            for (const a of document.getElementsByTagName('audio')) if (a.softstop) a.softstop();
+            for (const a of document.getElementsByTagName('audio')) a.softstop?.();
 
             this.errorMeter = new ErrorMeterOverlay(this.GreatTime, this.GoodTime, this.MehTime);
             this.progOverlay = new ProgressOverlay(track.hits[0].time, track.hits.at(-1).endTime);
@@ -88,7 +102,7 @@ export default class Playback {
             app.renderer.resize(innerWidth, innerHeight);
             this.calcSize();
 
-            if (this.bg && this.bg.texture) {
+            if (this.bg?.texture) {
                 this.bg.position.set(innerWidth / 2, innerHeight / 2);
                 this.bg.scale.set(Math.max(innerWidth / this.bg.texture.width, innerHeight / this.bg.texture.height));
             }
@@ -129,7 +143,7 @@ export default class Playback {
         this.GoodTime = 140 - 8 * this.OD;
         this.GreatTime = 80 - 6 * this.OD;
 
-        this.approachTime = this.AR <= 5 ? 1800 - 120 * this.AR : 1950 - 150 * this.AR;
+        this.approachTime = this.AR > 5 ? 1950 - 150 * this.AR : 1800 - 120 * this.AR;
         this.approachFade = Math.min(800, this.approachTime);
 
         this.player = new Player(this);
@@ -261,7 +275,7 @@ export default class Playback {
                     hit.x += ofs;
                     hit.y += ofs;
 
-                    if (hit.type === "slider") {
+                    if (hit.type === 'slider') {
                         for (const k of hit.keyframes) {
                             k.x += ofs;
                             k.y += ofs;
@@ -455,33 +469,14 @@ export default class Playback {
         this.gamefield.scale.set(this.gfx.height / 384);
     }
     resume() {
-        document.getElementsByClassName('pause-menu')[0].hidden = true;
+        menu.hidden = true;
         this.osu.audio.play();
         game.paused = false;
     }
     pause() {
         if (this.osu.audio.pause()) {
             game.paused = true;
-            const menu = document.getElementsByClassName('pause-menu')[0], buttons = document.getElementsByClassName('pausebutton'),
-                cont = buttons[0], retry = buttons[1], quit = buttons[2];
-
             menu.hidden = false;
-            cont.onclick = () => {
-                this.resume();
-                cont.onclick = null;
-                retry.onclick = null;
-                quit.onclick = null;
-            };
-            retry.onclick = () => {
-                menu.hidden = true;
-                this.retry();
-                game.paused = false;
-            };
-            quit.onclick = () => {
-                menu.hidden = true;
-                this.quit();
-                game.paused = false;
-            };
         }
     }
     createJudgement(pos, finalTime) {
@@ -517,9 +512,8 @@ export default class Playback {
         this.updateJudgement(judge, time);
     }
     updateJudgement(judge, time) {
-        if (!judge.points && time > judge.finalTime) {
+        if (judge.points === undefined && time > judge.finalTime) {
             const points = game.autoplay ? 300 : judge.defaultScore;
-
             this.scoreOverlay.hit(points, 300, judge.finalTime);
             this.invokeJudgement(judge, points, judge.finalTime);
             return;
@@ -787,7 +781,7 @@ export default class Playback {
                         if (dAfter > 0 && dAfter < hit.fadeOutTime + hit.sliderTimeTotal) {
                             let t = dAfter / hit.sliderTime;
                             const currentRepeat = Math.min(Math.ceil(t), hit.repeat), realT = t;
-                            
+
                             t = repeatclamp(Math.min(t, hit.repeat));
                             const at = hit.curve.pointAt(t);
 
@@ -816,9 +810,9 @@ export default class Playback {
 
                                         while (this.timingId + 1 < this.track.timing.length && this.track.timing[this.timingId + 1].offset <= tick.time) ++this.timingId;
                                         while (this.timingId > 0 && this.track.timing[this.timingId].offset > time) --this.timingId;
-                                        const timing = this.track.timing[this.timingId], 
+                                        const timing = this.track.timing[this.timingId],
                                             tickSound = game.sample[hit.hitSample.normal || timing.sampleSet || game.sampleSet].slidertick;
-                                        
+
                                         tickSound.volume = game.masterVolume * game.effectVolume * timing.volume;
                                         tickSound.play();
                                     }

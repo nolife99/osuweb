@@ -166,6 +166,7 @@ class Track {
             }
         }
         if (this.colors.length === 0) this.colors = [0x609f9f, 0xc0c0c0, 0x80ffff, 0x8bbfde];
+        this.difficulty.star = 0;
 
         let last = this.timing[0];
         for (const point of this.timing) {
@@ -251,11 +252,8 @@ export default class Osu {
         this.tracks = this.tracks.filter(t => t.general.Mode !== 3);
         return fetch('https://api.sayobot.cn/v2/beatmapinfo?0=' + this.tracks[0].metadata.BeatmapSetID, {
             signal: AbortSignal.timeout(5000)
-        }).then(r => r.json(), () => this.tracks.sort((a, b) => a.oldStar - b.oldStar)).then(e => {
-            if (e.status === 0) for (const data of e.data.bid_data) for (const track of this.tracks) if (track.metadata.BeatmapID == data.bid) {
-                track.difficulty.star = data.star;
-                track.length = data.length;
-            }
-        }).then(() => this.tracks.sort((a, b) => a.difficulty.star - b.difficulty.star));
+        }).then(r => r.json()).then(e => {
+            for (const data of e.data.bid_data) for (const track of this.tracks) if (track.metadata.BeatmapID == data.bid) track.difficulty.star = data.star;
+        }).then(() => this.tracks.sort((a, b) => a.difficulty.star - b.difficulty.star), () => this.tracks.sort((a, b) => a.oldStar - b.oldStar));
     }
 };

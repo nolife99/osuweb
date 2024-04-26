@@ -4,13 +4,14 @@ import { game, skin } from '../main.js';
 
 const charSpacing = 10;
 class LazyNumber {
-    lasttime = -1000000;
-    constructor(value) {
+    lasttime = Number.MIN_SAFE_INTEGER;
+    constructor(value, lag) {
+        this.lag = lag;
         this.value = value;
         this.target = value;
     }
     update(time) {
-        this.value += (this.target - this.value) * (1 - Math.exp((this.lasttime - time) / 180));
+        this.value += (this.target - this.value) * (1 - Math.exp((this.lasttime - time) / this.lag));
         this.lasttime = time;
     }
     set(time, value) {
@@ -21,14 +22,6 @@ class LazyNumber {
         this.update(time);
         return this.value;
     }
-}
-function grade(acc) {
-    if (acc >= 1) return 'SS';
-    if (acc >= .95) return 'S';
-    if (acc >= .9) return 'A';
-    if (acc >= .8) return 'B';
-    if (acc >= .7) return 'C';
-    return 'D';
 }
 function errortext(a) {
     let sum = 0;
@@ -59,9 +52,6 @@ function newdiv(parent, classname, text) {
     if (text) div.innerText = text;
     return div;
 }
-function f(a, mul) {
-    for (const b of a) b.scale.set(mul);
-}
 function setSpriteArrayText(arr, str) {
     arr.width = 0;
     for (let i = 0; i < str.length; ++i) {
@@ -73,10 +63,11 @@ function setSpriteArrayText(arr, str) {
     }
     for (let i = str.length; i < arr.length; ++i) arr[i].visible = false;
 }
-function setSpriteArrayPos(arr, x, y) {
+function setSpriteArrayPos(arr, x, y, mul) {
     for (const s of arr) {
         s.x = x + s.scale.x * charSpacing / 2;
         s.y = y;
+        s.scale.set(mul);
         x += s.knownwidth;
     }
 }
@@ -92,16 +83,16 @@ export default class ScoreOverlay extends PIXI.Container {
         great: 0, good: 0, meh: 0, miss: 0
     };
 
-    scoreDisplay = new LazyNumber(0);
-    comboDisplay = new LazyNumber(0);
-    accuracyDisplay = new LazyNumber(100);
-    HPDisplay = new LazyNumber(1);
+    scoreDisplay = new LazyNumber(0, 250);
+    comboDisplay = new LazyNumber(0, 150);
+    accuracyDisplay = new LazyNumber(100, 200);
+    HPDisplay = new LazyNumber(1, 200);
 
     constructor(HPdrain, scoreMultiplier) {
         super();
 
         this.HPdrain = HPdrain;
-        this.scaleMul = innerHeight / 800;
+        this.size = innerHeight / 800;
         this.scoreMultiplier = scoreMultiplier;
 
         this.scoreDigits = this.newSpriteArray(10, .4, 0xddffff);
@@ -114,14 +105,13 @@ export default class ScoreOverlay extends PIXI.Container {
         this.HPbar[2].texture = skin['hpbarmid.png'];
         this.HPbar[0].anchor.x = 1;
         this.HPbar[0].scale.x = this.HPbar[1].scale.x = innerWidth / 500;
-        this.HPbar[0].y = this.HPbar[1].y = this.HPbar[2].y = -7 * this.scaleMul;
+        this.HPbar[0].y = this.HPbar[1].y = this.HPbar[2].y = -7 * this.size;
     }
     newSpriteArray(len, scaleMul, tint = 0xffffff) {
         const a = Array(len);
         for (let i = 0; i < len; ++i) {
             const s = a[i] = this.addChild(new PIXI.Sprite);
-            s.scale.set(this.scaleMul * scaleMul);
-            s.alpha = 1;
+            s.scale.set(this.size * scaleMul);
             s.tint = tint;
         }
         return a;
@@ -168,36 +158,32 @@ export default class ScoreOverlay extends PIXI.Container {
         this.HPDisplay.set(time, this.HP);
     }
     update(time) {
-        this.scaleMul = innerHeight / 800;
-
-        f(this.scoreDigits, this.scaleMul * .4);
-        f(this.comboDigits, this.scaleMul / 5);
-        f(this.accDigits, this.scaleMul / 5);
-        f(this.HPbar, this.scaleMul / 2);
+        this.size = innerHeight / 800;
 
         this.HPbar[0].scale.x = this.HPbar[1].scale.x = innerWidth / 500;
-        this.HPbar[0].y = this.HPbar[1].y = this.HPbar[2].y = -7 * this.scaleMul;
+        this.HPbar[0].scale.y = this.HPbar[1].scale.y = this.size / 2;
+        this.HPbar[0].y = this.HPbar[1].y = this.HPbar[2].y = -7 * this.size;
         this.HPbar[0].x = this.HPbar[1].x = this.HPbar[2].x = this.HPDisplay.valueAt(time) * innerWidth;
 
         setSpriteArrayText(this.scoreDigits, this.scoreDisplay.valueAt(time).toFixed(0).padStart(6, '0'));
         setSpriteArrayText(this.comboDigits, this.comboDisplay.valueAt(time).toFixed(0) + 'x');
         setSpriteArrayText(this.accDigits, this.accuracyDisplay.valueAt(time).toFixed(2) + '%');
 
-        const basex = innerWidth / 2, basey = innerHeight * .017, unit = Math.min(innerWidth / 640, innerHeight / 480);
-        setSpriteArrayPos(this.scoreDigits, basex - this.scoreDigits.width / 2, basey);
-        setSpriteArrayPos(this.accDigits, basex - this.scoreDigits.width / 2 - this.accDigits.width - 16 * unit, basey + 3 * unit);
-        setSpriteArrayPos(this.comboDigits, basex + this.scoreDigits.width / 2 + 16 * unit, basey + 3 * unit);
+        const x = innerWidth / 2, y = innerHeight * .017, side = Math.min(innerWidth / 640, innerHeight / 480);
+        setSpriteArrayPos(this.scoreDigits, x - this.scoreDigits.width / 2, y, this.size * .4);
+        setSpriteArrayPos(this.accDigits, x - this.scoreDigits.width / 2 - this.accDigits.width - 16 * side, y + 3 * side, this.size / 5);
+        setSpriteArrayPos(this.comboDigits, x + this.scoreDigits.width / 2 + 16 * side, y + 3 * side, this.size / 5);
     }
     showSummary(metadata, a, playback) {
         const acc = this.judgeTotal / this.maxJudgeTotal * 100, grading = document.body.appendChild(newdiv(null, 'grading'));
         grading.classList.add('transparent');
 
-        let rank = 'D';
-        if (acc >= 1) rank = 'SS';
-        else if (acc >= .95) rank = 'S';
-        else if (acc >= .9) rank = 'A';
-        else if (acc >= .8) rank = 'B';
-        else if (acc >= .7) rank = 'C';
+        let rank = 'SS';
+        if (acc < .7) rank = 'D';
+        else if (acc < .8) rank = 'C';
+        else if (acc < .9) rank = 'B';
+        else if (acc < .95) rank = 'A';
+        else if (acc < 1) rank = 'S';
 
         const top = newdiv(grading, 'top'), info = newdiv(top, 'beatmap-info');
         newdiv(info, 'title', metadata.Title);

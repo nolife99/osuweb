@@ -103,7 +103,7 @@ function bindkeyselector(id, keynameitem, keycodeitem) {
         function deactivate() {
             btn.onclick = activate;
             btn.classList.remove('using');
-            document.removeEventListener('keydown', listenkey);
+            removeEventListener('keydown', listenkey);
         }
         function listenkey(e) {
             settings[keycodeitem] = e.code;
@@ -113,7 +113,7 @@ function bindkeyselector(id, keynameitem, keycodeitem) {
             deactivate();
         }
         btn.classList.add('using');
-        document.addEventListener('keydown', listenkey);
+        addEventListener('keydown', listenkey);
         btn.onclick = deactivate;
     }
     btn.onclick = activate;
@@ -134,7 +134,7 @@ bindkeyselector('rbutton1select', 'K2name', 'K2keycode');
 bindrange('mastervolume-range', 'mastervolume', v => v + '%');
 bindrange('effectvolume-range', 'effectvolume', v => v + '%');
 bindrange('musicvolume-range', 'musicvolume', v => v + '%');
-bindrange("audiooffset-range", "audiooffset", v => v + 'ms');
+bindrange('audiooffset-range', 'audiooffset', v => v + 'ms');
 bindExclusiveCheck('easy-check', 'easy', 'hardrock-check', 'hardrock');
 bindExclusiveCheck('daycore-check', 'daycore', 'nightcore-check', 'nightcore');
 bindcheck('hidden-check', 'hidden');
@@ -149,7 +149,7 @@ document.getElementById('restoredefault-btn').onclick = () => {
     saveToLocal();
 }
 document.getElementById('deletemaps-btn').onclick = () => {
-    const names = JSON.parse(localStorage.getItem('beatmapfilelist'));
+    const names = localStorage.getItem('beatmapfilelist')?.split(String.fromCodePoint(8203));
     localStorage.removeItem('beatmapfilelist');
     if (names) for (const name of names) localforage.removeItem(name);
     location.reload();

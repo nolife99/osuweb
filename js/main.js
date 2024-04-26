@@ -17,22 +17,19 @@ const progresses = document.getElementsByClassName('progress'),
     pDragboxInner = document.getElementsByClassName('dragbox-inner')[0],
     pDragboxHint = document.getElementsByClassName('dragbox-hint')[0],
     pBeatmapList = document.getElementsByClassName('beatmap-list')[0],
-    mapList = JSON.parse(localStorage.getItem('beatmapfilelist')) || [];
+    mapList = localStorage.getItem('beatmapfilelist')?.split(String.fromCodePoint(8203)) || [];
 
 if (mapList.length > 0) {
     const counter = progresses[3].childNodes;
     counter[3].innerText = mapList.length;
 
     const tempbox = Array(mapList.length), loadingCounter = counter[1];
-    for (let i = 0; i < mapList.length; ++i) {
-        const box = tempbox[i] = pBeatmapList.insertBefore(document.createElement('div'), pDragbox);
-        box.className = 'beatmapbox';
-    }
+    for (let i = 0; i < mapList.length; ++i) (tempbox[i] = pBeatmapList.insertBefore(document.createElement('div'), pDragbox)).className = 'beatmapbox';
 
     let loadedCount = 0;
-    for (let i = 0; i < mapList.length; ++i) localforage.getItem(mapList[i]).then(blob => {
+    for (let i = 0; i < mapList.length; ++i) localforage.getItem(mapList[i]).then(buf => {
         const zipFs = new fs.FS;
-        zipFs.importBlob(blob).then(() => {
+        zipFs.importUint8Array(buf).then(() => {
             addbeatmap(zipFs, box => {
                 pBeatmapList.replaceChild(box, tempbox[i]);
                 pDragboxHint.innerText = defaultHint;
@@ -140,12 +137,7 @@ class BeatmapController {
         app.renderer.autoDensity = true;
         app.renderer.backgroundColor = 0x111111;
 
-        const scrollTop = document.body.scrollTop, defaultAlert = alert;
-        document.addEventListener('contextmenu', e => {
-            e.preventDefault();
-            return false;
-        });
-
+        const scrollTop = document.body.scrollTop, canvas = app.view;
         settings.loadToGame(game);
         this.osu.loadAudio(track);
 
@@ -154,23 +146,11 @@ class BeatmapController {
             cursor.anchor.set(.5);
             cursor.scale.set(.3 * game.cursorSize);
         }
-        const pGameArea = document.getElementsByClassName('game-area')[0], pMainPage = document.getElementsByClassName('main-page')[0];
-        pGameArea.appendChild(app.view);
+        const pMainPage = document.getElementsByClassName('main-page')[0];
+        document.body.insertBefore(canvas, document.body.firstChild);
 
-        if (game.autoplay) {
-            pGameArea.classList.remove('shownomouse');
-            pGameArea.classList.remove('showhwmouse');
-        }
-        else if (game.showhwmouse) {
-            pGameArea.classList.remove('shownomouse');
-            pGameArea.classList.add('showhwmouse');
-        }
-        else {
-            pGameArea.classList.remove('showhwmouse');
-            pGameArea.classList.add('shownomouse');
-        }
+        if (!cursor) canvas.classList.add('hwmouse');
         pMainPage.hidden = true;
-        pGameArea.hidden = false;
 
         let playback = new Playback(this.osu, track);
         app.ticker.add(() => {
@@ -183,10 +163,8 @@ class BeatmapController {
 
         stopGame = restart => {
             if (!restart) {
-                pGameArea.hidden = true;
                 pMainPage.hidden = false;
                 document.body.scrollTop = scrollTop;
-                alert = defaultAlert;
 
                 app.ticker.stop();
                 app.destroy(true, {
@@ -211,10 +189,10 @@ class BeatmapController {
         boxCover.className = 'beatmapcover';
         mapTitle.className = 'beatmaptitle';
         mapper.className = 'beatmapauthor';
+        this.osu.getCoverSrc(boxCover);
 
         mapTitle.innerText = track.metadata.Title;
         mapper.innerText = `${track.metadata.Artist}/${track.metadata.Creator}`;
-        this.osu.getCoverSrc(boxCover);
 
         const first = track.length;
         if (first) {
@@ -236,7 +214,7 @@ class BeatmapController {
                 const difficultyBox = box.appendChild(document.createElement('div')), closeDifficultyMenu = () => {
                     box.removeChild(difficultyBox);
                     showingDifficultyBox = false;
-                    removeEventListener('click', closeDifficultyMenu, false);
+                    removeEventListener('click', closeDifficultyMenu);
                 }
                 difficultyBox.className = 'difficulty-box';
 
@@ -269,7 +247,7 @@ class BeatmapController {
                     };
                 }
                 showingDifficultyBox = true;
-                addEventListener('click', closeDifficultyMenu, false);
+                addEventListener('click', closeDifficultyMenu);
             }
         };
         return box;
@@ -296,25 +274,23 @@ pDragbox.ondrop = e => {
     e.preventDefault();
 
     pDragboxHint.innerText = loadingHint;
-    for (const blob of e.dataTransfer.files) {
-        const id = blob.size.toString(), zipFs = new fs.FS;
-        localforage.setItem(id, blob);
+    for (const blob of e.dataTransfer.files) blob.arrayBuffer().then(buf => {
+        const bytes = new Uint8Array(buf), id = blob.lastModified.toString(), zipFs = new fs.FS;
+        localforage.setItem(id, new Uint8Array(buf));
         if (!mapList.includes(id)) {
             mapList.push(id);
-            localStorage.setItem('beatmapfilelist', JSON.stringify(mapList));
+            localStorage.setItem('beatmapfilelist', mapList.join(String.fromCodePoint(8203)));
         }
-        zipFs.importBlob(blob).then(() => addbeatmap(zipFs, box => {
+        zipFs.importUint8Array(bytes).then(() => addbeatmap(zipFs, box => {
             pBeatmapList.insertBefore(box, pDragbox);
             pDragboxHint.innerText = defaultHint;
         })).catch(ex => {
             console.warn('Error during file transfer:', blob.name, ex);
             pDragboxHint.innerText = nonValidHint;
         });
-    }
+    });
 };
-
-addEventListener('dragover', e => e.preventDefault(), false);
-addEventListener('drop', e => e.preventDefault(), false);
+addEventListener('dragover', e => e.preventDefault());
 
 pDragboxHint.innerText = defaultHint;
 pDragboxInner.hidden = false;
