@@ -17,7 +17,7 @@ const progresses = document.getElementsByClassName('progress'),
     pDragboxInner = document.getElementsByClassName('dragbox-inner')[0],
     pDragboxHint = document.getElementsByClassName('dragbox-hint')[0],
     pBeatmapList = document.getElementsByClassName('beatmap-list')[0],
-    mapList = localStorage.getItem('beatmapfilelist')?.split(String.fromCodePoint(8203)) || [];
+    mapList = localStorage.getItem('‌')?.split('‌') || [];
 
 if (mapList.length > 0) {
     const counter = progresses[3].childNodes;
@@ -276,10 +276,10 @@ pDragbox.ondrop = e => {
     pDragboxHint.innerText = loadingHint;
     for (const blob of e.dataTransfer.files) blob.arrayBuffer().then(buf => {
         const bytes = new Uint8Array(buf), id = blob.lastModified.toString(), zipFs = new fs.FS;
-        localforage.setItem(id, new Uint8Array(buf));
+        localforage.setItem(id, bytes);
         if (!mapList.includes(id)) {
             mapList.push(id);
-            localStorage.setItem('beatmapfilelist', mapList.join(String.fromCodePoint(8203)));
+            localStorage.setItem('‌', mapList.join('‌'));
         }
         zipFs.importUint8Array(bytes).then(() => addbeatmap(zipFs, box => {
             pBeatmapList.insertBefore(box, pDragbox);

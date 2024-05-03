@@ -514,7 +514,7 @@ div[hidden=""] {
     font-style: italic;
     font-size: 20em;
     line-height: .6em;
-    letter-spacing: -0.08em;
+    letter-spacing: -.08em;
 }
 
 .grading .grade.SS {

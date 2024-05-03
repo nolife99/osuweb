@@ -149,8 +149,8 @@ document.getElementById('restoredefault-btn').onclick = () => {
     saveToLocal();
 }
 document.getElementById('deletemaps-btn').onclick = () => {
-    const names = localStorage.getItem('beatmapfilelist')?.split(String.fromCodePoint(8203));
-    localStorage.removeItem('beatmapfilelist');
+    const names = localStorage.getItem('‌')?.split('‌');
+    localStorage.removeItem('‌');
     if (names) for (const name of names) localforage.removeItem(name);
     location.reload();
 }
