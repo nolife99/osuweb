@@ -1,8 +1,7 @@
 'use strict';
 
 const saveToLocal = () => localStorage.setItem('osugamesettings', JSON.stringify(settings)), defaultsettings = {
-    dim: 80, blur: 0,
-    cursorsize: 1, showhwmouse: false,
+    dim: 80, cursorsize: 1, showhwmouse: false,
     snakein: true, snakeout: false,
 
     disableWheel: false, disableButton: false,
@@ -17,7 +16,6 @@ export const settings = JSON.parse(localStorage.getItem('osugamesettings')) ?? d
 settings.loadToGame = game => {
     if (game) {
         game.backgroundDimRate = settings.dim / 100;
-        game.backgroundBlurRate = settings.blur / 100;
         game.cursorSize = settings.cursorsize;
         game.showhwmouse = settings.showhwmouse;
         game.snakein = settings.snakein;
@@ -122,7 +120,6 @@ function bindkeyselector(id, keynameitem, keycodeitem) {
 }
 
 bindrange('dim-range', 'dim', v => v + '%');
-bindrange('blur-range', 'blur', v => v + '%');
 bindrange('cursorsize-range', 'cursorsize', v => v.toFixed(2) + 'x');
 bindcheck('showhwmouse-check', 'showhwmouse');
 bindcheck('snakein-check', 'snakein');

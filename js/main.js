@@ -43,12 +43,10 @@ if (mapList.length > 0) {
 }
 
 export let skin;
-const sheetUrl = 'asset/skin/sprites.json';
-
-PIXI.Loader.shared.add(sheetUrl, resource => {
+PIXI.Assets.load('asset/skin/sprites.json').then(resource => {
     skin = resource.textures;
     progresses[1].classList.add('finished');
-}).load();
+});
 
 const sample = [
     'asset/hitsound/normal-hitnormal.ogg',
@@ -87,7 +85,6 @@ sounds.load(sample, () => {
     game.sampleComboBreak = sounds[sample[15]];
     progresses[2].classList.add('finished');
 });
-PIXI.utils.skipHello();
 
 export let app, stopGame;
 let showingDifficultyBox;
@@ -134,7 +131,7 @@ class BeatmapController {
         app = new PIXI.Application({
             width: innerWidth, height: innerHeight, resolution: devicePixelRatio, autoDensity: true
         });
-        app.renderer.autoDensity = true;
+        app.renderer._view.autoDensity = true;
         app.renderer.backgroundColor = 0x111111;
 
         const scrollTop = document.body.scrollTop, canvas = app.view;

@@ -543,44 +543,17 @@ export default class Playback {
     }
     createBackground() {
         const loadBg = async (key, uri) => {
-            const consumeImage = txt => {
-                if (game.backgroundBlurRate > .0001) {
-                    const sprite = new PIXI.Sprite(txt);
-                    sprite.anchor.set(.5);
-                    sprite.position.set(txt.width / 2, txt.height / 2);
-
-                    const shortSide = Math.min(txt.width, txt.height), blurPower = game.backgroundBlurRate * shortSide,
-                        t = Math.max(shortSide, Math.max(10, blurPower) * 3);
-
-                    sprite.scale.set(t / (t - 2 * Math.max(10, blurPower)));
-                    const blurFilter = new PIXI.filters.BlurFilter(blurPower, 14);
-                    blurFilter.autoFit = false;
-                    sprite.filters = [blurFilter];
-
-                    const texture = PIXI.RenderTexture.create(txt.width, txt.height);
-                    app.renderer.render(sprite, {
-                        renderTexture: texture
-                    });
-                    sprite.destroy();
-                    this.bg = new PIXI.Sprite(texture);
-                    this.bg.renderTexture = texture;
-                }
-                else this.bg = new PIXI.Sprite(txt);
-
+            if (!PIXI.Assets.get(key)) PIXI.Assets.add(key, uri ? await uri() : key);
+            PIXI.Assets.load(key).then(resource => {
+                this.bg = app.stage.addChildAt(new PIXI.Sprite(resource), 0);
                 this.bg.anchor.set(.5);
                 this.bg.position.set(innerWidth / 2, innerHeight / 2);
-                this.bg.scale.set(Math.max(innerWidth / txt.width, innerHeight / txt.height));
-                app.stage.addChildAt(this.bg, 0);
-            }, txt = PIXI.Loader.shared.resources[key];
-
-            if (txt?.texture) consumeImage(txt.texture);
-            else PIXI.Loader.shared.add(key.toString(), uri ? await uri() : key, {
-                loadType: PIXI.LoaderResource.LOAD_TYPE.IMAGE
-            }, resource => consumeImage(resource.texture)).load();
+                this.bg.scale.set(Math.max(innerWidth / resource.width, innerHeight / resource.height));
+            });
         }
         if (this.track.events.length > 0) {
             const ev = this.track.events, file = ev[0][0] === 'Video' ? ev[1][2] : ev[0][2], entry = this.osu.zip.getChildByName(file.slice(1, file.length - 1));
-            if (entry) loadBg(entry.id + entry.uncompressedSize, () => entry.getData64URI());
+            if (entry) loadBg((entry.id + entry.uncompressedSize).toString(), () => entry.getData64URI('image/jpeg'));
             else loadBg(defaultBg);
         }
         else loadBg(defaultBg);
@@ -1002,7 +975,6 @@ export default class Playback {
             hit.objects.forEach(this.destroyHit);
             hit.judges.forEach(this.destroyHit);
         }
-        if (game.backgroundBlurRate > .0001) this.bg.destroy(true);
         SliderMesh.deallocate();
 
         if (game.allowMouseScroll) removeEventListener('wheel', this.volumeEv);
@@ -1029,7 +1001,7 @@ export default class Playback {
         this.breakOverlay.destroy(opt);
         this.progOverlay.destroy(opt);
         this.gamefield.destroy(opt);
-        if (game.backgroundBlurRate <= .0001) this.bg.destroy(opt);
+        this.bg.destroy(opt);
 
         stopGame(true);
     }

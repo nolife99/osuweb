@@ -232,13 +232,14 @@ export default class Osu {
                 const file = track.events[0][2];
                 if (track.events[0][0] === 'Video') file = track.events[1][2];
 
-                const entry = this.zip.getChildByName(file.slice(1, file.length - 1)), id = entry.id + entry.uncompressedSize;
-                entry.getData64URI().then(b => {
+                const entry = this.zip.getChildByName(file.slice(1, file.length - 1)), id = (entry.id + entry.uncompressedSize).toString();
+                entry.getData64URI('image/jpeg').then(b => {
                     img.src = b;
-                    if (!PIXI.Loader.shared.resources[id]) PIXI.Loader.shared.add(id.toString(), b, {
-                        loadType: PIXI.LoaderResource.LOAD_TYPE.IMAGE
-                    });
-                }).catch(() => { });
+                    if (!PIXI.Assets.get(id)) {
+                        PIXI.Assets.add(id, b);
+                        PIXI.Assets.load(id);
+                    }
+                });
                 return;
             }
             catch { }
