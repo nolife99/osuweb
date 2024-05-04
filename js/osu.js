@@ -236,7 +236,9 @@ export default class Osu {
                 entry.getData64URI('image/jpeg').then(b => {
                     img.src = b;
                     if (!PIXI.Assets.get(id)) {
-                        PIXI.Assets.add(id, b);
+                        PIXI.Assets.add({
+                            alias: id, src: b
+                        });
                         PIXI.Assets.load(id);
                     }
                 });

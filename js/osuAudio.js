@@ -21,7 +21,9 @@ export const sounds = {
                     o.soundNode.start();
                 }
             };
-            fetch(source).then(response => response.arrayBuffer()).then(buf => actx.decodeAudioData(buf, buffer => {
+            fetch(source, { 
+                method: "GET", mode: 'no-cors'
+            }).then(response => response.arrayBuffer()).then(buf => actx.decodeAudioData(buf, buffer => {
                 o.buffer = buffer;
                 o.hasLoaded = true;
                 if (toLoad === ++loaded) onLoad();

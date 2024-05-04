@@ -14,11 +14,11 @@ import BezierApproximator from './math/BezierApproximator.js';
 
 const glowFadeOut = 350, flashFadeIn = 40, defaultBg = 'asset/skin/defaultbg.jpg',
     followZoomInTime = 100, ballFadeOut = 100, bgFadeTime = 800, spinnerInTime = 300,
+    menu = document.getElementsByClassName('pause-menu')[0], buttons = document.getElementsByClassName('pausebutton'),
+    cont = buttons[0], retry = buttons[1], quit = buttons[2],
     clamp01 = num => Math.min(Math.max(num, 0), 1), lerp = (a, b, t) => a + (b - a) * t,
     colorLerp = (rgb1, rgb2, t) => lerp(rgb1 >> 16, rgb2 >> 16, t) << 16 |
-        lerp((rgb1 >> 8) & 255, (rgb2 >> 8) & 255, t) << 8 | lerp(rgb1 & 255, rgb2 & 255, t),
-    menu = document.getElementsByClassName('pause-menu')[0], buttons = document.getElementsByClassName('pausebutton'),
-    cont = buttons[0], retry = buttons[1], quit = buttons[2];;
+        lerp((rgb1 >> 8) & 255, (rgb2 >> 8) & 255, t) << 8 | lerp(rgb1 & 255, rgb2 & 255, t);
 
 function repeatclamp(a) {
     a %= 2;
@@ -28,7 +28,7 @@ function binarySearch(i, array) {
     let l = 0, r = array.length;
     while (l < r) {
         const m = Math.floor((l + r) / 2);
-        if ((array[m].zIndex || 0) < i) l = m + 1;
+        if (array[m].zIndex < i) l = m + 1;
         else r = m;
     }
     return l;
@@ -543,12 +543,36 @@ export default class Playback {
     }
     createBackground() {
         const loadBg = async (key, uri) => {
-            if (!PIXI.Assets.get(key)) PIXI.Assets.add(key, uri ? await uri() : key);
+            if (!PIXI.Assets.cache.has(key)) PIXI.Assets.add({
+                alias: key, src: uri ? await uri() : key
+            });
             PIXI.Assets.load(key).then(resource => {
-                this.bg = app.stage.addChildAt(new PIXI.Sprite(resource), 0);
+                if (game.backgroundBlurRate > .0001) {
+                    const sprite = new PIXI.Sprite(resource);
+                    sprite.anchor.set(.5);
+                    sprite.position.set(resource.width / 2, resource.height / 2);
+
+                    const shortSide = Math.min(resource.width, resource.height), blurPower = game.backgroundBlurRate * shortSide,
+                        t = Math.max(shortSide, Math.max(10, blurPower) * 3);
+
+                    sprite.scale.set(t / (t - 2 * Math.max(10, blurPower)));
+                    sprite.filters = [new PIXI.BlurFilter(blurPower, 18, 1, 15)];
+
+                    const texture = PIXI.RenderTexture.create({
+                        width: resource.width, height: resource.height
+                    });
+                    app.renderer.render(sprite, {
+                        renderTexture: texture, clear: false
+                    });
+                    sprite.destroy();
+                    this.bg = new PIXI.Sprite(texture);
+                }
+                else this.bg = new PIXI.Sprite(resource);
+
                 this.bg.anchor.set(.5);
                 this.bg.position.set(innerWidth / 2, innerHeight / 2);
                 this.bg.scale.set(Math.max(innerWidth / resource.width, innerHeight / resource.height));
+                app.stage.addChildAt(this.bg, 0);
             });
         }
         if (this.track.events.length > 0) {
@@ -975,6 +999,7 @@ export default class Playback {
             hit.objects.forEach(this.destroyHit);
             hit.judges.forEach(this.destroyHit);
         }
+        if (game.backgroundBlurRate > .0001) this.bg.destroy(true);
         SliderMesh.deallocate();
 
         if (game.allowMouseScroll) removeEventListener('wheel', this.volumeEv);
@@ -1001,7 +1026,7 @@ export default class Playback {
         this.breakOverlay.destroy(opt);
         this.progOverlay.destroy(opt);
         this.gamefield.destroy(opt);
-        this.bg.destroy(opt);
+        if (game.backgroundBlurRate <= .0001) this.bg.destroy(opt);
 
         stopGame(true);
     }

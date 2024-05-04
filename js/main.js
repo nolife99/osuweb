@@ -132,7 +132,7 @@ class BeatmapController {
             width: innerWidth, height: innerHeight, resolution: devicePixelRatio, autoDensity: true
         });
         app.renderer._view.autoDensity = true;
-        app.renderer.backgroundColor = 0x111111;
+        app.renderer.background.backgroundColor.value = 0x111111;
 
         const scrollTop = document.body.scrollTop, canvas = app.view;
         settings.loadToGame(game);
@@ -178,7 +178,7 @@ class BeatmapController {
         };
     }
     createBeatmapBox() {
-        const box = document.createElement('div'), boxCover = box.appendChild(document.createElement('img')),
+        const box = document.createElement('div'), boxCover = box.appendChild(new Image),
             mapTitle = box.appendChild(document.createElement('div')), mapper = box.appendChild(document.createElement('div')),
             track = this.osu.tracks[0];
 
