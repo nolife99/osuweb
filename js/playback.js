@@ -404,6 +404,7 @@ export default class Playback {
                         hit.base = newsprite('spinnerbase.png');
                         hit.prog = newsprite('spinnerprogress.png');
                         hit.top = newsprite('spinnertop.png');
+
                         if (game.hidden) {
                             hit.prog.visible = false;
                             hit.base.visible = false;
@@ -422,7 +423,7 @@ export default class Playback {
                         }
                     }
 
-                    const container = new PIXI.Container;
+                    const container = hit.followPoints = new PIXI.Container;
                     container.x1 = x1;
                     container.y1 = y1;
                     container.t1 = t1;
@@ -432,7 +433,6 @@ export default class Playback {
                     container.preempt = this.approachTime;
                     container.hit = hit;
                     hit.objects.push(container);
-                    hit.followPoints = container;
 
                     const spacing = 33, rotation = Math.atan2(container.dy, container.dx), distance = Math.hypot(container.dx, container.dy);
                     for (let d = spacing * 1.5; d < distance - spacing; d += spacing) {
@@ -547,8 +547,8 @@ export default class Playback {
                 alias: key, src: uri ? await uri() : key
             });
             PIXI.Assets.load(key).then(resource => {
-                if (game.backgroundBlurRate > .0001) {
-                    const sprite = new PIXI.Sprite(resource);
+                let sprite = new PIXI.Sprite(resource);
+                if (game.backgroundBlurRate > 0) {
                     sprite.anchor.set(.5);
                     sprite.position.set(resource.width / 2, resource.height / 2);
 
@@ -565,14 +565,13 @@ export default class Playback {
                         renderTexture: texture, clear: false
                     });
                     sprite.destroy();
-                    this.bg = new PIXI.Sprite(texture);
+                    sprite = new PIXI.Sprite(texture);
                 }
-                else this.bg = new PIXI.Sprite(resource);
 
-                this.bg.anchor.set(.5);
-                this.bg.position.set(innerWidth / 2, innerHeight / 2);
-                this.bg.scale.set(Math.max(innerWidth / resource.width, innerHeight / resource.height));
-                app.stage.addChildAt(this.bg, 0);
+                sprite.anchor.set(.5);
+                sprite.position.set(innerWidth / 2, innerHeight / 2);
+                sprite.scale.set(Math.max(innerWidth / resource.width, innerHeight / resource.height));
+                this.bg = app.stage.addChildAt(sprite, 0);
             });
         }
         if (this.track.events.length > 0) {
@@ -635,10 +634,9 @@ export default class Playback {
         this.invokeJudgement(hit.judges[0], points, time);
     }
     updateHits(time) {
-        while (this.current < this.hits.length && this.futuremost < time + this.approachTime) {
+        while (this.current < this.hits.length && this.futuremost < time + this.approachTime + spinnerInTime) {
             const hit = this.hits[this.current++];
-            for (let i = hit.judges.length - 1; i >= 0; --i) {
-                const judge = hit.judges[i];
+            for (const judge of hit.judges) {
                 if (judge.parent) break;
 
                 const children = this.gamefield.children;
@@ -854,9 +852,8 @@ export default class Playback {
                                 hit.ball.scale.set((1 + .15 * timeAfter / ballFadeOut) / 2 * this.hitScale);
                             }
                             if (hit.repeat > 1) {
-                                const normal = hit.repeat - hit.repeat % 2;
-                                hit.reverse.visible = currentRepeat < normal;
-                                if (hit.reverse_b) hit.reverse_b.visible = currentRepeat < normal - 1;
+                                hit.reverse.visible = currentRepeat < hit.repeat - hit.repeat % 2;
+                                if (hit.reverse_b) hit.reverse_b.visible = currentRepeat < hit.repeat - 1 + hit.repeat % 2;
                             }
                             if (game.snakeout && currentRepeat === hit.repeat) {
                                 if (hit.repeat % 2 === 1) {
@@ -911,11 +908,10 @@ export default class Playback {
                         const alpha = time < hit.time - spinnerInTime - this.approachTime ? 0 : time < hit.endTime ? 1 : 1 - (time - hit.endTime) / 150;
                         hit.top.alpha = hit.prog.alpha = hit.base.alpha = alpha;
 
-                        if (time < hit.endTime) {
-                            hit.top.scale.set(.3 * clamp01((time - (hit.time - spinnerInTime - this.approachTime)) / spinnerInTime));
-                            hit.base.scale.set(.6 * clamp01((time - (hit.time - spinnerInTime)) / spinnerInTime));
-                        }
                         if (time < hit.time) {
+                            hit.top.scale.set(.3 * clamp01((time - hit.time + spinnerInTime + this.approachTime) / spinnerInTime));
+                            hit.base.scale.set(.6 * clamp01((time - hit.time + spinnerInTime) / spinnerInTime));
+
                             const t = (hit.time - time) / (spinnerInTime + this.approachTime);
                             if (t < 1) hit.top.rotation = -t * t * 10;
                         }
@@ -999,7 +995,7 @@ export default class Playback {
             hit.objects.forEach(this.destroyHit);
             hit.judges.forEach(this.destroyHit);
         }
-        if (game.backgroundBlurRate > .0001) this.bg.destroy(true);
+        if (game.backgroundBlurRate > 0) this.bg.destroy(true);
         SliderMesh.deallocate();
 
         if (game.allowMouseScroll) removeEventListener('wheel', this.volumeEv);
@@ -1026,7 +1022,7 @@ export default class Playback {
         this.breakOverlay.destroy(opt);
         this.progOverlay.destroy(opt);
         this.gamefield.destroy(opt);
-        if (game.backgroundBlurRate <= .0001) this.bg.destroy(opt);
+        if (game.backgroundBlurRate === 0) this.bg.destroy(opt);
 
         stopGame(true);
     }
