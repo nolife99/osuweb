@@ -176,7 +176,7 @@ export default class Player {
         cur = this.curObj;
         for (var i = 0; this.curid < this.playback.newHits.length; ++i) {
             const hit = this.playback.newHits[i];
-            if (hit.time > time) break;
+            if (hit?.time > time) break;
 
             if (!hit.score) {
                 let targX = hit.x, targY = hit.y;
