@@ -21,9 +21,7 @@ export const sounds = {
                     o.soundNode.start();
                 }
             };
-            fetch(source, { 
-                method: "GET", mode: 'no-cors'
-            }).then(response => response.arrayBuffer()).then(buf => actx.decodeAudioData(buf, buffer => {
+            fetch(source).then(response => response.arrayBuffer()).then(buf => actx.decodeAudioData(buf, buffer => {
                 o.buffer = buffer;
                 o.hasLoaded = true;
                 if (toLoad === ++loaded) onLoad();
@@ -39,13 +37,12 @@ export default class OsuAudio {
     speed = 1;
     ctx = actx;
     gain = new GainNode(actx);
-
+a
     constructor(buffer, callback) {
         this.gain.connect(actx.destination);
-        actx.decodeAudioData(buffer.buffer, async decoded => {
+        actx.decodeAudioData(buffer.buffer, decoded => {
             this.decoded = decoded;
-            callback();
-            await actx.resume();
+            actx.resume().then(callback);
         });
     }
     get pos() {

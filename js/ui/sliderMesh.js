@@ -24,7 +24,7 @@ export default class SliderMesh extends PIXI.Container {
             ibo.push(c, p1, p2);
         }
 
-        const res = Math.max(DIVIDES, Math.min(Math.ceil(curve.calcLength / 4.7), 10000));
+        const res = Math.max(DIVIDES, Math.min(Math.floor(curve.calcLength / 4.5), 10000));
         for (let i = 1; i < res; ++i) {
             const pt = curve.pointAt((i + 1) / res), prev = curve.pointAt(i / res), dx = pt.x - prev.x, dy = pt.y - prev.y,
                 length = Math.hypot(dx, dy), ox = SliderMesh.radius * dy / length, oy = SliderMesh.radius * dx / length;
@@ -54,7 +54,7 @@ export default class SliderMesh extends PIXI.Container {
         this.geometry = new PIXI.Geometry().addAttribute('pos', vbo, 4).addIndex(ibo);
 
         this.curve = curve;
-        this.texelY = tintid / SliderMesh.ncolors + .001;
+        this.texelY = tintid / SliderMesh.ncolors + 1e-6;
     }
     _render(renderer) {
         renderer.batch.flush();

@@ -1,6 +1,6 @@
 'use strict';
 
-const saveToLocal = () => localStorage.setItem('osugamesettings', JSON.stringify(settings)), defaultsettings = {
+const saveToLocal = () => localStorage.setItem('settings', JSON.stringify(settings)), defaultsettings = {
     dim: 80, blur: 0,
     cursorsize: 1, showhwmouse: false,
     snakein: true, snakeout: false,
@@ -13,7 +13,7 @@ const saveToLocal = () => localStorage.setItem('osugamesettings', JSON.stringify
     hideNumbers: false, hideGreat: true, hideFollow: false
 };
 
-export const settings = JSON.parse(localStorage.getItem('osugamesettings')) ?? defaultsettings;
+export const settings = JSON.parse(localStorage.getItem('settings')) || defaultsettings;
 settings.loadToGame = game => {
     if (game) {
         game.backgroundDimRate = settings.dim / 100;
@@ -45,12 +45,12 @@ settings.loadToGame = game => {
         game.hideFollow = settings.hideFollow;
     }
 }
-settings.restorers = [];
+const restorers = [];
 
 function bindcheck(id, item) {
     const c = document.getElementById(id);
     c.checked = settings[item];
-    settings.restorers.push(() => c.checked = settings[item]);
+    restorers.push(() => c.checked = settings[item]);
     c.onclick = () => {
         settings[item] = c.checked;
         saveToLocal();
@@ -61,8 +61,8 @@ function bindExclusiveCheck(id1, item1, id2, item2) {
     c1.checked = settings[item1];
     c2.checked = settings[item2];
 
-    settings.restorers.push(() => c1.checked = settings[item1]);
-    settings.restorers.push(() => c2.checked = settings[item2]);
+    restorers.push(() => c1.checked = settings[item1]);
+    restorers.push(() => c2.checked = settings[item2]);
     c1.onclick = () => {
         settings[item1] = c1.checked;
         settings[item2] = false;
@@ -90,7 +90,7 @@ function bindrange(id, item, feedback) {
         indicator.innerText = feedback(val);
     }
     range.value = settings[item];
-    settings.restorers.push(() => range.value = settings[item]);
+    restorers.push(() => range.value = settings[item]);
     range.oninput();
     range.onchange = () => {
         settings[item] = range.value;
@@ -118,7 +118,7 @@ function bindkeyselector(id, keynameitem, keycodeitem) {
     }
     btn.onclick = activate;
     btn.value = settings[keynameitem];
-    settings.restorers.push(() => btn.value = settings[keynameitem]);
+    restorers.push(() => btn.value = settings[keynameitem]);
 }
 
 bindrange('dim-range', 'dim', v => v + '%');
@@ -143,12 +143,13 @@ bindcheck('hidenumbers-check', 'hideNumbers');
 bindcheck('hidegreat-check', 'hideGreat');
 bindcheck('hidefollowpoints-check', 'hideFollow');
 
-document.getElementById('restoredefault-btn').onclick = () => {
+const warns = document.getElementsByClassName('warnbtn');
+warns[0].onclick = () => {
     Object.assign(settings, defaultsettings);
-    for (const c of settings.restorers) c();
+    for (const c of restorers) c();
     saveToLocal();
 }
-document.getElementById('deletemaps-btn').onclick = () => {
+warns[1].onclick = () => {
     const names = localStorage.getItem('‌')?.split('‌');
     localStorage.removeItem('‌');
     if (names) for (const name of names) localforage.removeItem(name);

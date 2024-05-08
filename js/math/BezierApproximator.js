@@ -75,7 +75,7 @@ export default class BezierApproximator {
 
             for (let i = 1; i < parent.length - 1; ++i) {
                 const last = parent[i - 1], cur = parent[i], next = parent[i + 1];
-                if ((last.x - 2 * cur.x + next.x) ** 2 + (last.y - 2 * cur.y + next.y) ** 2 > .3) {
+                if ((last.x - 2 * cur.x + next.x) ** 2 + (last.y - 2 * cur.y + next.y) ** 2 > .36) {
                     isFlat = false;
                     break;
                 }

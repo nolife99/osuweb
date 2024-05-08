@@ -42,7 +42,6 @@ export default class Playback {
     gfx = {};
     gamefield = new PIXI.Container;
     destroyHit = o => {
-        this.gamefield.removeChild(o);
         o.destroy({
             children: true
         });
@@ -265,7 +264,7 @@ export default class Playback {
 
             SliderMesh.initialize(track.colors, this.circleRadius / 2.1, {
                 dx: 2 * this.gfx.width / innerWidth / 512, dy: -2 * this.gfx.height / innerHeight / 384,
-                ox: -1 + 2 * this.gfx.xoffset / innerWidth, oy: 1 - 2 * this.gfx.yoffset / innerHeight
+                ox: 2 * this.gfx.xoffset / innerWidth - 1, oy: 1 - 2 * this.gfx.yoffset / innerHeight
             }, track.colors.SliderTrackOverride, track.colors.SliderBorder);
 
             let prev;
@@ -288,18 +287,18 @@ export default class Playback {
                 hit.objects = [];
                 hit.judges = [];
 
-                const newHitSprite = (path, zIndex, scale = 1, anchorx = .5, anchory = .5) => {
+                const newHitSprite = (path, zIndex, scale = 1, anchorx = .5) => {
                     const sprite = new PIXI.Sprite(skin[path]);
                     sprite.firstScale = this.hitScale * scale;
                     sprite.scale.set(sprite.firstScale);
-                    sprite.anchor.set(anchorx, anchory);
+                    sprite.anchor.set(anchorx, .5);
                     sprite.position.set(hit.x, hit.y);
                     sprite.zIndex = zIndex;
                     sprite.alpha = 0;
                     hit.objects.push(sprite);
                     return sprite;
                 }, createHitCircle = () => {
-                    const index = hit.index + 1, basedep = 1 - .000001 * hit.hitIndex;
+                    const index = hit.index + 1, basedep = 1 - 1e-9 * hit.hitIndex;
                     hit.base = newHitSprite('disc.png', basedep, .5);
                     hit.base.tint = this.track.colors[hit.combo % this.track.colors.length];
                     hit.circle = newHitSprite('hitcircleoverlay.png', basedep, .5);
@@ -318,10 +317,10 @@ export default class Playback {
                     hit.judges.push(this.createJudgement(hit, hit.time + this.MehTime));
                     hit.numbers = [];
                     if (!game.hideNumbers) {
-                        if (index < 10) hit.numbers.push(newHitSprite(`score-${index}.png`, basedep, .4, .5, .47));
+                        if (index < 10) hit.numbers.push(newHitSprite(`score-${index}.png`, basedep, .4));
                         else if (index < 100) {
-                            hit.numbers.push(newHitSprite(`score-${index % 10}.png`, basedep, .35, 0, .47));
-                            hit.numbers.push(newHitSprite(`score-${(index - index % 10) / 10}.png`, basedep, .35, 1, .47));
+                            hit.numbers.push(newHitSprite(`score-${index % 10}.png`, basedep, .35, 0));
+                            hit.numbers.push(newHitSprite(`score-${(index - index % 10) / 10}.png`, basedep, .35, 1));
                         }
                     }
                 }
@@ -332,7 +331,7 @@ export default class Playback {
                         hit.nexttick = 0;
                         hit.body = new SliderMesh(hit.curve, hit.combo % this.track.colors.length);
                         hit.body.alpha = 0;
-                        hit.body.zIndex = 1 - .000001 * hit.hitIndex;
+                        hit.body.zIndex = 1 - 1e-9 * hit.hitIndex;
                         hit.objects.push(hit.body);
 
                         const newSprite = (path, x, y, scale = 1) => {
@@ -340,7 +339,7 @@ export default class Playback {
                             sprite.scale.set(this.hitScale * scale);
                             sprite.anchor.set(.5);
                             sprite.position.set(x, y);
-                            sprite.zIndex = 1 - .000001 * hit.hitIndex;
+                            sprite.zIndex = 1 - 1e-9 * hit.hitIndex;
                             sprite.alpha = 0;
                             hit.objects.push(sprite);
                             return sprite;
@@ -357,12 +356,12 @@ export default class Playback {
                             lastTick.time = t;
                         }
                         if (hit.repeat > 1) {
-                            const p = hit.curve.pointAt(1), p2 = hit.curve.pointAt(.999999);
+                            const p = hit.curve.pointAt(1), p2 = hit.curve.pointAt(1 - 1e-9);
                             hit.reverse = newSprite('reversearrow.png', p.x, p.y, .36);
                             hit.reverse.rotation = Math.atan2(p2.y - p.y, p2.x - p.x);
                         }
                         if (hit.repeat > 2) {
-                            const p2 = hit.curve.pointAt(.000001);
+                            const p2 = hit.curve.pointAt(1e-9);
                             hit.reverse_b = newSprite('reversearrow.png', hit.x, hit.y, .36);
                             hit.reverse_b.rotation = Math.atan2(p2.y - hit.y, p2.x - hit.x);
                             hit.reverse_b.visible = false;
@@ -405,6 +404,7 @@ export default class Playback {
                         hit.prog = newsprite('spinnerprogress.png');
                         hit.top = newsprite('spinnertop.png');
 
+                        hit.prog.scale.set(0);
                         if (game.hidden) {
                             hit.prog.visible = false;
                             hit.base.visible = false;
@@ -635,11 +635,10 @@ export default class Playback {
     }
     updateHits(time) {
         while (this.current < this.hits.length && this.futuremost < time + this.approachTime + spinnerInTime) {
-            const hit = this.hits[this.current++];
+            const hit = this.hits[this.current++], children = this.gamefield.children;
             for (const judge of hit.judges) {
                 if (judge.parent) break;
 
-                const children = this.gamefield.children;
                 judge.parent = this.gamefield;
                 children.splice(binarySearch(judge.zIndex || 0, children), 0, judge);
             }
@@ -647,7 +646,6 @@ export default class Playback {
                 const obj = hit.objects[i];
                 if (obj.parent) break;
 
-                const children = this.gamefield.children;
                 obj.parent = this.gamefield;
                 children.splice(binarySearch(obj.zIndex || 0, children), 0, obj);
             }
@@ -663,7 +661,7 @@ export default class Playback {
                 hit.judges.forEach(this.destroyHit);
                 hit.destroyed = true;
             }
-            else {
+            else if (!hit.destroyed) {
                 const updateHitCircle = isCircle => {
                     const f = hit.followPoints;
                     if (f) for (const o of f.children) {
@@ -757,11 +755,11 @@ export default class Playback {
                                     hit.reverse.position.set(p.x, p.y);
 
                                     if (t < .5) {
-                                        const p2 = hit.curve.pointAt(t + .000001);
+                                        const p2 = hit.curve.pointAt(t + 1e-9);
                                         hit.reverse.rotation = Math.atan2(p.y - p2.y, p.x - p2.x);
                                     }
                                     else {
-                                        const p2 = hit.curve.pointAt(t - .000001);
+                                        const p2 = hit.curve.pointAt(t - 1e-9);
                                         hit.reverse.rotation = Math.atan2(p2.y - p.y, p2.x - p.x);
                                     }
                                 }
@@ -882,7 +880,7 @@ export default class Playback {
                                 }
                                 else {
                                     tick.alpha *= clamp01(1 - dt);
-                                    tick.tint = colorLerp(0xffffff, 0xff0000, clamp01(dt * 2));
+                                    tick.tint = colorLerp(0xffffff, 0xff0000, dt * 2);
                                 }
                             }
                         }
@@ -908,6 +906,7 @@ export default class Playback {
                         const alpha = time < hit.time - spinnerInTime - this.approachTime ? 0 : time < hit.endTime ? 1 : 1 - (time - hit.endTime) / 150;
                         hit.top.alpha = hit.prog.alpha = hit.base.alpha = alpha;
 
+                        const prog = hit.spinProg / hit.clearSpin;
                         if (time < hit.time) {
                             hit.top.scale.set(.3 * clamp01((time - hit.time + spinnerInTime + this.approachTime) / spinnerInTime));
                             hit.base.scale.set(.6 * clamp01((time - hit.time + spinnerInTime) / spinnerInTime));
@@ -915,14 +914,11 @@ export default class Playback {
                             const t = (hit.time - time) / (spinnerInTime + this.approachTime);
                             if (t < 1) hit.top.rotation = -t * t * 10;
                         }
-
-                        const prog = hit.spinProg / hit.clearSpin;
-                        if (time > hit.time) {
+                        else {
                             hit.base.rotation = hit.rotation / 2;
                             hit.top.rotation = hit.base.rotation;
                             hit.prog.scale.set(.6 * (.13 + .87 * clamp01(prog)));
                         }
-                        else hit.prog.scale.set(0);
 
                         if (time > hit.endTime && !hit.score) {
                             if (game.autoplay) this.hitSuccess(hit, 300, hit.endTime);

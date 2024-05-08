@@ -88,7 +88,7 @@ export default class Player {
                 e.preventDefault();
                 e.stopPropagation();
             }
-            
+
             addEventListener('contextmenu', this.disableContextMenu);
             addEventListener('mousemove', this.mousemoveCallback);
             if (game.allowMouseButton) {
@@ -149,7 +149,7 @@ export default class Player {
     }
     update(time) {
         let cur = this.curObj;
-        if (game.down && cur) {
+        if (game.down && cur && !cur.destroyed) {
             if (cur.type === 'circle' || time > cur.endTime) {
                 if (cur.type !== 'spinner') {
                     game.mouseX = (cur.ball || cur).x;
@@ -174,8 +174,8 @@ export default class Player {
         }
 
         cur = this.curObj;
-        for (; this.curid < this.playback.hits.length; ++this.curid) {
-            const hit = this.playback.hits[this.curid];
+        for (var i = 0; this.curid < this.playback.newHits.length; ++i) {
+            const hit = this.playback.newHits[i];
             if (hit.time > time) break;
 
             if (!hit.score) {
@@ -197,8 +197,8 @@ export default class Player {
                 }
             }
         }
-        if (!cur && this.curid < this.playback.hits.length) {
-            cur = this.playback.hits[this.curid];
+        if (!cur && i < this.playback.newHits.length) {
+            cur = this.playback.newHits[i];
             this.curObj = cur;
         }
         if (!cur || cur.time > time + this.playback.approachTime) {
