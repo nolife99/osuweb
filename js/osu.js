@@ -19,7 +19,7 @@ class Track {
         this.track = track;
     }
     decode(ondecoded) {
-        let section, combo = 0, index = 0, forceNewCombo = false, key, value, parts;
+        let section, combo = 0, index = 0, forceNewCombo, key, value, parts;
         for (const l of this.track.split('\n')) {
             const line = l.trim();
             if (line === '' || line.indexOf('//') === 0) continue;

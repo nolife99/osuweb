@@ -13,7 +13,6 @@ export default class Player {
     constructor(playback) {
         this.playback = playback;
         if (game.autoplay) {
-            this.curid = 0;
             this.lastX = game.mouseX;
             this.lastY = game.mouseY;
             this.lastTime = 0;
@@ -174,9 +173,9 @@ export default class Player {
         }
 
         cur = this.curObj;
-        for (var i = 0; this.curid < this.playback.newHits.length; ++i) {
+        for (var i = 0; i < this.playback.newHits.length; ++i) {
             const hit = this.playback.newHits[i];
-            if (hit?.time > time) break;
+            if (hit.time > time) break;
 
             if (!hit.score) {
                 let targX = hit.x, targY = hit.y;
