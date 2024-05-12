@@ -18,12 +18,12 @@ export default class BezierApproximator {
             }
             else if (prev && pt.x === prev.x && pt.y === prev.y) {
                 const pts = points.splice(0);
-                if (pts.length > 1) this.paths.push(BezierApproximator.FlattenBezier(pts));
+                if (pts.length > 1) this.paths.push(FlattenBezier(pts));
             }
             points.push(pt);
             prev = pt;
         }
-        if (!line && points.length > 1) this.paths.push(BezierApproximator.FlattenBezier(points));
+        if (!line && points.length > 1) this.paths.push(FlattenBezier(points));
 
         this.preLens = this.paths.map(curve => {
             const parts = new Float32Array(curve.length - 1);
@@ -64,51 +64,27 @@ export default class BezierApproximator {
             x: last.x, y: last.y, t: t
         };
     }
-    static FlattenBezier(pts) {
-        if (pts.length === 2) return pts;
-        const deg = pts.length - 1, output = [], toFlatten = [structuredClone(pts)], freeBufs = [],
-            subBuf1 = Array(pts.length), subBuf2 = Array(deg * 2 + 1), l = subBuf2;
+};
+function FlattenBezier(pts) {
+    if (pts.length === 2) return pts;
+    const deg = pts.length - 1, output = [], toFlatten = [structuredClone(pts)], freeBufs = [],
+        subBuf1 = Array(pts.length), subBuf2 = Array(deg * 2 + 1), l = subBuf2;
 
-        while (toFlatten.length > 0) {
-            const parent = toFlatten.pop();
-            let isFlat = true;
+    while (toFlatten.length > 0) {
+        const parent = toFlatten.pop();
+        let isFlat = true;
 
-            for (let i = 1; i < parent.length - 1; ++i) {
-                const last = parent[i - 1], cur = parent[i], next = parent[i + 1];
-                if ((last.x - 2 * cur.x + next.x) ** 2 + (last.y - 2 * cur.y + next.y) ** 2 > .36) {
-                    isFlat = false;
-                    break;
-                }
+        for (let i = 1; i < parent.length - 1; ++i) {
+            const last = parent[i - 1], cur = parent[i], next = parent[i + 1];
+            if ((last.x - 2 * cur.x + next.x) ** 2 + (last.y - 2 * cur.y + next.y) ** 2 > .36) {
+                isFlat = false;
+                break;
             }
-            if (isFlat) {
-                for (let i = 0; i < pts.length; ++i) subBuf1[i] = parent[i];
-                for (let i = 0, k = deg; i < pts.length; ++i, --k) {
-                    subBuf2[i] = subBuf1[0];
-                    for (let j = 0; j < k; ++j) {
-                        const cur = subBuf1[j], next = subBuf1[j + 1];
-                        subBuf1[j] = {
-                            x: (cur.x + next.x) / 2, y: (cur.y + next.y) / 2
-                        }
-                    }
-                }
-                for (let i = 1; i < pts.length; ++i) subBuf2[deg + i] = subBuf1[i];
-                output.push(parent[0]);
-
-                for (let i = 1; i < deg; ++i) {
-                    const idx = i * 2, last = subBuf2[idx - 1], cur = subBuf2[idx], next = subBuf2[idx + 1];
-                    output.push({
-                        x: (last.x + 2 * cur.x + next.x) / 4, y: (last.y + 2 * cur.y + next.y) / 4
-                    });
-                }
-                freeBufs.push(parent);
-                continue;
-            }
+        }
+        if (isFlat) {
             for (let i = 0; i < pts.length; ++i) subBuf1[i] = parent[i];
-
-            const r = freeBufs.length > 0 ? freeBufs.pop() : Array(pts.length);
             for (let i = 0, k = deg; i < pts.length; ++i, --k) {
-                l[i] = subBuf1[0];
-                r[k] = subBuf1[k];
+                subBuf2[i] = subBuf1[0];
                 for (let j = 0; j < k; ++j) {
                     const cur = subBuf1[j], next = subBuf1[j + 1];
                     subBuf1[j] = {
@@ -116,12 +92,36 @@ export default class BezierApproximator {
                     }
                 }
             }
-            for (let i = 0; i < pts.length; ++i) parent[i] = l[i];
+            for (let i = 1; i < pts.length; ++i) subBuf2[deg + i] = subBuf1[i];
+            output.push(parent[0]);
 
-            toFlatten.push(r);
-            toFlatten.push(parent);
+            for (let i = 1; i < deg; ++i) {
+                const idx = i * 2, last = subBuf2[idx - 1], cur = subBuf2[idx], next = subBuf2[idx + 1];
+                output.push({
+                    x: (last.x + 2 * cur.x + next.x) / 4, y: (last.y + 2 * cur.y + next.y) / 4
+                });
+            }
+            freeBufs.push(parent);
+            continue;
         }
-        output.push(pts[deg]);
-        return output;
+        for (let i = 0; i < pts.length; ++i) subBuf1[i] = parent[i];
+
+        const r = freeBufs.length > 0 ? freeBufs.pop() : Array(pts.length);
+        for (let i = 0, k = deg; i < pts.length; ++i, --k) {
+            l[i] = subBuf1[0];
+            r[k] = subBuf1[k];
+            for (let j = 0; j < k; ++j) {
+                const cur = subBuf1[j], next = subBuf1[j + 1];
+                subBuf1[j] = {
+                    x: (cur.x + next.x) / 2, y: (cur.y + next.y) / 2
+                }
+            }
+        }
+        for (let i = 0; i < pts.length; ++i) parent[i] = l[i];
+
+        toFlatten.push(r);
+        toFlatten.push(parent);
     }
-};
+    output.push(pts[deg]);
+    return output;
+}

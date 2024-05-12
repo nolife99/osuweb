@@ -1,5 +1,3 @@
-'use strict';
-
 function timeformat(ms) {
     let s = ms / 1000, prefix = '';
     if (s < 0) {

@@ -1,5 +1,3 @@
-'use strict';
-
 const saveToLocal = () => localStorage.setItem('settings', JSON.stringify(settings)), defaultSettings = {
     dim: 80, blur: 0,
     cursorsize: 1, showhwmouse: false,
@@ -150,8 +148,6 @@ warns[0].onclick = () => {
     saveToLocal();
 }
 warns[1].onclick = () => {
-    const names = localStorage.getItem('‌')?.split('‌');
     localStorage.removeItem('‌');
-    if (names) for (const name of names) localforage.removeItem(name);
-    location.reload();
+    localforage.clear(() => location.reload());
 }

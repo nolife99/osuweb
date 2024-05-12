@@ -89,7 +89,7 @@ export default class Playback {
 
             await loadTask;
             app.stage.addChild(this.scoreOverlay, this.errorMeter, this.progOverlay, this.breakOverlay);
-            
+
             this.loadingMenu.hidden = true;
             this.osu.audio.gain.gain.value = game.musicVolume * game.masterVolume;
             this.osu.audio.speed = this.speed;
@@ -309,9 +309,8 @@ export default class Playback {
                     hit.burst = newHitSprite('hitburst.png', 2);
                     hit.burst.visible = false;
 
-                    hit.approach = newHitSprite('approachcircle.png', 2);
+                    hit.approach = hit.enableflash ? newHitSprite('approachcircle.png', 2) : hit.burst;
                     hit.approach.tint = this.track.colors[hit.combo % this.track.colors.length];
-                    if (!hit.enableflash) hit.approach.visible = false;
 
                     hit.judges.push(this.createJudgement(hit, hit.time + this.MehTime));
                     hit.numbers = [];
@@ -427,7 +426,6 @@ export default class Playback {
                     container.dx = hit.x - x1;
                     container.dy = hit.y - y1;
                     container.dt = hit.time - t1;
-                    container.preempt = this.approachTime;
                     container.hit = hit;
                     hit.objects.push(container);
 
@@ -438,7 +436,6 @@ export default class Playback {
 
                         const p = container.addChild(new PIXI.Sprite(skin['followpoint.png']));
                         p.scale.set(this.hitScale * .4, this.hitScale * .3);
-                        p.position.set(x, y);
                         p.rotation = rotation;
                         p.anchor.set(.5);
                         p.blendMode = PIXI.BLEND_MODES.ADD;
@@ -503,12 +500,13 @@ export default class Playback {
                     judge.text = 'great';
                     judge.tint = 0x66ccff;
                 }
+                else judge.visible = false;
                 break;
         }
         this.updateJudgement(judge, time);
     }
     updateJudgement(judge, time) {
-        if (judge.points === undefined && time > judge.finalTime) {
+        if (typeof judge.points === 'undefined' && time > judge.finalTime) {
             const points = game.autoplay ? 300 : judge.defaultScore;
             this.scoreOverlay.hit(points, 300, judge.finalTime);
             this.invokeJudgement(judge, points, judge.finalTime);
@@ -518,23 +516,22 @@ export default class Playback {
 
         const t = time - judge.t0;
         if (judge.points === 0) {
-            if (t > 800) {
-                judge.visible = false;
-                return;
+            if (t > 800) judge.visible = false;
+            else {
+                judge.alpha = t < 100 ? t / 100 : t < 600 ? 1 : 1 - (t - 600) / 200;
+                judge.width = 16 * this.hitScale * judge.text.length;
+
+                const t5 = (t / 800) ** 5;
+                judge.y = judge.baseY + 100 * t5 * this.hitScale;
+                judge.rotation = .7 * t5;
             }
-            judge.alpha = t < 100 ? t / 100 : t < 600 ? 1 : 1 - (t - 600) / 200;
-            judge.width = 16 * this.hitScale * judge.text.length;
-            const t5 = (t / 800) ** 5;
-            judge.y = judge.baseY + 100 * t5 * this.hitScale;
-            judge.rotation = .7 * t5;
         }
         else {
-            if (t > 500) {
-                judge.visible = false;
-                return;
+            if (t > 500) judge.visible = false;
+            else {
+                judge.alpha = t < 100 ? t / 100 : 1 - (t - 100) / 400;
+                judge.width = (16 + 8 * ((t / 1800 - 1) ** 5 + 1)) * this.hitScale * judge.text.length;
             }
-            judge.alpha = t < 100 ? t / 100 : 1 - (t - 100) / 400;
-            judge.width = (16 + 8 * ((t / 1800 - 1) ** 5 + 1)) * this.hitScale * judge.text.length;
         }
     }
     createBackground() {
@@ -632,9 +629,8 @@ export default class Playback {
     updateHits(time) {
         while (this.current < this.hits.length && this.futuremost < time + this.approachTime + spinnerInTime) {
             const hit = this.hits[this.current++], children = this.gamefield.children;
-            for (const judge of hit.judges) {
+            if (!game.autoplay && !game.hideGreat) for (const judge of hit.judges) {
                 if (judge.parent) break;
-
                 judge.parent = this.gamefield;
                 children.splice(binarySearch(judge.zIndex || 0, children), 0, judge);
             }
@@ -645,28 +641,27 @@ export default class Playback {
                 obj.parent = this.gamefield;
                 children.splice(binarySearch(obj.zIndex || 0, children), 0, obj);
             }
-
             this.newHits.push(hit);
             if (hit.time > this.futuremost) this.futuremost = hit.time;
         }
         for (let i = this.newHits.length - 1; i >= 0; --i) {
             const hit = this.newHits[i];
             if (time - hit.endTime > this.MehTime + 800) {
-                PIXI.utils.removeItems(this.newHits, i, 1);
+                PIXI.utils.removeItems(this.newHits, i--, 1);
                 hit.objects.forEach(this.destroyHit);
                 hit.judges.forEach(this.destroyHit);
                 hit.destroyed = true;
             }
-            else if (!hit.destroyed) {
+            else {
                 const updateHitCircle = isCircle => {
                     const f = hit.followPoints;
                     if (f) for (const o of f.children) {
-                        const x = f.x1 + (o.frac - .1) * f.dx, y = f.y1 + (o.frac - .1) * f.dy, fadeOutTime = f.t1 + o.frac * f.dt, fadeInTime = fadeOutTime - f.preempt, hitFadeIn = f.hit.objFadeIn;
-                        let relpos = clamp01((time - fadeInTime) / hitFadeIn);
+                        const x = f.x1 + (o.frac - .1) * f.dx, y = f.y1 + (o.frac - .1) * f.dy, fadeOutTime = f.t1 + o.frac * f.dt, fadeInTime = fadeOutTime - this.approachTime;
+                        let relpos = clamp01((time - fadeInTime) / hit.objFadeIn);
 
                         relpos *= 2 - relpos;
                         o.position.set(x + ((f.x1 + o.frac * f.dx) - x) * relpos, y + ((f.y1 + o.frac * f.dy) - y) * relpos);
-                        o.alpha = (time < fadeOutTime ? (time - fadeInTime) / hitFadeIn : 1 - (time - fadeOutTime) / hitFadeIn) / 2;
+                        o.alpha = (time < fadeOutTime ? (time - fadeInTime) / hit.objFadeIn : 1 - (time - fadeOutTime) / hit.objFadeIn) / 2;
                     }
                     const diff = hit.time - time, opaque = this.approachTime - this.approachFade;
 
@@ -675,12 +670,12 @@ export default class Playback {
 
                     if (diff < this.approachTime && diff > opaque) hit.approach.alpha = (this.approachTime - diff) / this.approachFade;
                     else if (diff < opaque && !hit.score) hit.approach.alpha = 1;
+
                     const noteFullAppear = this.approachTime - hit.objFadeIn, setcircleAlpha = alpha => {
                         hit.base.alpha = hit.circle.alpha = alpha;
                         for (const digit of hit.numbers) digit.alpha = alpha;
                         hit.glow.alpha = alpha / 2;
                     };
-
                     if (diff < this.approachTime && diff > noteFullAppear) setcircleAlpha((this.approachTime - diff) / hit.objFadeIn);
                     else if (diff < noteFullAppear) {
                         if (-diff > hit.objFadeOut) {

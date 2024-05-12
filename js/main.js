@@ -1,5 +1,3 @@
-'use strict';
-
 import { sounds } from './osuAudio.js';
 import { settings } from './settings.js';
 import Playback from './playback.js';

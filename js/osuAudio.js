@@ -33,7 +33,7 @@ export default class OsuAudio {
     speed = 1;
     ctx = actx;
     gain = new GainNode(actx);
-    
+
     constructor(buffer, callback) {
         this.gain.connect(actx.destination);
         actx.decodeAudioData(buffer.buffer, decoded => {

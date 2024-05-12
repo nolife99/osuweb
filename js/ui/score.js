@@ -78,13 +78,13 @@ export default class ScoreOverlay extends PIXI.Container {
     judgeTotal = 0;
     maxJudgeTotal = 0;
     HP = 1;
-    judgecnt = {
+    judges = {
         great: 0, good: 0, meh: 0, miss: 0
     };
 
     scoreDisplay = new LazyNumber(0, 250);
     comboDisplay = new LazyNumber(0, 150);
-    accuracyDisplay = new LazyNumber(100, 200);
+    accDisplay = new LazyNumber(100, 200);
     HPDisplay = new LazyNumber(1, 200);
 
     constructor(HPdrain, scoreMultiplier) {
@@ -95,7 +95,7 @@ export default class ScoreOverlay extends PIXI.Container {
         this.scoreMultiplier = scoreMultiplier;
 
         this.scoreDigits = this.newSpriteArray(10, .4, 0xddffff);
-        this.comboDigits = this.newSpriteArray(5, .2, 0xddffff);
+        this.comboDigits = this.newSpriteArray(6, .2, 0xddffff);
         this.accDigits = this.newSpriteArray(7, .2, 0xddffff);
         this.HPbar = this.newSpriteArray(3, .5);
 
@@ -117,23 +117,23 @@ export default class ScoreOverlay extends PIXI.Container {
     }
     HPincreasefor(result, isTick) {
         if (isTick) {
-            if (result === 0) return -.005 * this.HPdrain;
-            return .005 * (10.2 - this.HPdrain);
+            if (result === 0) return this.HPdrain / -200;
+            return (10.2 - this.HPdrain) / 200;
         }
         switch (result) {
-            case 0: return -.02 * this.HPdrain;
-            case 50: return .01 * (4 - this.HPdrain);
-            case 100: return .01 * (8 - this.HPdrain);
-            case 300: return .01 * (10.2 - this.HPdrain);
+            case 0: return this.HPdrain / -50;
+            case 50: return (4 - this.HPdrain) / 100;
+            case 100: return (8 - this.HPdrain) / 100;
+            case 300: return (10.2 - this.HPdrain) / 100;
         }
     }
     hit(result, maxresult, time) {
         const isTick = maxresult !== 300;
         if (!isTick) switch (result) {
-            case 300: ++this.judgecnt.great; break;
-            case 100: ++this.judgecnt.good; break;
-            case 50: ++this.judgecnt.meh; break;
-            default: ++this.judgecnt.miss; break;
+            case 300: ++this.judges.great; break;
+            case 100: ++this.judges.good; break;
+            case 50: ++this.judges.meh; break;
+            default: ++this.judges.miss; break;
         }
 
         this.judgeTotal += result;
@@ -153,7 +153,7 @@ export default class ScoreOverlay extends PIXI.Container {
 
         this.scoreDisplay.set(time, this.score);
         this.comboDisplay.set(time, this.combo);
-        this.accuracyDisplay.set(time, this.judgeTotal / this.maxJudgeTotal * 100);
+        this.accDisplay.set(time, this.judgeTotal / this.maxJudgeTotal * 100);
         this.HPDisplay.set(time, this.HP);
     }
     update(time) {
@@ -166,7 +166,7 @@ export default class ScoreOverlay extends PIXI.Container {
 
         setSpriteArrayText(this.scoreDigits, this.scoreDisplay.valueAt(time).toFixed(0).padStart(6, '0'));
         setSpriteArrayText(this.comboDigits, this.comboDisplay.valueAt(time).toFixed(0) + 'x');
-        setSpriteArrayText(this.accDigits, this.accuracyDisplay.valueAt(time).toFixed(2) + '%');
+        setSpriteArrayText(this.accDigits, this.accDisplay.valueAt(time).toFixed(2) + '%');
 
         const x = innerWidth / 2, y = innerHeight * .017, side = Math.min(innerWidth / 640, innerHeight / 480);
         setSpriteArrayPos(this.scoreDigits, x - this.scoreDigits.width / 2, y, this.size * .4);
@@ -197,10 +197,10 @@ export default class ScoreOverlay extends PIXI.Container {
         newdiv(left, 'block score', this.score.toFixed(0));
         newdiv(left, 'block acc', acc.toFixed(2) + '%');
         newdiv(left, 'block err', errortext(a));
-        newdiv(left, 'block great', this.judgecnt.great.toString());
-        newdiv(left, 'block good', this.judgecnt.good.toString());
-        newdiv(left, 'block meh', this.judgecnt.meh.toString());
-        newdiv(left, 'block miss', this.judgecnt.miss.toString());
+        newdiv(left, 'block great', this.judges.great.toString());
+        newdiv(left, 'block good', this.judges.good.toString());
+        newdiv(left, 'block meh', this.judges.meh.toString());
+        newdiv(left, 'block miss', this.judges.miss.toString());
         newdiv(left, 'block combo', `${this.maxcombo}/${this.fullcombo}x`);
 
         const b1 = newdiv(grading, 'btn retry'), b2 = newdiv(grading, 'btn quit');
