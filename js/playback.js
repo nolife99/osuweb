@@ -282,7 +282,6 @@ export default class Playback {
                 }
                 hit.ticks = [];
                 hit.objects = [];
-                hit.judges = [];
 
                 const newHitSprite = (path, zIndex, scale = 1, anchorx = .5) => {
                     const sprite = new PIXI.Sprite(skin[path]);
@@ -294,7 +293,7 @@ export default class Playback {
                     sprite.alpha = 0;
                     hit.objects.push(sprite);
                     return sprite;
-                }, createHitCircle = () => {
+                }, createHitCircle = isCircle => {
                     const index = hit.index + 1, basedep = 1 - 1e-9 * hit.hitIndex;
                     hit.base = newHitSprite('disc.png', basedep, .5);
                     hit.base.tint = this.track.colors[hit.combo % this.track.colors.length];
@@ -310,7 +309,7 @@ export default class Playback {
                     hit.approach = hit.enableflash ? newHitSprite('approachcircle.png', 2) : hit.burst;
                     hit.approach.tint = this.track.colors[hit.combo % this.track.colors.length];
 
-                    hit.judges.push(this.createJudgement(hit, hit.time + this.MehTime));
+                    if (isCircle) hit.judge = this.createJudgement(hit, hit.time + this.MehTime);
                     hit.numbers = [];
                     if (!game.hideNumbers) {
                         if (index < 10) hit.numbers.push(newHitSprite(`score-${index}.png`, basedep, .4));
@@ -321,7 +320,7 @@ export default class Playback {
                     }
                 }
                 switch (hit.type) {
-                    case 'circle': createHitCircle(); break;
+                    case 'circle': createHitCircle(true); break;
                     case 'slider':
                         hit.nextRepeat = 1;
                         hit.nexttick = 0;
@@ -370,10 +369,10 @@ export default class Playback {
 
                         hit.ball = newSprite('sliderb.png', hit.x, hit.y, .5);
                         hit.ball.visible = false;
-                        createHitCircle();
+                        createHitCircle(false);
 
                         const v = hit.repeat % 2 === 1 ? hit.curve.pointAt(1) : hit;
-                        hit.judges.push(this.createJudgement(v, hit.time + hit.sliderTimeTotal + this.GoodTime));
+                        hit.judge = this.createJudgement(v, hit.time + hit.sliderTimeTotal + this.GoodTime);
                         break;
 
                     case 'spinner':
@@ -403,7 +402,7 @@ export default class Playback {
                             hit.prog.visible = false;
                             hit.base.visible = false;
                         }
-                        hit.judges.push(this.createJudgement(hit, hit.endTime + 233));
+                        hit.judge = this.createJudgement(hit, hit.endTime + 233);
                         break;
                 }
                 if (!game.hideFollow && prev && hit.type !== 'spinner' && hit.combo === prev.combo) {
@@ -610,27 +609,26 @@ export default class Playback {
         }
     }
     hitSuccess(hit, points, time) {
-        this.scoreOverlay.hit(points, 300, time);
+        this.scoreOverlay.hit(points, hit.type === 'slider' ? 30 : 300, time);
         if (points > 0) {
             if (hit.type === 'spinner') this.playHitsound(hit, 0, hit.endTime);
             else {
                 this.playHitsound(hit, 0, hit.time);
                 this.errorMeter.hit(time - hit.time, time);
-                if (hit.type === 'slider') hit.judges.at(-1).defaultScore = 50;
+                if (hit.type === 'slider') hit.judge.defaultScore = 50;
             }
         }
 
         hit.score = points;
         hit.clickTime = time;
-        this.invokeJudgement(hit.judges[0], points, time);
+        if (hit.type !== 'slider') this.invokeJudgement(hit.judge, points, time);
     }
     updateHits(time) {
         while (this.current < this.hits.length && this.futuremost < time + this.approachTime + spinnerInTime) {
             const hit = this.hits[this.current++], children = this.gamefield.children;
-            if (!game.autoplay && !game.hideGreat) for (const judge of hit.judges) {
-                if (judge.parent) break;
-                judge.parent = this.gamefield;
-                children.splice(binarySearch(judge.zIndex || 0, children), 0, judge);
+            if (!(game.autoplay && game.hideGreat) && !hit.judge.parent) {
+                hit.judge.parent = this.gamefield;
+                children.splice(binarySearch(hit.judge.zIndex || 0, children), 0, hit.judge);
             }
             for (let i = hit.objects.length - 1; i >= 0; --i) {
                 const obj = hit.objects[i];
@@ -647,7 +645,7 @@ export default class Playback {
             if (time - hit.endTime > this.MehTime + 800) {
                 PIXI.utils.removeItems(this.newHits, i--, 1);
                 hit.objects.forEach(this.destroyHit);
-                hit.judges.forEach(this.destroyHit);
+                this.destroyHit(hit.judge);
                 hit.destroyed = true;
             }
             else {
@@ -704,7 +702,12 @@ export default class Playback {
                             }
                         }
                     }
-                    if (isCircle) this.updateJudgement(hit.judges[0], time);
+                    
+                    if (isCircle) this.updateJudgement(hit.judge, time);
+                    else if (typeof hit.score === 'undefined' && time > hit.time + this.MehTime) {
+                        hit.score = game.autoplay ? 30 : 0;
+                        this.scoreOverlay.hit(hit.score, 30, hit.time + this.MehTime);
+                    }
                 }
                 switch (hit.type) {
                     case 'circle': updateHitCircle(true); break;
@@ -786,7 +789,7 @@ export default class Playback {
                                 if (!tick.result) {
                                     if (activated) {
                                         tick.result = true;
-                                        hit.judges.at(-1).defaultScore = 50;
+                                        hit.judge.defaultScore = 50;
 
                                         while (this.timingId + 1 < this.track.timing.length && this.track.timing[this.timingId + 1].offset <= tick.time) ++this.timingId;
                                         while (this.timingId > 0 && this.track.timing[this.timingId].offset > time) --this.timingId;
@@ -808,7 +811,7 @@ export default class Playback {
                                         curRep.result = true;
                                         if (++hsPlayed < 20) {
                                             this.playHitsound(hit, hit.nextRepeat, curRep.time);
-                                            hit.judges.at(-1).defaultScore = 50;
+                                            hit.judge.defaultScore = 50;
                                         }
                                     }
                                     this.scoreOverlay.hit(activated ? 30 : 0, 30, curRep.time);
@@ -816,7 +819,7 @@ export default class Playback {
                             }
                             if (realT > hit.repeat && activated && !hit.scoredSliderEnd) {
                                 hit.scoredSliderEnd = hit.time + hit.sliderTimeTotal;
-                                this.invokeJudgement(hit.judges.at(-1), 300, hit.scoredSliderEnd);
+                                this.invokeJudgement(hit.judge, 300, hit.scoredSliderEnd);
                                 this.scoreOverlay.hit(300, 300, hit.scoredSliderEnd);
                                 this.playHitsound(hit, hit.repeat, hit.scoredSliderEnd);
                             }
@@ -871,7 +874,7 @@ export default class Playback {
                                 }
                             }
                         }
-                        for (const judge of hit.judges) this.updateJudgement(judge, time);
+                        this.updateJudgement(hit.judge, time);
                         break;
 
                     case 'spinner':
@@ -918,7 +921,7 @@ export default class Playback {
                                 this.hitSuccess(hit, points, hit.endTime);
                             }
                         }
-                        this.updateJudgement(hit.judges[0], time);
+                        this.updateJudgement(hit.judge, time);
                         break;
                 }
             }
@@ -976,7 +979,7 @@ export default class Playback {
     destroy() {
         for (const hit of this.hits) if (!hit.destroyed) {
             hit.objects.forEach(this.destroyHit);
-            hit.judges.forEach(this.destroyHit);
+            this.destroyHit(hit.judge);
         }
         if (game.backgroundBlurRate > 0) this.bg.destroy(true);
         SliderMesh.deallocate();

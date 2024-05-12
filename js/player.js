@@ -126,13 +126,13 @@ export default class Player {
         }
         else if (hit) {
             if (hit.type === 'circle' || hit.type === 'slider') {
-                if (game.autoplay) this.playback.hitSuccess(hit, 300, hit.time);
+                if (game.autoplay) this.playback.hitSuccess(hit, hit.type === 'slider' ? 30 : 300, hit.time);
                 else {
                     let points = 50;
                     const diff = click.time - hit.time;
                     if (Math.abs(diff) <= this.playback.GoodTime) points = 100;
                     if (Math.abs(diff) <= this.playback.GreatTime) points = 300;
-                    this.playback.hitSuccess(hit, points, click.time);
+                    this.playback.hitSuccess(hit, hit.type === 'slider' ? 30 : points, click.time);
                 }
             }
         }

@@ -27,7 +27,7 @@ export default function CircleApproximator(hit) {
         arcRange = tau - arcRange;
     }
     return {
-        calcLength: arcRange * radius, pointAt: t => {
+        definedLength: hit.pixelLength, calcLength: arcRange * radius, pointAt: t => {
             const ang = thetaStart + t * expectRange;
             return {
                 x: Math.cos(ang) * radius + center.x, y: Math.sin(ang) * radius + center.y, t: t
