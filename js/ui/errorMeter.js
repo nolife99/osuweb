@@ -16,7 +16,7 @@ class ErrorMeter extends PIXI.Container {
             piece.tint = tint;
             piece.anchor.set(.5);
             piece.position.set(0);
-        }
+        };
         newbarpiece(barheight, color50);
         newbarpiece(barheight * r100 / r50, color100);
         newbarpiece(barheight * r300 / r50, color300);
@@ -86,4 +86,4 @@ export default class ErrorMeterOverlay extends PIXI.Container {
     destroy(opt) {
         super.destroy(opt);
     }
-}
+};

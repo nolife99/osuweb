@@ -65,9 +65,8 @@ function setSpriteArrayText(arr, str) {
 }
 function setSpriteArrayPos(arr, x, y, mul) {
     for (const s of arr) {
-        s.x = x + s.scale.x * charSpacing / 2;
-        s.y = y;
         s.scale.set(mul);
+        s.position.set(x + s.scale.x * charSpacing / 2, y);
         x += s.knownwidth;
     }
 }
@@ -221,4 +220,4 @@ export default class ScoreOverlay extends PIXI.Container {
     destroy(opt) {
         super.destroy(opt);
     }
-}
+};

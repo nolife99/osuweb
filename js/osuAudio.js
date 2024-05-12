@@ -2,34 +2,30 @@
 
 const actx = new AudioContext;
 export const sounds = {
-    load: (sources, onLoad) => {
-        let toLoad = sources.length, loaded = 0;
-        for (const source of sources) {
-            const o = {
-                volumeNode: new GainNode(actx),
-                get volume() {
-                    return o.volumeNode.gain.value;
-                },
-                set volume(value) {
-                    o.volumeNode.gain.value = value;
-                },
-                play: () => {
-                    o.soundNode = new AudioBufferSourceNode(actx, {
-                        buffer: o.buffer
-                    });
-                    o.soundNode.connect(o.volumeNode).connect(actx.destination);
-                    o.soundNode.start();
-                }
-            };
-            fetch(source).then(response => response.arrayBuffer()).then(buf => actx.decodeAudioData(buf, buffer => {
-                o.buffer = buffer;
-                o.hasLoaded = true;
-                if (toLoad === ++loaded) onLoad();
-            }));
+    load: (sources, onLoad) => Promise.all(sources.map(async source => {
+        const o = {
+            volumeNode: new GainNode(actx),
+            get volume() {
+                return o.volumeNode.gain.value;
+            },
+            set volume(value) {
+                o.volumeNode.gain.value = value;
+            },
+            play: () => {
+                o.soundNode = new AudioBufferSourceNode(actx, {
+                    buffer: o.buffer
+                });
+                o.soundNode.connect(o.volumeNode).connect(actx.destination);
+                o.soundNode.start();
+            }
+        };
+        return await actx.decodeAudioData(await (await fetch(source)).arrayBuffer(), buffer => {
+            o.buffer = buffer;
+            o.hasLoaded = true;
             o.name = source;
             sounds[o.name] = o;
-        }
-    }
+        });
+    })).then(onLoad)
 };
 export default class OsuAudio {
     started = 0;
@@ -37,7 +33,7 @@ export default class OsuAudio {
     speed = 1;
     ctx = actx;
     gain = new GainNode(actx);
-a
+    
     constructor(buffer, callback) {
         this.gain.connect(actx.destination);
         actx.decodeAudioData(buffer.buffer, decoded => {

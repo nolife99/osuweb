@@ -20,7 +20,7 @@ const glowFadeOut = 350, flashFadeIn = 40, defaultBg = 'asset/skin/defaultbg.jpg
     colorLerp = (rgb1, rgb2, t) => lerp(rgb1 >> 16, rgb2 >> 16, t) << 16 |
         lerp((rgb1 >> 8) & 255, (rgb2 >> 8) & 255, t) << 8 | lerp(rgb1 & 255, rgb2 & 255, t);
 
-function repeatclamp(a) {
+function repeatClamp(a) {
     a %= 2;
     return a > 1 ? 2 - a : a;
 }
@@ -80,22 +80,21 @@ export default class Playback {
         this.wait = Math.max(0, bgFadeTime - track.hits[0].time);
         this.skipTime = track.hits[0].time - 2000;
 
-        osu.onready = () => {
+        osu.onready = async () => {
             for (const a of document.getElementsByTagName('audio')) a.softstop?.();
 
             this.errorMeter = new ErrorMeterOverlay(this.GreatTime, this.GoodTime, this.MehTime);
             this.progOverlay = new ProgressOverlay(track.hits[0].time, track.hits.at(-1).endTime);
             this.scoreOverlay = new ScoreOverlay(this.HP, scoreMult);
 
-            loadTask.then(() => {
-                app.stage.addChild(this.scoreOverlay, this.errorMeter, this.progOverlay, this.breakOverlay);
-                this.loadingMenu.hidden = true;
-
-                this.osu.audio.gain.gain.value = game.musicVolume * game.masterVolume;
-                this.osu.audio.speed = this.speed;
-                this.osu.audio.play(this.audioTick = bgFadeTime + this.wait);
-                this.started = true;
-            });
+            await loadTask;
+            app.stage.addChild(this.scoreOverlay, this.errorMeter, this.progOverlay, this.breakOverlay);
+            
+            this.loadingMenu.hidden = true;
+            this.osu.audio.gain.gain.value = game.musicVolume * game.masterVolume;
+            this.osu.audio.speed = this.speed;
+            this.osu.audio.play(this.audioTick = bgFadeTime + this.wait);
+            this.started = true;
         };
         onresize = () => {
             app.renderer.resize(innerWidth, innerHeight);
@@ -347,7 +346,7 @@ export default class Playback {
                         const tickDuration = hit.timing.beatMs / this.track.difficulty.SliderTickRate, nticks = Math.ceil(hit.sliderTimeTotal / tickDuration);
 
                         if (!hit.timing.isNaN) for (let i = 0; i < nticks; ++i) {
-                            const t = hit.time + i * tickDuration, pos = repeatclamp(i * tickDuration / hit.sliderTime);
+                            const t = hit.time + i * tickDuration, pos = repeatClamp(i * tickDuration / hit.sliderTime);
                             if (Math.min(pos, 1 - pos) * hit.sliderTime <= 10) continue;
                             const at = hit.curve.pointAt(pos);
 
@@ -386,15 +385,13 @@ export default class Playback {
                         hit.y = 192;
                         hit.rotation = 0;
                         hit.spinProg = 0;
-                        hit.clicked = false;
                         hit.clearSpin = (1.5 * this.OD < 5 ? 3 + .4 * this.OD : 2.5 + .5 * this.OD) / this.speed * Math.PI * (hit.endTime - hit.time) / 1000;
                         hit.spinProg = hit.clearSpin < Math.PI ? Number.MAX_SAFE_INTEGER : 0;
 
                         function newsprite(path) {
                             const sprite = new PIXI.Sprite(skin[path]);
                             sprite.anchor.set(.5);
-                            sprite.x = hit.x;
-                            sprite.y = hit.y;
+                            sprite.position.set(hit.x, hit.y);
                             sprite.zIndex = .5;
                             sprite.alpha = 0;
                             hit.objects.push(sprite);
@@ -441,8 +438,7 @@ export default class Playback {
 
                         const p = container.addChild(new PIXI.Sprite(skin['followpoint.png']));
                         p.scale.set(this.hitScale * .4, this.hitScale * .3);
-                        p.x = x;
-                        p.y = y;
+                        p.position.set(x, y);
                         p.rotation = rotation;
                         p.anchor.set(.5);
                         p.blendMode = PIXI.BLEND_MODES.ADD;
@@ -721,7 +717,6 @@ export default class Playback {
                     case 'circle': updateHitCircle(true); break;
                     case 'slider':
                         updateHitCircle(false);
-                        const noteFullAppear = this.approachTime - hit.objFadeIn;
                         hit.body.startt = 0;
                         hit.body.endt = 1;
 
@@ -729,7 +724,7 @@ export default class Playback {
                             hit.body.alpha = alpha;
                             for (const tick of hit.ticks) tick.alpha = alpha;
                         }
-                        const diff = hit.time - time, dAfter = -diff;
+                        const diff = hit.time - time, dAfter = -diff, noteFullAppear = this.approachTime - hit.objFadeIn;
                         if (diff < this.approachTime && diff > noteFullAppear) {
                             setbodyAlpha((this.approachTime - diff) / hit.objFadeIn);
                             if (hit.reverse) hit.reverse.alpha = hit.body.alpha;
@@ -746,7 +741,7 @@ export default class Playback {
                                 if (hit.reverse_b) hit.reverse_b.alpha = 1;
                             }
                         }
-                        if (game.snakein) {
+                        if (game.snakeIn) {
                             if (diff > 0) {
                                 const t = clamp01((time - hit.time + this.approachTime) / this.approachTime * 3);
                                 hit.body.endt = t;
@@ -767,7 +762,6 @@ export default class Playback {
                         }
                         const resizeFollow = dir => {
                             if (!hit.lastFollow) hit.lastFollow = time;
-                            if (!hit.followSize) hit.followSize = 1;
                             hit.followSize = Math.max(1, Math.min(2.2, hit.followSize + (time - hit.lastFollow) * dir));
                             hit.lastFollow = time;
                         }
@@ -775,11 +769,11 @@ export default class Playback {
                             let t = dAfter / hit.sliderTime;
                             const currentRepeat = Math.min(Math.ceil(t), hit.repeat), realT = t;
 
-                            t = repeatclamp(Math.min(t, hit.repeat));
+                            t = repeatClamp(Math.min(t, hit.repeat));
                             const at = hit.curve.pointAt(t);
 
-                            hit.follow.x = hit.ball.x = at.x;
-                            hit.follow.y = hit.ball.y = at.y;
+                            hit.follow.position.set(at.x, at.y);
+                            hit.ball.position.set(at.x, at.y);
 
                             if (!game.autoplay) {
                                 const dx = game.mouseX - at.x, dy = game.mouseY - at.y, followpx = hit.followSize * this.circleRadius / 1.8;
@@ -853,7 +847,7 @@ export default class Playback {
                                 hit.reverse.visible = currentRepeat < hit.repeat - hit.repeat % 2;
                                 if (hit.reverse_b) hit.reverse_b.visible = currentRepeat < hit.repeat - 1 + hit.repeat % 2;
                             }
-                            if (game.snakeout && currentRepeat === hit.repeat) {
+                            if (game.snakeOut && currentRepeat === hit.repeat) {
                                 if (hit.repeat % 2 === 1) {
                                     hit.body.startt = t;
                                     hit.body.endt = 1;
@@ -867,20 +861,20 @@ export default class Playback {
                         for (const tick of hit.ticks) {
                             if (time < tick.appeartime) {
                                 const dt = (tick.appeartime - time) / 500;
-                                tick.alpha *= clamp01(1 - dt);
-                                tick.scale.set(this.hitScale / 2 * (.5 + clamp01((1 - dt) * (1 + dt)) / 2));
+                                tick.alpha *= 1 - dt;
+                                tick.scale.set(this.hitScale / 2 * (.5 + (1 - dt) * (1 + dt) / 2));
                             }
                             else tick.scale.set(this.hitScale / 2);
 
                             if (time > tick.time) {
                                 const dt = (time - tick.time) / 150;
                                 if (tick.result) {
-                                    tick.alpha *= clamp01(-((dt - 1) ** 5));
-                                    tick.scale.set(.5 * this.hitScale * (1 + dt / 2 * (2 - dt)));
+                                    tick.alpha *= -((dt - 1) ** 5);
+                                    tick.scale.set(this.hitScale * (1 + dt / 2 * (2 - dt)) / 2);
                                 }
                                 else {
-                                    tick.alpha *= clamp01(1 - dt);
-                                    tick.tint = colorLerp(0xffffff, 0xff0000, dt * 2);
+                                    tick.alpha *= 1 - dt;
+                                    tick.tint = colorLerp(0xffffff, 0xff0000, clamp01(dt * 2));
                                 }
                             }
                         }

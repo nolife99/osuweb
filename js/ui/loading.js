@@ -66,4 +66,4 @@ export default class LoadingMenu extends PIXI.Container {
     destroy(opt) {
         super.destroy(opt);
     }
-}
+};

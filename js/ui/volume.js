@@ -52,4 +52,4 @@ export default class VolumeMenu extends PIXI.Container {
     destroy(opt) {
         super.destroy(opt);
     }
-}
+};

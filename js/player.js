@@ -9,6 +9,7 @@ const inUpcoming = (click, playback) => hit => {
     const dx = predict.x - hit.x, dy = predict.y - hit.y, r = predict.r + playback.circleRadius;
     return !hit.score && dx * dx + dy * dy < r * r && Math.abs(predict.time - hit.time) < playback.MehTime;
 }, spinRadius = 60;
+
 export default class Player {
     constructor(playback) {
         this.playback = playback;

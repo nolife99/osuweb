@@ -27,7 +27,6 @@ export default class BreakOverlay extends PIXI.Container {
         this.number.anchor.set(.5);
         this.number.y = -40;
 
-        this.barmid.blendMode = this.barleft.blendMode = this.barright.blendMode = PIXI.BLEND_MODES.ADD;
         this.addChild(this.barmid, this.barleft, this.barright, this.number);
     }
     countdown(end, time) {
@@ -53,4 +52,4 @@ export default class BreakOverlay extends PIXI.Container {
     destroy(opt) {
         super.destroy(opt);
     }
-}
+};

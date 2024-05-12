@@ -138,7 +138,7 @@ class BeatmapController {
         settings.loadToGame(game);
         this.osu.loadAudio(track);
 
-        if (!game.showhwmouse || game.autoplay) {
+        if (!game.hwMouse || game.autoplay) {
             var cursor = new PIXI.Sprite(skin['cursor.png']);
             cursor.anchor.set(.5);
             cursor.scale.set(.3 * game.cursorSize);
@@ -156,7 +156,7 @@ class BeatmapController {
                 game.mouseX / 512 * playback.gfx.width + playback.gfx.xoffset,
                 game.mouseY / 384 * playback.gfx.height + playback.gfx.yoffset);
             app.renderer.render(app.stage);
-        }).start();
+        });
 
         stopGame = restart => {
             if (!restart) {

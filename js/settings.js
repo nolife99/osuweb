@@ -1,6 +1,6 @@
 'use strict';
 
-const saveToLocal = () => localStorage.setItem('settings', JSON.stringify(settings)), defaultsettings = {
+const saveToLocal = () => localStorage.setItem('settings', JSON.stringify(settings)), defaultSettings = {
     dim: 80, blur: 0,
     cursorsize: 1, showhwmouse: false,
     snakein: true, snakeout: false,
@@ -13,15 +13,15 @@ const saveToLocal = () => localStorage.setItem('settings', JSON.stringify(settin
     hideNumbers: false, hideGreat: true, hideFollow: false
 };
 
-export const settings = JSON.parse(localStorage.getItem('settings')) || defaultsettings;
+export const settings = JSON.parse(localStorage.getItem('settings')) || defaultSettings;
 settings.loadToGame = game => {
     if (game) {
         game.backgroundDimRate = settings.dim / 100;
         game.backgroundBlurRate = settings.blur / 1000;
         game.cursorSize = settings.cursorsize;
-        game.showhwmouse = settings.showhwmouse;
-        game.snakein = settings.snakein;
-        game.snakeout = settings.snakeout;
+        game.hwMouse = settings.showhwmouse;
+        game.snakeIn = settings.snakein;
+        game.snakeOut = settings.snakeout;
 
         game.allowMouseScroll = !settings.disableWheel;
         game.allowMouseButton = !settings.disableButton;
@@ -145,7 +145,7 @@ bindcheck('hidefollowpoints-check', 'hideFollow');
 
 const warns = document.getElementsByClassName('warnbtn');
 warns[0].onclick = () => {
-    Object.assign(settings, defaultsettings);
+    Object.assign(settings, defaultSettings);
     for (const c of restorers) c();
     saveToLocal();
 }
