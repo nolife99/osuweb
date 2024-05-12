@@ -1,5 +1,3 @@
-'use strict';
-
 import { game, skin } from '../main.js';
 
 const charSpacing = 10;

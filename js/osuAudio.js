@@ -1,5 +1,3 @@
-'use strict';
-
 const actx = new AudioContext;
 export const sounds = {
     load: (sources, onLoad) => Promise.all(sources.map(async source => {

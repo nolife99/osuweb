@@ -1,5 +1,3 @@
-'use strict';
-
 import OsuAudio from './osuAudio.js';
 
 const typeCirc = 1, typeSlider = 2, typeNC = 4, typeSpin = 8, clamp = (num, min, max) => Math.min(Math.max(num, min), max),
@@ -233,7 +231,7 @@ export default class Osu {
                 if (track.events[0][0] === 'Video') file = track.events[1][2];
 
                 const entry = this.zip.getChildByName(file.slice(1, file.length - 1)), id = (entry.id + entry.uncompressedSize).toString();
-                entry.getData64URI('image/jpeg').then(b => {
+                entry.getData64URI('image/webp').then(b => {
                     img.src = b;
                     if (!PIXI.Assets.get(id)) {
                         PIXI.Assets.add({

@@ -842,7 +842,7 @@
         }
     },
     "meta": {
-        "app": "http://free-tex-packer.com",
+        "app": "https://free-tex-packer.com",
         "image": "sprites.png",
         "size": {
             "w": 1892,

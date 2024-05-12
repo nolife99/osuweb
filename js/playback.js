@@ -1,5 +1,3 @@
-'use strict';
-
 import { game, skin, app, stopGame } from './main.js';
 import Player from './player.js';
 import ScoreOverlay from './ui/score.js';

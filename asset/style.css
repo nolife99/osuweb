@@ -723,7 +723,7 @@ div[hidden=""] {
 
 @keyframes lds-dual-ring {
     0% {
-        transform: rotate(0deg);
+        transform: rotate(0);
     }
 
     100% {
