@@ -2,10 +2,10 @@ import { sounds } from './osuAudio.js';
 import { settings } from './settings.js';
 import Playback from './playback.js';
 import Osu from './osu.js';
-import { fs } from "https://unpkg.com/@zip.js/zip.js/index.min.js";
+import { fs } from "https://cdn.jsdelivr.net/npm/@zip.js/zip.js/index.min.js";
 
 export const game = {
-    mouse: null, mouseX: 0, mouseY: 0,
+    mouseX: 0, mouseY: 0,
     K1down: false, K2down: false, M1down: false, M2down: false, down: false,
     finished: false,
     sample: [{}, {}, {}, {}], sampleSet: 1
@@ -87,38 +87,6 @@ sounds.load(sample, () => {
 export let app, stopGame;
 let showingDifficultyBox;
 
-function previewMap(box, blob, time) {
-    const volume = (settings.mastervolume / 100) * (settings.musicvolume / 100);
-    for (const a of document.getElementsByTagName('audio')) if (a.softstop) a.softstop();
-
-    const a = box.appendChild(new Audio(URL.createObjectURL(blob)));
-    a.volume = 0;
-    a.currentTime = time;
-
-    a.play().then(() => {
-        const fadeIn = setInterval(() => {
-            if (a.volume < volume) a.volume = Math.min(volume, a.volume + .05 * volume);
-            else clearInterval(fadeIn);
-        }, 30), fadeOut = setInterval(() => {
-            if (a.currentTime > time + 10) a.volume = Math.max(0, a.volume - .05 * volume);
-            if (a.volume === 0) {
-                clearInterval(fadeOut);
-                URL.revokeObjectURL(a.src);
-                a.remove();
-            }
-        }, 30);
-    });
-    a.softstop = () => {
-        const fadeOut = setInterval(() => {
-            a.volume = Math.max(0, a.volume - .05 * volume);
-            if (a.volume === 0) {
-                clearInterval(fadeOut);
-                URL.revokeObjectURL(a.src);
-                a.remove();
-            }
-        }, 15);
-    }
-}
 class BeatmapController {
     constructor(osz) {
         this.osu = new Osu(osz.root);
@@ -203,7 +171,38 @@ class BeatmapController {
         }
         box.onclick = e => {
             if (!showingDifficultyBox) {
-                this.osu.zip.getChildByName(track.general.AudioFilename).getBlob().then(data => previewMap(box, data, track.general.PreviewTime / 1000));
+                this.osu.zip.getChildByName(track.general.AudioFilename).getBlob().then(blob => {
+                    const volume = settings.mastervolume * settings.musicvolume / 1e+4, time = track.general.PreviewTime / 1e+3;
+                    for (const a of document.getElementsByTagName('audio')) if (a.softstop) a.softstop();
+
+                    const a = box.appendChild(new Audio(URL.createObjectURL(blob)));
+                    a.volume = 0;
+                    a.currentTime = time;
+
+                    a.play().then(() => {
+                        const fadeIn = setInterval(() => {
+                            if (a.volume < volume) a.volume = Math.min(volume, a.volume + volume / 20);
+                            else clearInterval(fadeIn);
+                        }, 30), fadeOut = setInterval(() => {
+                            if (a.currentTime > time + 10) a.volume = Math.max(0, a.volume - volume / 20);
+                            if (a.volume === 0) {
+                                clearInterval(fadeOut);
+                                URL.revokeObjectURL(a.src);
+                                a.remove();
+                            }
+                        }, 30);
+                    });
+                    a.softstop = () => {
+                        const fadeOut = setInterval(() => {
+                            a.volume = Math.max(0, a.volume - volume / 20);
+                            if (a.volume === 0) {
+                                clearInterval(fadeOut);
+                                URL.revokeObjectURL(a.src);
+                                a.remove();
+                            }
+                        }, 15);
+                    }
+                });
                 e.stopPropagation();
 
                 const difficultyBox = box.appendChild(document.createElement('div')), closeDifficultyMenu = () => {

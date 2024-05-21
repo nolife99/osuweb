@@ -81,7 +81,7 @@ export default class ScoreOverlay extends PIXI.Container {
     };
 
     scoreDisplay = new LazyNumber(0, 250);
-    comboDisplay = new LazyNumber(0, 150);
+    comboDisplay = new LazyNumber(0, 90);
     accDisplay = new LazyNumber(100, 200);
     HPDisplay = new LazyNumber(1, 200);
 
