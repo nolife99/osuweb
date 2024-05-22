@@ -65,7 +65,7 @@ export default class BezierApproximator {
         };
     }
 };
-function FlattenBezier(pts) {
+const FlattenBezier = pts => {
     if (pts.length === 2) return pts;
     const deg = pts.length - 1, output = [], toFlatten = [structuredClone(pts)], freeBufs = [],
         subBuf1 = Array(pts.length), subBuf2 = Array(deg * 2 + 1), l = subBuf2;
@@ -124,4 +124,4 @@ function FlattenBezier(pts) {
     }
     output.push(pts[deg]);
     return output;
-}
+};

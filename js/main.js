@@ -15,9 +15,9 @@ const progresses = document.getElementsByClassName('progress'),
     pDragboxInner = document.getElementsByClassName('dragbox-inner')[0],
     pDragboxHint = document.getElementsByClassName('dragbox-hint')[0],
     pBeatmapList = document.getElementsByClassName('beatmap-list')[0],
-    mapList = localStorage.getItem('‌')?.split('‌') || [];
+    mapList = localStorage.getItem('‌')?.split('‌');
 
-if (mapList.length > 0) {
+if (mapList) {
     const counter = progresses[3].childNodes;
     counter[3].innerText = mapList.length;
 
@@ -25,7 +25,7 @@ if (mapList.length > 0) {
     for (let i = 0; i < mapList.length; ++i) (tempbox[i] = pBeatmapList.insertBefore(document.createElement('div'), pDragbox)).className = 'beatmapbox';
 
     let loadedCount = 0;
-    for (let i = 0; i < mapList.length; ++i) localforage.getItem(mapList[i]).then(buf => {
+    mapList.forEach((item, i) => localforage.getItem(item).then(buf => {
         const zipFs = new fs.FS;
         zipFs.importUint8Array(buf).then(() => {
             addbeatmap(zipFs, box => {
@@ -34,10 +34,10 @@ if (mapList.length > 0) {
             });
             loadingCounter.innerText = ++loadedCount;
         }).catch(e => {
-            console.warn('Error importing beatmap:', mapList[i], e);
+            console.warn('Error importing beatmap:', item, e);
             pDragboxHint.innerText = nonValidHint;
         });
-    }).catch(err => console.warn('Error getting beatmap:', mapList[i], err));
+    }).catch(err => console.warn('Error getting beatmap:', item, err)));
 }
 
 export let skin;
@@ -248,12 +248,7 @@ class BeatmapController {
     }
 }
 
-const defaultHint = 'Drag and drop a beatmap (.osz) file here',
-    modeErrHint = 'Only supports osu! (std) mode beatmaps. Drop another file.',
-    nonValidHint = 'Not a valid osz file. Drop another file.',
-    loadingHint = 'Loading...';
-
-function addbeatmap(osz, f) {
+const addbeatmap = (osz, f) => {
     const map = new BeatmapController(osz), osu = map.osu;
     osu.load(() => {
         if (!osu.tracks.some(t => t.general.Mode !== 3)) {
@@ -262,7 +257,11 @@ function addbeatmap(osz, f) {
         }
         f(map.createBeatmapBox());
     });
-}
+}, defaultHint = 'Drag and drop a beatmap (.osz) file here',
+    modeErrHint = 'Only supports osu! (std) mode beatmaps. Drop another file.',
+    nonValidHint = 'Not a valid osz file. Drop another file.',
+    loadingHint = 'Loading...';
+
 pDragbox.ondrop = e => {
     e.stopPropagation();
     e.preventDefault();
@@ -271,7 +270,7 @@ pDragbox.ondrop = e => {
     for (const blob of e.dataTransfer.files) blob.arrayBuffer().then(buf => {
         const bytes = new Uint8Array(buf), id = blob.lastModified.toString(), zipFs = new fs.FS;
         localforage.setItem(id, bytes);
-        if (!mapList.includes(id)) {
+        if (mapList && !mapList.includes(id)) {
             mapList.push(id);
             localStorage.setItem('‌', mapList.join('‌'));
         }

@@ -6,8 +6,7 @@ export default class SliderMesh extends PIXI.Container {
     constructor(curve, tintid) {
         super();
 
-        const ibo = [], first = curve.pointAt(0), vbo = [first.x, first.y, 0, 0];
-        function addArc(c, p1, p2, t) {
+        const ibo = [], first = curve.pointAt(0), vbo = [first.x, first.y, 0, 0], addArc = (c, p1, p2, t) => {
             const v = vbo[4 * c], nextV = vbo[4 * c + 1], aStart = Math.atan2(vbo[4 * p1 + 1] - nextV, vbo[4 * p1] - v);
             let aEnd = Math.atan2(vbo[4 * p2 + 1] - nextV, vbo[4 * p2] - v);
             if (aStart > aEnd) aEnd += 2 * Math.PI;
@@ -22,9 +21,8 @@ export default class SliderMesh extends PIXI.Container {
                 p1 = newv;
             }
             ibo.push(c, p1, p2);
-        }
+        }, res = Math.max(Math.min(Math.ceil(curve.calcLength / 4.7), 10000), DIVIDES);
 
-        const res = Math.max(Math.min(Math.ceil(curve.calcLength / 4.7), 10000), DIVIDES);
         for (let i = 1; i < res; ++i) {
             const pt = curve.pointAt((i + 1) / res), prev = curve.pointAt(i / res), dx = pt.x - prev.x, dy = pt.y - prev.y,
                 length = Math.hypot(dx, dy), ox = SliderMesh.radius * dy / length, oy = SliderMesh.radius * dx / length;
@@ -72,11 +70,11 @@ export default class SliderMesh extends PIXI.Container {
         gl.colorMask(false, false, false, false);
         gl.depthFunc(gl.LESS);
 
-        function bind(geometry, draw = true) {
+        const bind = (geometry, draw = true) => {
             renderer.shader.bind(SliderMesh.shader);
             renderer.geometry.bind(geometry);
             if (draw) renderer.geometry.draw(gl.TRIANGLES);
-        }
+        };
         if (this.startt === 0 && this.endt === 1) {
             uniform.dt = 0;
             uniform.ot = 1;

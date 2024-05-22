@@ -1,4 +1,4 @@
-function timeformat(ms) {
+const timeformat = ms => {
     let s = ms / 1000, prefix = '';
     if (s < 0) {
         prefix = '-';
@@ -11,8 +11,7 @@ function timeformat(ms) {
         m %= 60;
     }
     return `${prefix}${m}:${Math.floor(s % 60).toString().padStart(2, '0')}`;
-}
-const font = {
+}, font = {
     fontFamily: 'Venera', fontSize: 16, fill: 0xddffff
 };
 

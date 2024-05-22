@@ -103,9 +103,9 @@ class Track {
                     }
                     else if ((hit.type & typeSlider) > 0) {
                         const sliderKeys = parts[5].split('|');
-                        hit.keyframes = new Array(sliderKeys.length - 1);
-                        if (hit.keyframes.length === 0) hit.type = 'circle';
+                        if (sliderKeys.length - 1 === 0) hit.type = 'circle';
                         else {
+                            hit.keyframes = new Array(sliderKeys.length - 1);
                             for (let j = 1; j < sliderKeys.length; ++j) {
                                 const p = sliderKeys[j].split(':');
                                 hit.keyframes[j - 1] = {

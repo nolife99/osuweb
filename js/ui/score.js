@@ -1,6 +1,46 @@
 import { game, skin } from '../main.js';
 
-const charSpacing = 10;
+const charSpacing = 10, errortext = a => {
+    let sum = 0;
+    for (const i of a) sum += i;
+
+    const mean = sum / a.length;
+    let devSq = 0;
+    for (const i of a) devSq += (i - mean) * 2;
+
+    const sgnavg = mean.toFixed(0);
+    return `${sgnavg[0] !== '-' ? '+' + sgnavg : sgnavg}±${Math.sqrt(devSq / a.length).toFixed(0)}ms`;
+}, modstext = () => {
+    const l = '+', arr = [];
+    if (game.easy) arr.push('EZ');
+    if (game.daycore) arr.push('DC');
+    if (game.hidden) arr.push('HD');
+    if (game.hardrock) arr.push('HR');
+    if (game.nightcore) arr.push('NC');
+    if (game.autoplay) arr.push('AT');
+    if (arr.length === 0) return '';
+    return l.concat(...arr);
+}, newdiv = (parent, classname, text) => {
+    const div = document.createElement('div');
+    if (parent) parent.appendChild(div);
+    if (classname) div.className = classname;
+    if (text) div.innerText = text;
+    return div;
+}, setSpriteArrayText = (arr, str) => {
+    arr.width = 0;
+    for (let i = 0; i < str.length; ++i) {
+        const digit = arr[i], ch = str[i];
+        digit.texture = skin[`score-${ch === '%' ? 'percent' : ch}.png`];
+        digit.knownwidth = digit.scale.x * (digit.texture.width + charSpacing);
+        digit.visible = true;
+        arr.width += digit.knownwidth;
+    }
+    for (let i = str.length; i < arr.length; ++i) arr[i].visible = false;
+}, setSpriteArrayPos = (arr, x, y, mul) => arr.forEach(s => {
+    s.scale.set(mul);
+    s.position.set(x + s.scale.x * charSpacing / 2, y);
+    x += s.knownwidth;
+});
 class LazyNumber {
     lasttime = Number.MIN_SAFE_INTEGER;
     constructor(value, lag) {
@@ -19,53 +59,6 @@ class LazyNumber {
     valueAt(time) {
         this.update(time);
         return this.value;
-    }
-}
-function errortext(a) {
-    let sum = 0;
-    for (const i of a) sum += i;
-
-    const mean = sum / a.length;
-    let devSq = 0;
-    for (const i of a) devSq += (i - mean) * 2;
-
-    const sgnavg = mean.toFixed(0);
-    return `${sgnavg[0] !== '-' ? '+' + sgnavg : sgnavg}±${Math.sqrt(devSq / a.length).toFixed(0)}ms`;
-}
-function modstext() {
-    const l = '+', arr = [];
-    if (game.easy) arr.push('EZ');
-    if (game.daycore) arr.push('DC');
-    if (game.hidden) arr.push('HD');
-    if (game.hardrock) arr.push('HR');
-    if (game.nightcore) arr.push('NC');
-    if (game.autoplay) arr.push('AT');
-    if (arr.length === 0) return '';
-    return l.concat(...arr);
-}
-function newdiv(parent, classname, text) {
-    const div = document.createElement('div');
-    if (parent) parent.appendChild(div);
-    if (classname) div.className = classname;
-    if (text) div.innerText = text;
-    return div;
-}
-function setSpriteArrayText(arr, str) {
-    arr.width = 0;
-    for (let i = 0; i < str.length; ++i) {
-        const digit = arr[i], ch = str[i];
-        digit.texture = skin[`score-${ch === '%' ? 'percent' : ch}.png`];
-        digit.knownwidth = digit.scale.x * (digit.texture.width + charSpacing);
-        digit.visible = true;
-        arr.width += digit.knownwidth;
-    }
-    for (let i = str.length; i < arr.length; ++i) arr[i].visible = false;
-}
-function setSpriteArrayPos(arr, x, y, mul) {
-    for (const s of arr) {
-        s.scale.set(mul);
-        s.position.set(x + s.scale.x * charSpacing / 2, y);
-        x += s.knownwidth;
     }
 }
 export default class ScoreOverlay extends PIXI.Container {

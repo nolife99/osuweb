@@ -13,39 +13,37 @@ const saveToLocal = () => localStorage.setItem('settings', JSON.stringify(settin
 
 export const settings = JSON.parse(localStorage.getItem('settings')) || defaultSettings;
 settings.loadToGame = game => {
-    if (game) {
-        game.backgroundDimRate = settings.dim / 100;
-        game.backgroundBlurRate = settings.blur / 1000;
-        game.cursorSize = settings.cursorsize;
-        game.hwMouse = settings.showhwmouse;
-        game.snakeIn = settings.snakein;
-        game.snakeOut = settings.snakeout;
+    if (!game) return;
 
-        game.allowMouseScroll = !settings.disableWheel;
-        game.allowMouseButton = !settings.disableButton;
-        game.K1keycode = settings.K1keycode;
-        game.K2keycode = settings.K2keycode;
+    game.backgroundDimRate = settings.dim / 100;
+    game.backgroundBlurRate = settings.blur / 1000;
+    game.cursorSize = settings.cursorsize;
+    game.hwMouse = settings.showhwmouse;
+    game.snakeIn = settings.snakein;
+    game.snakeOut = settings.snakeout;
 
-        game.masterVolume = settings.mastervolume / 100;
-        game.effectVolume = settings.effectvolume / 100;
-        game.musicVolume = settings.musicvolume / 100;
-        game.globalOffset = +settings.audiooffset;
+    game.allowMouseScroll = !settings.disableWheel;
+    game.allowMouseButton = !settings.disableButton;
+    game.K1keycode = settings.K1keycode;
+    game.K2keycode = settings.K2keycode;
 
-        game.easy = settings.easy;
-        game.daycore = settings.daycore;
-        game.hardrock = settings.hardrock;
-        game.nightcore = settings.nightcore;
-        game.hidden = settings.hidden;
-        game.autoplay = settings.autoplay;
+    game.masterVolume = settings.mastervolume / 100;
+    game.effectVolume = settings.effectvolume / 100;
+    game.musicVolume = settings.musicvolume / 100;
+    game.globalOffset = +settings.audiooffset;
 
-        game.hideNumbers = settings.hideNumbers;
-        game.hideGreat = settings.hideGreat;
-        game.hideFollow = settings.hideFollow;
-    }
-}
-const restorers = [];
+    game.easy = settings.easy;
+    game.daycore = settings.daycore;
+    game.hardrock = settings.hardrock;
+    game.nightcore = settings.nightcore;
+    game.hidden = settings.hidden;
+    game.autoplay = settings.autoplay;
 
-function bindcheck(id, item) {
+    game.hideNumbers = settings.hideNumbers;
+    game.hideGreat = settings.hideGreat;
+    game.hideFollow = settings.hideFollow;
+};
+const restorers = [], bindcheck = (id, item) => {
     const c = document.getElementById(id);
     c.checked = settings[item];
     restorers.push(() => c.checked = settings[item]);
@@ -53,8 +51,7 @@ function bindcheck(id, item) {
         settings[item] = c.checked;
         saveToLocal();
     }
-}
-function bindExclusiveCheck(id1, item1, id2, item2) {
+}, bindExclusiveCheck = (id1, item1, id2, item2) => {
     const c1 = document.getElementById(id1), c2 = document.getElementById(id2);
     c1.checked = settings[item1];
     c2.checked = settings[item2];
@@ -73,8 +70,7 @@ function bindExclusiveCheck(id1, item1, id2, item2) {
         c1.checked = false;
         saveToLocal();
     }
-}
-function bindrange(id, item, feedback) {
+}, bindrange = (id, item, feedback) => {
     const range = document.getElementById(id), indicator = document.getElementById(id + '-indicator');
     range.onmousedown = () => {
         indicator.hidden = false;
@@ -94,30 +90,28 @@ function bindrange(id, item, feedback) {
         settings[item] = range.value;
         saveToLocal();
     }
-}
-function bindkeyselector(id, keynameitem, keycodeitem) {
-    const btn = document.getElementById(id);
-    function activate() {
-        function deactivate() {
+}, bindkeyselector = (id, keynameitem, keycodeitem) => {
+    const btn = document.getElementById(id), activate = () => {
+        const deactivate = () => {
             btn.onclick = activate;
             btn.classList.remove('using');
             removeEventListener('keydown', listenkey);
-        }
-        function listenkey(e) {
+        }, listenkey = e => {
             settings[keycodeitem] = e.code;
             settings[keynameitem] = e.key.toUpperCase();
             btn.value = settings[keynameitem];
             saveToLocal();
             deactivate();
-        }
+        };
+
         btn.classList.add('using');
         addEventListener('keydown', listenkey);
         btn.onclick = deactivate;
-    }
+    };
     btn.onclick = activate;
     btn.value = settings[keynameitem];
     restorers.push(() => btn.value = settings[keynameitem]);
-}
+};
 
 bindrange('dim-range', 'dim', v => v + '%');
 bindrange('blur-range', 'blur', v => v + '%');
@@ -127,8 +121,8 @@ bindcheck('snakein-check', 'snakein');
 bindcheck('snakeout-check', 'snakeout');
 bindcheck('disable-wheel-check', 'disableWheel');
 bindcheck('disable-button-check', 'disableButton');
-bindkeyselector('lbutton1select', 'K1name', 'K1keycode');
-bindkeyselector('rbutton1select', 'K2name', 'K2keycode');
+bindkeyselector('leftButton', 'K1name', 'K1keycode');
+bindkeyselector('rightButton', 'K2name', 'K2keycode');
 bindrange('mastervolume-range', 'mastervolume', v => v + '%');
 bindrange('effectvolume-range', 'effectvolume', v => v + '%');
 bindrange('musicvolume-range', 'musicvolume', v => v + '%');

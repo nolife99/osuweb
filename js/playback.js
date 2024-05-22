@@ -18,11 +18,10 @@ const glowFadeOut = 350, flashFadeIn = 40, defaultBg = 'asset/skin/defaultbg.jpg
     colorLerp = (rgb1, rgb2, t) => lerp(rgb1 >> 16, rgb2 >> 16, t) << 16 |
         lerp((rgb1 >> 8) & 255, (rgb2 >> 8) & 255, t) << 8 | lerp(rgb1 & 255, rgb2 & 255, t);
 
-function repeatClamp(a) {
+const repeatClamp = a => {
     a %= 2;
     return a > 1 ? 2 - a : a;
-}
-function binarySearch(i, array) {
+}, binarySearch = (i, array) => {
     let l = 0, r = array.length;
     while (l < r) {
         const m = Math.floor((l + r) / 2);
@@ -30,6 +29,14 @@ function binarySearch(i, array) {
         else r = m;
     }
     return l;
+}, getdist = (A, B, useEnd) => {
+    let x = A.x, y = A.y;
+    if (useEnd) {
+        const pt = A.curve.pointAt(1);
+        x = pt.x;
+        y = pt.y;
+    }
+    return (x - B.x) ** 2 + (y - B.y) ** 2;
 }
 
 export default class Playback {
@@ -215,17 +222,7 @@ export default class Playback {
                 resolve(hit);
             }));
         })).then(hits => {
-            function getdist(A, B, useEnd) {
-                let x = A.x, y = A.y;
-                if (useEnd) {
-                    const pt = A.curve.pointAt(1);
-                    x = pt.x;
-                    y = pt.y;
-                }
-                return (x - B.x) ** 2 + (y - B.y) ** 2;
-            }
             const lazyStack = 9, stackOfs = (1 - .7 * ((this.CS - 5) / 5)) * -3.2;
-
             for (let i = hits.length - 1; i > 0; --i) {
                 let n = i, objectI = hits[i];
                 if (objectI.chain !== 0 || objectI.type === 'spinner') continue;
@@ -384,7 +381,7 @@ export default class Playback {
                         hit.clearSpin = (1.5 * this.OD < 5 ? 3 + .4 * this.OD : 2.5 + .5 * this.OD) / this.speed * Math.PI * (hit.endTime - hit.time) / 1000;
                         hit.spinProg = hit.clearSpin < Math.PI ? Number.MAX_SAFE_INTEGER : 0;
 
-                        function newsprite(path) {
+                        const newsprite = path => {
                             const sprite = new PIXI.Sprite(skin[path]);
                             sprite.anchor.set(.5);
                             sprite.position.set(hit.x, hit.y);
@@ -392,7 +389,7 @@ export default class Playback {
                             sprite.alpha = 0;
                             hit.objects.push(sprite);
                             return sprite;
-                        }
+                        };
                         hit.base = newsprite('spinnerbase.png');
                         hit.prog = newsprite('spinnerprogress.png');
                         hit.top = newsprite('spinnertop.png');
@@ -577,7 +574,7 @@ export default class Playback {
         const timing = this.track.timing[this.timingId],
             volume = game.masterVolume * game.effectVolume * timing.volume, defaultSet = timing.sampleSet || game.sampleSet;
 
-        function playHit(bitmask, normalSet, additionSet) {
+        const playHit = (bitmask, normalSet, additionSet) => {
             const normal = game.sample[normalSet].hitnormal;
             normal.volume = volume;
             normal.play();
@@ -598,7 +595,7 @@ export default class Playback {
                 clap.volume = volume;
                 clap.play();
             }
-        }
+        };
         if (hit.type === 'circle' || hit.type === 'spinner') {
             const normal = hit.hitSample.normal || defaultSet, addition = hit.hitSample.addition || normal;
             playHit(hit.hitSound, normal, addition);
@@ -716,11 +713,11 @@ export default class Playback {
                         hit.body.startt = 0;
                         hit.body.endt = 1;
 
-                        function setbodyAlpha(alpha) {
-                            hit.body.alpha = alpha;
-                            for (const tick of hit.ticks) tick.alpha = alpha;
-                        }
-                        const diff = hit.time - time, dAfter = -diff, noteFullAppear = this.approachTime - hit.objFadeIn;
+                        const setbodyAlpha = a => {
+                            hit.body.alpha = a;
+                            for (const tick of hit.ticks) tick.alpha = a;
+                        }, diff = hit.time - time, dAfter = -diff, noteFullAppear = this.approachTime - hit.objFadeIn;
+                        
                         if (diff < this.approachTime && diff > noteFullAppear) {
                             setbodyAlpha((this.approachTime - diff) / hit.objFadeIn);
                             if (hit.reverse) hit.reverse.alpha = hit.body.alpha;
