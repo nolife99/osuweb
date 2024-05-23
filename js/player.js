@@ -150,8 +150,9 @@ export default class Player {
         if (game.down && cur && !cur.destroyed) {
             if (cur.type === 'circle' || time > cur.endTime) {
                 if (cur.type !== 'spinner') {
-                    game.mouseX = (cur.ball || cur).x;
-                    game.mouseY = (cur.ball || cur).y;
+                    const { x, y } = cur.ball || cur;
+                    game.mouseX = x;
+                    game.mouseY = y;
                 }
                 game.down = false;
 
@@ -161,8 +162,9 @@ export default class Player {
                 this.lastTime = time;
             }
             else if (cur.type === 'slider') {
-                game.mouseX = cur.ball.x;
-                game.mouseY = cur.ball.y;
+                const { x, y } = cur.ball;
+                game.mouseX = x;
+                game.mouseY = y;
             }
             else if (!game.paused) {
                 const ang = Math.atan2(game.mouseY - cur.y, game.mouseX - cur.x) + .75;
@@ -204,15 +206,15 @@ export default class Player {
             return;
         }
         if (!game.down) {
-            let targX = cur.x, targY = cur.y;
+            let { x, y } = cur;
             if (cur.type === 'spinner') {
-                const ang = Math.atan2(game.mouseY - targY, game.mouseX - targX);
-                targX += spinRadius * Math.cos(ang);
-                targY += spinRadius * Math.sin(ang);
+                const ang = Math.atan2(game.mouseY - y, game.mouseX - x);
+                x += spinRadius * Math.cos(ang);
+                x += spinRadius * Math.sin(ang);
             }
             const t = Math.sin(((time - this.lastTime) / (cur.time - this.lastTime) * Math.PI) / 2), ease = 1 - t;
-            game.mouseX = t * targX + ease * this.lastX;
-            game.mouseY = t * targY + ease * this.lastY;
+            game.mouseX = t * x + ease * this.lastX;
+            game.mouseY = t * y + ease * this.lastY;
         }
     }
 };

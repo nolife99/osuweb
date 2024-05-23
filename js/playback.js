@@ -30,7 +30,7 @@ const repeatClamp = a => {
     }
     return l;
 }, getdist = (A, B, useEnd) => {
-    let x = A.x, y = A.y;
+    let { x, y } = A;
     if (useEnd) {
         const pt = A.curve.pointAt(1);
         x = pt.x;
@@ -224,32 +224,32 @@ export default class Playback {
         })).then(hits => {
             const lazyStack = 9, stackOfs = (1 - .7 * ((this.CS - 5) / 5)) * -3.2;
             for (let i = hits.length - 1; i > 0; --i) {
-                let n = i, objectI = hits[i];
-                if (objectI.chain !== 0 || objectI.type === 'spinner') continue;
+                let n = i, objI = hits[i];
+                if (objI.chain !== 0 || objI.type === 'spinner') continue;
 
-                if (objectI.type === 'circle') while (--n >= 0) {
-                    const objectN = hits[n];
-                    if (objectN.type === 'spinner') continue;
-                    if (objectI.time - this.approachTime * track.general.StackLeniency > objectN.endTime) break;
+                if (objI.type === 'circle') while (--n >= 0) {
+                    const objN = hits[n];
+                    if (objN.type === 'spinner') continue;
+                    if (objI.time - this.approachTime * track.general.StackLeniency > objN.endTime) break;
 
-                    if (objectN.type === 'slider' && getdist(objectN, objectI, true) < lazyStack) {
-                        const offset = objectI.chain - objectN.chain + 1;
-                        for (let j = n + 1; j <= i; ++j) if (getdist(objectN, hits[j], true) < lazyStack) hits[j].chain -= offset;
+                    if (objN.type === 'slider' && getdist(objN, objI, true) < lazyStack) {
+                        const offset = objI.chain - objN.chain + 1;
+                        for (let j = n + 1; j <= i; ++j) if (getdist(objN, hits[j], true) < lazyStack) hits[j].chain -= offset;
                         break;
                     }
-                    if (getdist(objectN, objectI) < lazyStack) {
-                        objectN.chain = objectI.chain + 1;
-                        objectI = objectN;
+                    if (getdist(objN, objI) < lazyStack) {
+                        objN.chain = objI.chain + 1;
+                        objI = objN;
                     }
                 }
-                else if (objectI.type === 'slider') while (--n >= 0) {
-                    const objectN = hits[n];
-                    if (objectN.type === 'spinner') continue;
+                else if (objI.type === 'slider') while (--n >= 0) {
+                    const objN = hits[n];
+                    if (objN.type === 'spinner') continue;
 
-                    if (objectI.time - (this.approachTime * track.general.StackLeniency) > objectN.time) break;
-                    if (getdist(objectN, objectI, objectN.type === 'slider') < lazyStack) {
-                        objectN.chain = objectI.chain + 1;
-                        objectI = objectN;
+                    if (objI.time - (this.approachTime * track.general.StackLeniency) > objN.time) break;
+                    if (getdist(objN, objI, objN.type === 'slider') < lazyStack) {
+                        objN.chain = objI.chain + 1;
+                        objI = objN;
                     }
                 }
             }
@@ -341,21 +341,21 @@ export default class Playback {
                         if (!hit.timing.isNaN) for (let i = 0; i < nticks; ++i) {
                             const t = hit.time + i * tickDuration, pos = repeatClamp(i * tickDuration / hit.sliderTime);
                             if (Math.min(pos, 1 - pos) * hit.sliderTime <= 10) continue;
-                            const at = hit.curve.pointAt(pos);
+                            const { x, y } = hit.curve.pointAt(pos);
 
-                            const lastTick = hit.ticks[hit.ticks.push(newSprite('sliderscorepoint.png', at.x, at.y)) - 1];
+                            const lastTick = hit.ticks[hit.ticks.push(newSprite('sliderscorepoint.png', x, y)) - 1];
                             lastTick.appeartime = hit.time + i * tickDuration / 1.5;
                             lastTick.time = t;
                         }
                         if (hit.repeat > 1) {
-                            const p = hit.curve.pointAt(1), p2 = hit.curve.pointAt(1 - 1e-9);
-                            hit.reverse = newSprite('reversearrow.png', p.x, p.y, .36);
-                            hit.reverse.rotation = Math.atan2(p2.y - p.y, p2.x - p.x);
+                            const { x, y } = hit.curve.pointAt(1), { x: x2, y: y2 } = hit.curve.pointAt(1 - 1e-9);
+                            hit.reverse = newSprite('reversearrow.png', x, y, .36);
+                            hit.reverse.rotation = Math.atan2(y2 - y, x2 - x);
                         }
                         if (hit.repeat > 2) {
-                            const p2 = hit.curve.pointAt(1e-9);
+                            const { x, y } = hit.curve.pointAt(1e-9);
                             hit.reverse_b = newSprite('reversearrow.png', hit.x, hit.y, .36);
-                            hit.reverse_b.rotation = Math.atan2(p2.y - hit.y, p2.x - hit.x);
+                            hit.reverse_b.rotation = Math.atan2(y - hit.y, x - hit.x);
                             hit.reverse_b.visible = false;
                         }
 
@@ -535,18 +535,20 @@ export default class Playback {
             });
             PIXI.Assets.load(key).then(resource => {
                 let sprite = new PIXI.Sprite(resource);
+                const { width: w, height: h } = resource;
+
                 if (game.backgroundBlurRate > 0) {
                     sprite.anchor.set(.5);
-                    sprite.position.set(resource.width / 2, resource.height / 2);
+                    sprite.position.set(w / 2, h / 2);
 
-                    const shortSide = Math.min(resource.width, resource.height), blurPower = game.backgroundBlurRate * shortSide,
+                    const shortSide = Math.min(w, h), blurPower = game.backgroundBlurRate * shortSide,
                         t = Math.max(shortSide, Math.max(10, blurPower) * 3);
 
                     sprite.scale.set(t / (t - 2 * Math.max(10, blurPower)));
                     sprite.filters = [new PIXI.BlurFilter(blurPower, 18, 1, 15)];
 
                     const texture = PIXI.RenderTexture.create({
-                        width: resource.width, height: resource.height
+                        width: w, height: h
                     });
                     app.renderer.render(sprite, {
                         renderTexture: texture, clear: false
@@ -557,7 +559,7 @@ export default class Playback {
 
                 sprite.anchor.set(.5);
                 sprite.position.set(innerWidth / 2, innerHeight / 2);
-                sprite.scale.set(Math.max(innerWidth / resource.width, innerHeight / resource.height));
+                sprite.scale.set(Math.max(innerWidth / w, innerHeight / h));
                 this.bg = app.stage.addChildAt(sprite, 0);
             });
         }
@@ -569,12 +571,11 @@ export default class Playback {
         else loadBg(defaultBg);
     }
     playHitsound(hit, id, time) {
-        while (this.timingId + 1 < this.track.timing.length && this.track.timing[this.timingId + 1].offset <= time) ++this.timingId;
-        while (this.timingId > 0 && this.track.timing[this.timingId].offset > time) --this.timingId;
-        const timing = this.track.timing[this.timingId],
-            volume = game.masterVolume * game.effectVolume * timing.volume, defaultSet = timing.sampleSet || game.sampleSet;
+        const timingPts = this.track.timing;
+        while (this.timingId + 1 < timingPts.length && timingPts[this.timingId + 1].offset <= time) ++this.timingId;
+        while (this.timingId > 0 && timingPts[this.timingId].offset > time) --this.timingId;
 
-        const playHit = (bitmask, normalSet, additionSet) => {
+        const timing = timingPts[this.timingId], playHit = (bitmask, normalSet, additionSet) => {
             const normal = game.sample[normalSet].hitnormal;
             normal.volume = volume;
             normal.play();
@@ -595,7 +596,8 @@ export default class Playback {
                 clap.volume = volume;
                 clap.play();
             }
-        };
+        }, volume = game.masterVolume * game.effectVolume * timing.volume, defaultSet = timing.sampleSet || game.sampleSet;
+
         if (hit.type === 'circle' || hit.type === 'spinner') {
             const normal = hit.hitSample.normal || defaultSet, addition = hit.hitSample.addition || normal;
             playHit(hit.hitSound, normal, addition);
@@ -739,16 +741,16 @@ export default class Playback {
                                 const t = clamp01((time - hit.time + this.approachTime) / this.approachTime * 3);
                                 hit.body.endt = t;
                                 if (hit.reverse) {
-                                    const p = hit.curve.pointAt(t);
-                                    hit.reverse.position.set(p.x, p.y);
+                                    const { x, y } = hit.curve.pointAt(t);
+                                    hit.reverse.position.set(x, y);
 
                                     if (t < .5) {
-                                        const p2 = hit.curve.pointAt(t + 1e-9);
-                                        hit.reverse.rotation = Math.atan2(p.y - p2.y, p.x - p2.x);
+                                        const { x: x2, y: y2 } = hit.curve.pointAt(t + 1e-9);
+                                        hit.reverse.rotation = Math.atan2(y - y2, x - x2);
                                     }
                                     else {
-                                        const p2 = hit.curve.pointAt(t - 1e-9);
-                                        hit.reverse.rotation = Math.atan2(p2.y - p.y, p2.x - p.x);
+                                        const { x: x2, y: y2 } = hit.curve.pointAt(t - 1e-9);
+                                        hit.reverse.rotation = Math.atan2(y2 - y, x2 - x);
                                     }
                                 }
                             }
@@ -763,17 +765,17 @@ export default class Playback {
                             const currentRepeat = Math.min(Math.ceil(t), hit.repeat), realT = t;
 
                             t = repeatClamp(Math.min(t, hit.repeat));
-                            const at = hit.curve.pointAt(t);
+                            const { x: aX, y: aY } = hit.curve.pointAt(t);
 
-                            hit.follow.position.set(at.x, at.y);
-                            hit.ball.position.set(at.x, at.y);
+                            hit.follow.position.set(aX, aY);
+                            hit.ball.position.set(aX, aY);
 
                             if (!game.autoplay) {
-                                const dx = game.mouseX - at.x, dy = game.mouseY - at.y, followpx = hit.followSize * this.circleRadius / 1.8;
+                                const dx = game.mouseX - aX, dy = game.mouseY - aY, followpx = hit.followSize * this.circleRadius / 1.8;
                                 var isfollowing = dx * dx + dy * dy < followpx * followpx;
 
                                 if (!isfollowing) {
-                                    const predict = this.player.mouse(this.realtime), dx1 = predict.x - at.x, dy1 = predict.y - at.y, laxRad = followpx + predict.r;
+                                    const predict = this.player.mouse(this.realtime), dx1 = predict.x - aX, dy1 = predict.y - aY, laxRad = followpx + predict.r;
                                     isfollowing = dx1 * dx1 + dy1 * dy1 < laxRad * laxRad;
                                 }
                             }
@@ -787,10 +789,11 @@ export default class Playback {
                                     if (activated) {
                                         tick.result = true;
                                         hit.judge.defaultScore = 50;
+                                        const timingPts = this.track.timing;
 
-                                        while (this.timingId + 1 < this.track.timing.length && this.track.timing[this.timingId + 1].offset <= tick.time) ++this.timingId;
-                                        while (this.timingId > 0 && this.track.timing[this.timingId].offset > time) --this.timingId;
-                                        const timing = this.track.timing[this.timingId],
+                                        while (this.timingId + 1 < timingPts.length && timingPts[this.timingId + 1].offset <= tick.time) ++this.timingId;
+                                        while (this.timingId > 0 && timingPts[this.timingId].offset > time) --this.timingId;
+                                        const timing = timingPts[this.timingId],
                                             tickSound = game.sample[hit.hitSample.normal || timing.sampleSet || game.sampleSet].slidertick;
 
                                         tickSound.volume = game.masterVolume * game.effectVolume * timing.volume;

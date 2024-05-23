@@ -1,5 +1,4 @@
 const volumeRange = document.getElementById('mastervolume-range');
-
 export default class VolumeMenu extends PIXI.Container {
     fadetime = 1000;
     visible = false;

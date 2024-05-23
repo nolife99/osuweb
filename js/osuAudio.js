@@ -1,30 +1,22 @@
 const actx = new AudioContext;
-export const sounds = {
-    load: (sources, onLoad) => Promise.all(sources.map(async source => {
-        const o = {
-            volumeNode: new GainNode(actx),
-            get volume() {
-                return o.volumeNode.gain.value;
-            },
-            set volume(value) {
-                o.volumeNode.gain.value = value;
-            },
-            play: () => {
-                o.soundNode = new AudioBufferSourceNode(actx, {
-                    buffer: o.buffer
-                });
-                o.soundNode.connect(o.volumeNode).connect(actx.destination);
-                o.soundNode.start();
-            }
-        };
-        return await actx.decodeAudioData(await (await fetch(source)).arrayBuffer(), buffer => {
-            o.buffer = buffer;
-            o.hasLoaded = true;
-            o.name = source;
-            sounds[o.name] = o;
-        });
-    })).then(onLoad)
-};
+export const sounds = (sources, onLoad) => Promise.all(sources.map(async source => await actx.decodeAudioData(await (await fetch(source)).arrayBuffer(), buffer => {
+    const volumeNode = new GainNode(actx);
+    sounds[source] = {
+        get volume() {
+            return volumeNode.gain.value;
+        },
+        set volume(value) {
+            volumeNode.gain.value = value;
+        },
+        play: () => {
+            const soundNode = new AudioBufferSourceNode(actx, {
+                buffer: buffer
+            });
+            soundNode.connect(volumeNode).connect(actx.destination);
+            soundNode.start();
+        }
+    };
+}))).then(onLoad);
 export default class OsuAudio {
     started = 0;
     position = 0;

@@ -233,7 +233,7 @@ export default class Osu {
                 const entry = this.zip.getChildByName(file.slice(1, file.length - 1)), id = (entry.id + entry.uncompressedSize).toString();
                 entry.getData64URI('image/webp').then(b => {
                     img.src = b;
-                    if (!PIXI.Assets.get(id)) {
+                    if (!PIXI.Assets.cache.has(id)) {
                         PIXI.Assets.add({
                             alias: id, src: b
                         });

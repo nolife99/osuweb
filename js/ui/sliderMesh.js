@@ -24,14 +24,14 @@ export default class SliderMesh extends PIXI.Container {
         }, res = Math.max(Math.min(Math.ceil(curve.calcLength / 4.7), 10000), DIVIDES);
 
         for (let i = 1; i < res; ++i) {
-            const pt = curve.pointAt((i + 1) / res), prev = curve.pointAt(i / res), dx = pt.x - prev.x, dy = pt.y - prev.y,
-                length = Math.hypot(dx, dy), ox = SliderMesh.radius * dy / length, oy = SliderMesh.radius * dx / length;
+            const { x, y, t } = curve.pointAt((i + 1) / res), { x: pX, y: pY, t: pT } = curve.pointAt(i / res), 
+                dx = x - pX, dy = y - pY, l = Math.hypot(dx, dy), ox = SliderMesh.radius * dy / l, oy = SliderMesh.radius * dx / l;
 
-            vbo.push(prev.x - ox, prev.y + oy, prev.t, 1,
-                prev.x + ox, prev.y - oy, prev.t, 1,
-                pt.x - ox, pt.y + oy, pt.t, 1,
-                pt.x + ox, pt.y - oy, pt.t, 1,
-                pt.x, pt.y, pt.t, 0);
+            vbo.push(pX - ox, pY + oy, pT, 1,
+                pX + ox, pY - oy, pT, 1,
+                x - ox, y + oy, t, 1,
+                x + ox, y - oy, t, 1,
+                x, y, t, 0);
 
             const n = 5 * i;
             ibo.push(n - 5, n - 4, n,
@@ -45,8 +45,11 @@ export default class SliderMesh extends PIXI.Container {
         addArc(resP - 5, resP - 6, resP - 7, 1);
 
         for (let i = 1; i < res - 1; ++i) {
-            const c = curve.pointAt((i + 1) / res), b = curve.pointAt(i / res), n = curve.pointAt((i + 2) / res), p = i * 5;
-            if ((c.x - b.x) * (n.y - c.y) > (n.x - c.x) * (c.y - b.y)) addArc(p, p - 1, p + 2);
+            const { x, y } = curve.pointAt((i + 1) / res), 
+                { x: bX, y: bY } = curve.pointAt(i / res), 
+                { x: nX, y: nY } = curve.pointAt((i + 2) / res), p = i * 5;
+
+            if ((x - bX) * (nY - y) > (nX - x) * (y - bY)) addArc(p, p - 1, p + 2);
             else addArc(p, p + 1, p - 2);
         }
         this.geometry = new PIXI.Geometry().addAttribute('pos', vbo, 4).addIndex(ibo);
@@ -58,7 +61,7 @@ export default class SliderMesh extends PIXI.Container {
         renderer.batch.flush();
         renderer.state.set(SliderMesh.state);
 
-        const uniform = SliderMesh.shader.uniforms, ox0 = uniform.ox, oy0 = uniform.oy, gl = renderer.gl;
+        const uniform = SliderMesh.shader.uniforms, { ox: ox0, oy: oy0 } = uniform, gl = renderer.gl;
         uniform.texelY = this.texelY;
         uniform.alpha = this.alpha;
         uniform.dt = 0;
@@ -89,9 +92,9 @@ export default class SliderMesh extends PIXI.Container {
             uniform.dt = 0;
             uniform.ot = 1;
 
-            const p = this.curve.pointAt(this.startt);
-            uniform.ox += p.x * uniform.dx;
-            uniform.oy += p.y * uniform.dy;
+            const { x, y } = this.curve.pointAt(this.startt);
+            uniform.ox += x * uniform.dx;
+            uniform.oy += y * uniform.dy;
             bind(SliderMesh.circle);
         }
         else if (this.startt === 0) {
@@ -103,9 +106,9 @@ export default class SliderMesh extends PIXI.Container {
             uniform.dt = 0;
             uniform.ot = 1;
 
-            const p = this.curve.pointAt(this.endt);
-            uniform.ox += p.x * uniform.dx;
-            uniform.oy += p.y * uniform.dy;
+            const { x, y } = this.curve.pointAt(this.endt);
+            uniform.ox += x * uniform.dx;
+            uniform.oy += y * uniform.dy;
             bind(SliderMesh.circle);
         }
         gl.enable(gl.STENCIL_TEST);

@@ -15,9 +15,9 @@ const progresses = document.getElementsByClassName('progress'),
     pDragboxInner = document.getElementsByClassName('dragbox-inner')[0],
     pDragboxHint = document.getElementsByClassName('dragbox-hint')[0],
     pBeatmapList = document.getElementsByClassName('beatmap-list')[0],
-    mapList = localStorage.getItem('‌')?.split('‌');
+    mapList = localStorage.getItem('‌')?.split('‌') || [];
 
-if (mapList) {
+if (mapList.length > 0) {
     const counter = progresses[3].childNodes;
     counter[3].innerText = mapList.length;
 
@@ -64,7 +64,7 @@ const sample = [
     'asset/hitsound/drum-slidertick.ogg',
     'asset/hitsound/combobreak.ogg'
 ];
-sounds.load(sample, () => {
+sounds(sample, () => {
     game.sample[1].hitnormal = sounds[sample[0]];
     game.sample[1].hitwhistle = sounds[sample[1]];
     game.sample[1].hitfinish = sounds[sample[2]];
@@ -270,7 +270,7 @@ pDragbox.ondrop = e => {
     for (const blob of e.dataTransfer.files) blob.arrayBuffer().then(buf => {
         const bytes = new Uint8Array(buf), id = blob.lastModified.toString(), zipFs = new fs.FS;
         localforage.setItem(id, bytes);
-        if (mapList && !mapList.includes(id)) {
+        if (!mapList.includes(id)) {
             mapList.push(id);
             localStorage.setItem('‌', mapList.join('‌'));
         }
