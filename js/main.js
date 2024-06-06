@@ -248,15 +248,15 @@ class BeatmapController {
     }
 }
 
-const addbeatmap = (osz, f) => {
+const addbeatmap = async (osz, f) => {
     const map = new BeatmapController(osz), osu = map.osu;
-    osu.load(() => {
-        if (!osu.tracks.some(t => t.general.Mode !== 3)) {
-            pDragboxHint.innerText = modeErrHint;
-            return;
-        }
-        f(map.createBeatmapBox());
-    });
+    await osu.load();
+    
+    if (!osu.tracks.some(t => t.general.Mode !== 3)) {
+        pDragboxHint.innerText = modeErrHint;
+        return;
+    }
+    f(map.createBeatmapBox());
 }, defaultHint = 'Drag and drop a beatmap (.osz) file here',
     modeErrHint = 'Only supports osu! (std) mode beatmaps. Drop another file.',
     nonValidHint = 'Not a valid osz file. Drop another file.',

@@ -14,11 +14,8 @@ class Track {
     hits = [];
 
     constructor(track) {
-        this.track = track;
-    }
-    decode(ondecoded) {
         let section, combo = 0, index = 0, forceNewCombo, key, value, parts;
-        for (const l of this.track.split('\n')) {
+        for (const l of track.split('\n')) {
             const line = l.trim();
             if (line === '' || line.indexOf('//') === 0) continue;
             if (line.indexOf('[') === 0) {
@@ -203,26 +200,19 @@ class Track {
         }
         this.length = (this.hits.at(-1).endTime - this.hits[0].time) / 1000;
         this.oldStar = (this.difficulty.HPDrainRate + this.difficulty.CircleSize + this.difficulty.OverallDifficulty + clamp(this.hits.length / this.length * 8, 0, 16)) / 38 * 5;
-        ondecoded(this);
     }
 }
 export default class Osu {
     tracks = [];
     count = 0;
-    onready = () => { };
 
     constructor(zip) {
         this.zip = zip;
     }
-    load(ondecoded) {
-        const rawTracks = this.zip.children.filter(c => c.name.indexOf('.osu') === c.name.length - 4);
-        for (const t of rawTracks) t.getText().then(text => {
-            const track = new Track(text);
-            this.tracks.push(track);
-            track.decode(() => {
-                if (++this.count === rawTracks.length) this.sortTracks().then(ondecoded);
-            });
-        });
+    async load() {
+        await Promise.all(this.zip.children.filter(c => c.name.indexOf('.osu') === c.name.length - 4)
+            .map(t => t.getText().then(text => this.tracks.push(new Track(text)))));
+        return await this.sortTracks();
     }
     getCoverSrc(img) {
         for (const track of this.tracks) {

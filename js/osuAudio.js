@@ -17,9 +17,9 @@ export const sounds = (sources, onLoad) => Promise.all(sources.map(async source 
         }
     };
 }))).then(onLoad);
+
+let started = 0, position = 0;
 export default class OsuAudio {
-    started = 0;
-    position = 0;
     speed = 1;
     ctx = actx;
     gain = new GainNode(actx);
@@ -32,7 +32,7 @@ export default class OsuAudio {
         });
     }
     get pos() {
-        return this.playing ? this.position + (actx.currentTime - this.started) * this.speed : this.position;
+        return this.playing ? position + (actx.currentTime - started) * this.speed : position;
     }
     play(wait = 0) {
         this.source = new AudioBufferSourceNode(actx, {
@@ -41,23 +41,23 @@ export default class OsuAudio {
         this.source.connect(this.gain);
 
         if (wait > 0) {
-            this.position = -wait / 1000;
+            position = -wait / 1000;
             this.source.start(actx.currentTime + wait / 1000 / this.speed);
         }
-        else this.source.start(0, this.position);
-        this.started = actx.currentTime;
+        else this.source.start(0, position);
+        started = actx.currentTime;
         this.playing = true;
     }
     pause() {
         if (!this.playing || this.pos < 0) return false;
-        this.position += (actx.currentTime - this.started) * this.speed;
-        this.source.stop(this.position);
+        position += (actx.currentTime - started) * this.speed;
+        this.source.stop(position);
         this.source.disconnect(this.gain);
         this.playing = false;
         return true;
     }
     seek(time) {
-        if (this.playing && time > actx.currentTime - this.started) {
+        if (this.playing && time > actx.currentTime - started) {
             this.source.stop();
             this.source.disconnect(this.gain);
             this.source = new AudioBufferSourceNode(actx, {
@@ -65,8 +65,8 @@ export default class OsuAudio {
             });
             this.source.connect(this.gain);
             this.source.start(0, time);
-            this.position = time;
-            this.started = actx.currentTime;
+            position = time;
+            started = actx.currentTime;
             return true;
         }
         else return false;
